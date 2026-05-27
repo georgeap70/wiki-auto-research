@@ -1,0 +1,108 @@
+---
+title: Harness Optimization
+type: concept
+tags: [harness, system-prompt, scaffolding, code-synthesis, constraint-enforcement]
+sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt]
+last_updated: 2026-04-28
+---
+
+# Harness Optimization
+
+"Harness" refers to everything that wraps a base LLM: system prompts, tool definitions, interaction protocols, output parsers, constraint enforcement code, and any other scaffolding. Harness optimization is the practice of **automatically improving this wrapper** without modifying the underlying model weights.
+
+## Why Harness Optimization Matters
+
+- Model weights are expensive to change (retraining, fine-tuning)
+- Harnesses are cheap to modify (text files, code files)
+- Substantial capability gains are available at the harness layer
+- A single harness update can improve performance across all tasks
+
+[[sources/auto-harness]] demonstrated +39% gain on Tau3 by iterating the harness alone, with the underlying model (GPT-5.4) held constant. This suggests the harness is a high-leverage optimization target.
+
+## Types of Harness Components
+
+| Component | Example | Can be auto-optimized? |
+|-----------|---------|----------------------|
+| System prompt | Task description, instructions, persona | Yes |
+| Tool definitions | Function signatures, descriptions | Yes |
+| Interaction protocol | How to structure turns | Yes |
+| Constraint enforcement code | Valid action checking | Yes ([[sources/autoharness-arxiv]]) |
+| Output parser | Response parsing logic | Yes |
+| Memory / learnings store | `learnings.md` | Emergent — the agent writes to it |
+
+## Approaches in This Wiki
+
+### auto-harness (NeoSigma AI) — [[sources/auto-harness]]
+- Optimizes: system prompt + tool definitions
+- Method: agent edits its own `agent/agent.py`, gates with regression suite
+- Key feature: persistent `learnings.md` for cross-run memory
+- Result: +39% on Tau3
+
+### Meta-Harness (Stanford) — [[sources/meta-harness]]
+- Optimizes: full harness (prompt + scaffolding)
+- Method: optimizer agent reads full source + execution traces, proposes surgical edits
+- Key feature: rich diagnostic context (10M tokens)
+- Key claim: rich traces > scalar reward for proposal quality
+
+### AutoHarness (Google DeepMind) — [[sources/autoharness-arxiv]]
+- Optimizes: constraint enforcement code specifically
+- Method: iterative synthesis from environmental action feedback
+- Key insight: smaller models with good harnesses outperform larger models without
+- Use case: constrained action environments (games, formal systems)
+
+### AutoAgent (KevinRGU) — [[sources/autoagent-kevinrgu]]
+- Optimizes: full harness (system prompt, tools, routing)
+- Method: meta-agent hill-climbing loop; reads `program.md` directive, edits `agent.py`, scores on benchmark
+- Key feature: explicit abstraction boundary — human writes intent in `program.md`, meta-agent owns implementation in `agent.py`
+- Result: no published benchmark numbers
+
+### AutoAgent (HKUDS) — [[sources/autoagent-hkuds]]
+- Optimizes: full harness (agents, tools, workflows)
+- Method: natural language dialogue — human specifies and iterates agent behavior conversationally, system auto-generates implementation
+- Key feature: NL as the complete optimization interface; self-developing architecture with iterative feedback
+- Result: GAIA performance comparable to Claude 3.5 Sonnet
+
+### EvoForge (Haize Labs) — [[sources/evoforge]]
+- Optimizes: full harness (system prompt, tools, orchestration)
+- Method: population of agents each running the `program.md → agent.py` hill-climbing loop in parallel; knowledge synthesis after each generation
+- Key feature: three-tier abstraction (`evolve.md` → population; `program.md` → agent intent; `agent.py` → implementation); adds population dimension to [[sources/autoagent-kevinrgu]]
+- Result: 2× Codex CLI, 10× baseline (GPT-5-nano)
+
+### HonedHaiku (Tim Waldin) — [[sources/honedhaiku]]
+- Optimizes: system prompt only (prose-level)
+- Method: GEPA mutation-selection loop; Agentelo scores against real PR test suites
+- Key feature: "Goldilocks band" — prompt optimization only moves performance in the 50–70% range; training diversity critical for holdout generalization
+- Result: +19.7pp on unseen bugs (65% → 85%); converged in 4 iterations
+
+### HALO (Context Labs) — [[sources/halo]]
+- Optimizes: full harness (prompts, tool wiring, infrastructure)
+- Method: production OpenTelemetry traces → specialized Recursive Language Model engine analyzes cross-trace patterns → coding agent edits harness → redeploy
+- Key feature: explicit separation between **trace analysis** (RLM) and **harness editing** (coding agent); methodology designed around live deployment traffic
+- Result: AppWorld +15.8pp dev for both Gemini 3 Flash and Sonnet 4.6; +10.7pp test (generalizes)
+
+### SkillOpt (Microsoft Research) — [[sources/skillopt]]
+- Optimizes: a structured skill document (`best_skill.md`) treated as the model's "trainable state"
+- Method: rollout → reflection (separate success/failure analysis) → bounded add/delete/replace edits (edit budget as "textual learning rate") → held-out validation gate
+- Key feature: rejected-edit buffer as negative signal; optimizer-side meta-skill; strongest cross-model/cross-harness transfer evidence in the wiki
+- Result: best-or-tied-best on 52/52 model×benchmark combinations; ALFWorld 70.9% → 85.8%; +15.2% cross-model, +31.8% cross-harness transfer without re-optimization
+
+## Comparison
+
+| System | Feedback type | Scope | Human involvement |
+|--------|---------------|-------|------------------|
+| auto-harness | Production traces + pass/fail | Prompt + tools | None (overnight) |
+| Meta-Harness | Full traces + source code | Full harness | None |
+| AutoHarness | Environmental action signals | Constraint code only | None |
+| AutoAgent (KevinRGU) | Benchmark score (scalar) | Full harness | Write `program.md` once |
+| AutoAgent (HKUDS) | Conversational feedback | Full harness + workflows | NL direction per change |
+| EvoForge | Benchmark score (scalar, population) | Full harness | Write `evolve.md` + `program.md` |
+| HonedHaiku | PR test suite pass/fail | System prompt | Define challenges once |
+| HALO | OpenTelemetry production traces | Full harness | Deploy + define benchmarks |
+| SkillOpt | Rollout scores + rejected-edit buffer | Structured skill document | Define benchmarks once |
+
+## Connections
+
+- [[concepts/self-improvement-loop]] — harness optimization is the loop applied at the scaffolding layer
+- [[concepts/feedback-signals]] — rich traces vs. scalar pass/fail determines proposal quality
+- [[concepts/regression-gating]] — all three systems use gating to prevent regressions
+- [[sources/optimize-anything]] — generalizes harness optimization to any text artifact

@@ -1,0 +1,145 @@
+---
+title: Knowledge Accumulation in Self-Improving Systems
+type: concept
+tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage]
+sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt]
+last_updated: 2026-04-28
+---
+
+# Knowledge Accumulation
+
+A recurring theme across self-improving systems: **persistent memory that compounds across iterations** is what separates genuine improvement from random search. Without it, each iteration starts from scratch; with it, discoveries from earlier rounds inform later ones.
+
+## Why It Matters
+
+The naive self-improvement loop has no memory. The agent proposes a change, the change is accepted or rejected, and the next proposal starts from the same base. This is expensive: the same failure modes are rediscovered repeatedly, and insights from failed attempts are discarded.
+
+Knowledge accumulation solves this by storing structured information that future iterations can retrieve. The form of storage varies by system, but the function is constant: **convert experience into reusable context**.
+
+## Implementations Across Sources
+
+### learnings.md — [[sources/auto-harness]]
+
+A flat markdown file maintained alongside the agent harness. Each improvement session appends findings: what worked, what failed, which failure clusters have been seen before. On next session, this file is injected into the optimizer's context.
+
+Simple, but effective for sequential single-agent loops. Fails to scale across very long runs or parallel agents.
+
+### Execution Trace Database — [[sources/meta-harness]]
+
+Stanford's Meta-Harness stores full execution traces (up to 10M tokens). The optimizer can follow the execution path of a failure to its source. More expensive than learnings.md, but richer — the trace contains the actual causal chain, not just a summary.
+
+### Cognition Base — [[sources/asi-evolve]]
+
+An embedding-indexed repository of human prior knowledge (papers, heuristics, known pitfalls) plus agent-generated analysis nodes. Two-layer structure:
+
+1. **Human priors:** seeded from domain literature (e.g., 150 entries from 100 architecture papers)
+2. **Agent analyses:** each Analyzer report is stored as a node with motivation, code, results, and analysis
+
+Retrieved via semantic search over candidate motivations. This enables the agent to:
+- Leverage existing human expertise without re-deriving it
+- Build on its own prior discoveries without redundant exploration (novelty check filters near-duplicate motivations)
+
+### Attempts / Notes / Skills — [[sources/coral]]
+
+The richest accumulation architecture seen in this literature. Three parallel stores:
+
+**Attempts:** JSON per evaluated commit. Complete historical record — agent ID, score, parent hash, grader feedback. Agents can inspect the full lineage of any solution.
+
+**Notes:** Freeform markdown organized by topic. Special directories: `_synthesis/` for consolidated findings, `_connections.md` for cross-category patterns, `_open-questions.md` for gaps. Agents write, read, and *reorganize* notes — the structure of knowledge evolves alongside the content.
+
+**Skills:** Reusable procedures with natural-language description + executable artifacts. Once an agent discovers a useful technique, it distills it into a skill that any colleague can invoke.
+
+The three layers serve different time horizons: Attempts are real-time (per evaluation), Notes are medium-term (per heartbeat), Skills are long-term (validated across many runs).
+
+### SkillBank — [[sources/skill-rl-skill0]] (SKILL-RL)
+
+SKILL-RL extracts reusable **skills** from RL rollouts — not raw trajectories but distilled behavioral patterns with natural-language descriptions + executable artifacts. Organized hierarchically:
+
+- **General heuristics** at the top (broadly applicable across task types)
+- **Task-specific procedures** below (retrieved when task context matches)
+
+Crucially, the SkillBank **co-evolves with the RL policy**: as the policy improves through training, the SkillBank is updated to reflect the current best practices. The loop is recursive — better skills produce better rollouts, which produce better skills.
+
+This is the closest analog in the literature to CORAL's Skills store, but tightly coupled to RL training rather than agent co-evolution.
+
+### Weight Internalization — [[sources/skill-rl-skill0]] (SKILL-0)
+
+All prior knowledge accumulation systems are **external** (files, databases, embeddings, git). SKILL-0 is the only system in this wiki that stores accumulated knowledge **in model weights**.
+
+The mechanism is a dynamic curriculum:
+1. Training begins with full skill context in-context
+2. The skill budget is linearly decayed across training steps
+3. The model is trained to produce the same correct behavior with progressively less external scaffolding
+4. By the end of training, the model operates zero-shot — skills have been internalized
+
+This eliminates inference-time retrieval entirely (< 0.5k tokens/step vs. potentially large skill injections). The tradeoff: internalized knowledge requires retraining to update, whereas external stores (SkillBank, learnings.md, CORAL Skills) can be extended at any time.
+
+SKILL-0's weight internalization is conceptually adjacent to [[sources/agentflow]]'s Flow-GRPO — both persist knowledge via weight updates — but SKILL-0 targets *skill knowledge* while AgentFlow targets *task policy*.
+
+### Executable Skills (Parameterized Programs + NL Guidance) — [[sources/webxskill]]
+
+WebXSkill represents each skill as a **dual artifact**: a parameterized executable program *and* step-level natural-language guidance. The same skill can be deployed in two modes — grounded (auto-execute the program) or guided (feed NL instructions to the agent step-by-step).
+
+Indexed in a **URL-based graph** rather than flat or hierarchical: retrieval is context-aware based on which part of the web the agent is currently navigating.
+
+This is the first system in the wiki to make the NL/code duality an explicit design principle. Other skill systems either commit to one side (SKILL-0 internalizes as weights; Meta-Harness stores code) or pair them loosely (SKILL-RL, CORAL). WebXSkill's dual representation means the skill artifact is both executable and instructional without duplication.
+
+### Per-Capability LoRA Adapters — [[sources/trace]]
+
+TRACE is the only system in the wiki that accumulates knowledge as a **modular set of weight deltas**: one LoRA adapter per identified capability gap. A router classifier selects which adapter to apply per task at inference.
+
+Compared to other weight-based accumulation:
+- [[sources/agentflow]] updates one monolithic planner's weights in-the-flow
+- [[sources/skill-rl-skill0]] SKILL-0 internalizes skills into the base model's weights via curriculum
+- TRACE splits weight updates into **discrete, capability-isolated modules** with explicit routing
+
+This gives TRACE an unusual property: new capabilities can be *added* without retraining existing adapters — orthogonal to monolithic weight updates which risk catastrophic forgetting.
+
+### Skill Document as Trainable State — [[sources/skillopt]]
+
+SkillOpt makes the accumulation artifact explicit: a single markdown file (`best_skill.md`) *is* the trainable state of the system. The frozen model is unchanged; all accumulated knowledge lives in the document.
+
+What distinguishes SkillOpt's accumulation from learnings.md ([[sources/auto-harness]]) or system-prompt search ([[sources/honedhaiku]]):
+
+- **Structured edit operators**: add / delete / replace within an **edit budget** (treated explicitly as a "textual learning rate"). The accumulation grows gradually, not via free-form rewrites
+- **Rejected-edit buffer**: candidates that fail the validation gate are *retained* as negative examples for the optimizer — a second persistent store dedicated to failed mutations. Most other systems discard rejected proposals; SkillOpt mines them as hard negatives
+- **Optimizer-side meta-skill**: the optimizer agent maintains its *own* slowly-updating skill document about how to write better edits — a small meta-evolution layer on top of the primary accumulation
+
+The transfer evidence is the strongest in the wiki: `best_skill.md` produces +15.2% cross-model, +31.8% cross-harness, +10.4% self-optimizer gains without re-optimization. This argues that **structured prose skill documents are genuinely model- and harness-agnostic** as accumulated knowledge — a property weight-based accumulation ([[sources/skill-rl-skill0]] SKILL-0, [[sources/trace]]) cannot match.
+
+### Protocol-Native Lineage — [[sources/autogenesis]]
+
+[[sources/autogenesis]] proposes lineage as a **protocol primitive** rather than an optimizer feature. Every modification to any resource (prompt, tool, memory, agent, environment) is versioned, attributed, and tagged with decision rationale. The accumulated store is the complete history of the agent's self-modifications, queryable and rollback-able at the protocol level.
+
+This is closest to [[sources/coral]]'s Attempts store (per-commit lineage) but generalizes across all agent internals, not just evaluated code commits. Where CORAL's lineage exists to enable multi-agent coordination via shared git, AGP's lineage exists to make self-modification *inspectable and reversible*.
+
+## Shared Memory in Multi-Agent Systems
+
+When multiple agents run in parallel, knowledge accumulation must address concurrent access. [[sources/coral]] solves this with symlinks from isolated git worktrees to a centralized public directory. No locking needed — agents write asynchronously; reads are always consistent.
+
+The result: emergent coordination behaviors arise from shared memory access alone. Agents copy each other's successful techniques (copycatting), synthesize patterns across agents' notes (cross-referencing), and eventually form consensus on what's been exhausted (agent consensus). See [[concepts/self-improvement-loop]].
+
+## Knowledge Accumulation vs. Feedback Signals
+
+These are related but distinct:
+
+| | Feedback signals | Knowledge accumulation |
+|--|-----------------|----------------------|
+| **Scope** | Current iteration | Across iterations |
+| **Purpose** | Inform next proposal | Build a persistent knowledge base |
+| **Form** | Scalar or rich trace | Structured documents, embeddings |
+| **Author** | Evaluation infrastructure | The agent itself |
+
+See [[concepts/feedback-signals]] for the per-iteration side.
+
+## Open Questions
+
+- **Scale:** At what point does the knowledge base become too large to retrieve from efficiently? [[sources/asi-evolve]] uses embedding-based semantic search; [[sources/coral]] relies on agent judgment about what to read. Neither has been tested at thousands of hours of accumulated runs.
+- **Forgetting:** Should outdated knowledge (from early in the run, before key insights) be pruned? None of the current systems address this.
+- **Cross-domain transfer:** Can a knowledge base trained on one task transfer to another? [[sources/asi-evolve]] seeds the Cognition Base from human literature; genuinely cross-task accumulation has not been demonstrated.
+
+## Connections
+
+- [[concepts/self-improvement-loop]] — knowledge accumulation makes the loop compound rather than restart
+- [[concepts/feedback-signals]] — rich feedback is often the raw material that knowledge accumulation structures and stores
+- [[concepts/regression-gating]] — the knowledge base can store which changes caused regressions, preventing re-testing failed approaches

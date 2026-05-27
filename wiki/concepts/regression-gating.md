@@ -1,0 +1,122 @@
+---
+title: Regression Gating
+type: concept
+tags: [safety, regression, gating, threshold, pareto, lineage, rollback]
+sources: [auto-harness, optimize-anything, evox, meta-harness, autogenesis, autoreason, skillOpt]
+last_updated: 2026-04-28
+---
+
+# Regression Gating
+
+The mechanism by which self-improving systems **prevent improvement on new tasks from breaking existing capabilities**. Without gating, optimization pressure can cause catastrophic forgetting or proxy-metric overfitting.
+
+## The Problem
+
+A self-improving agent proposes a change that improves performance on recently-failed tasks. But:
+- It might break tasks it previously handled correctly
+- It might overfit to the failure cluster's surface features
+- It might improve on a proxy metric while hurting real-world performance
+
+Gating is the checkpoint: the proposed change must pass a validation test before being committed.
+
+## Gating Approaches
+
+### Threshold Gating (Pass Rate)
+Accept a change only if the pass rate on a regression suite stays above a threshold.
+
+Used by [[sources/auto-harness]] and [[sources/auto-harness|NeoSigma AI]]:
+- Threshold: **80%** of prior tasks must still pass
+- If a change passes 3 new tasks but breaks 2 old ones, it may still be rejected
+- Gives the optimizer room to improve (not 100%) while preventing wholesale regression
+
+**Trade-off**: The 80% threshold is somewhat arbitrary. Lower thresholds allow more aggressive changes; higher thresholds are more conservative. NeoSigma chose 80% empirically.
+
+### Pareto Gating (Multi-Metric)
+Accept a change only if it is not dominated — i.e., it is better on at least one metric and no worse on any other metric, compared to existing candidates.
+
+Used by [[sources/optimize-anything]]:
+- No single threshold — instead maintain a frontier of non-dominated solutions
+- Naturally handles multi-objective scenarios (speed vs. correctness vs. cost)
+- Avoids collapsing objectives into a scalar (which can hide regressions on one axis)
+
+### Held-Out Eval Gating
+Test proposed changes on a held-out set of tasks not seen during proposal generation.
+
+Used by [[sources/meta-harness]]:
+- Prevents overfitting to the failure cases that triggered the proposal
+- More expensive (requires maintaining a separate eval set)
+- Stronger anti-overfitting guarantee than regression-only testing
+
+### Stagnation-Based Gating
+Accept a strategy change only if the current strategy has plateaued.
+
+Used by [[sources/evox]]:
+- Outer loop monitors improvement rate over N iterations
+- Only switches strategy when stagnation is detected
+- Prevents premature strategy abandonment (explores long enough before switching)
+
+### Lineage + Rollback Gating
+
+A qualitatively different approach: instead of treating gating as a one-shot accept/reject decision, make every commitment *reversible*. If a change is later shown to degrade behavior, roll back to any prior version.
+
+Used by [[sources/autogenesis]]:
+- Every resource modification (prompt, tool, memory schema) is versioned
+- Each change carries **decision rationale** alongside the diff (semantic lineage, not just syntactic)
+- Assessment happens before commitment, but **rollback is always available** after
+- Prior versions are durable rollback targets, not garbage-collected
+
+This is a generalization of threshold/Pareto gating: instead of making the accept/reject decision irreversible, the system admits that any gate can be wrong and makes undo cheap. Conceptually similar to `git revert` at the agent-internals layer.
+
+### Tournament Gating (Borda Vote)
+
+Used by [[sources/autoreason]] for inference-time per-query refinement:
+
+- Each iteration produces three candidates: incumbent (A), adversarial revision (B), synthesis (AB)
+- A panel of fresh, blind judges ranks the three; **Borda count** aggregates rankings
+- The change only lands if independent judges prefer the changed version over the incumbent
+- Convergence: incumbent wins two rounds in a row → stop
+
+Tournament gating directly addresses three pathologies of naive critique-revise loops:
+- **Prompt bias**: critic agents hallucinate flaws when asked. The synthesis (AB) candidate hedges against fabricated criticism
+- **Scope creep**: outputs grow unboundedly without gating. The blind tournament rejects bloat that doesn't actually improve the output
+- **Lack of restraint**: models never choose "no change". The incumbent-wins path makes "no change" a first-class outcome
+
+This is gating *as the loop's primary control mechanism*, not as a safety check on top of an otherwise-unconstrained edit. Ablation: removing either B or AB collapses performance, indicating both adversarial change and synthesis are necessary for the tournament to function.
+
+### Edit Budget (Textual Learning Rate)
+
+A distinct primitive from [[sources/skillopt]]: rather than gating *whether* a change is accepted, gate *how large* any proposed change can be. The optimizer is constrained to add/delete/replace at most N operations per round.
+
+- Small budget → small steps; preserves functional rules; analogous to a small learning rate
+- Large budget → fast escape from poor local minima; risks overwriting useful structure
+
+This is **prior restraint** rather than post-hoc rejection: bad large edits are never proposed, not merely filtered. Composes with the standard held-out validation gate (SkillOpt uses both — bounded proposal + held-out test).
+
+Conceptually adjacent to:
+- Trust-region methods in numerical optimization
+- The "step size" parameter in policy-gradient RL
+- The patience limit in [[sources/deep-research]]'s GEPA setup, but applied to edit magnitude rather than iteration count
+
+## Design Considerations
+
+| Question | Options | Trade-off |
+|----------|---------|-----------|
+| What is the threshold? | 80%, 90%, 100% | Conservatism vs. exploration speed |
+| What is tested? | Prior failures only vs. full regression suite | Speed vs. safety |
+| How many metrics? | Scalar vs. Pareto | Simplicity vs. completeness |
+| How is the suite maintained? | Static vs. growing with each failure | Fixed cost vs. increasing safety |
+
+## The Regression Suite as a Growing Asset
+
+A key insight from [[sources/auto-harness]]: **each failure cluster that gets mined and converted to an eval case grows the regression suite**. This means:
+- Early iterations have weak gating (few test cases)
+- Later iterations have stronger gating (accumulated test cases)
+- The system becomes harder to break as it gets better
+
+This is a form of compounding safety, analogous to compounding capability.
+
+## Connections
+
+- [[concepts/self-improvement-loop]] — gating is the gate phase of the core loop
+- [[concepts/feedback-signals]] — gating typically uses scalar pass/fail, while proposals use rich diagnostics
+- [[concepts/harness-optimization]] — all harness optimizers in this wiki use some form of regression gating
