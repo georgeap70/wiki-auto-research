@@ -2,8 +2,8 @@
 title: Self-Improving Agentic Systems — Overview
 type: overview
 tags: [self-improvement, agentic-ai, meta-learning, optimization]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill]
-last_updated: 2026-04-18
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill, evoforge, honedhaiku, autoreason, halo, skillopt]
+last_updated: 2026-05-26
 ---
 
 # Self-Improving Agentic Systems — Overview
@@ -42,6 +42,11 @@ The key insight across this literature is that the optimization target can be an
 | Per-capability LoRA adapters | One adapter per identified capability gap | [[TRACE]] |
 | Executable skills (parameterized programs) | Dual-mode skill artifacts with NL + code | [[WebXSkill]] |
 | Typed agent resources (prompts/tools/memory) | Versioned resource modifications via protocol | [[Autogenesis]] |
+| Population of agent harnesses | Each agent in a parallel population hill-climbs its own `agent.py` | [[EvoForge]] |
+| System prompt (only) | Prompt evolved by GEPA against PR-test-suite feedback | [[HonedHaiku]] |
+| The output itself (per-query) | Inference-time tournament between incumbent / revision / synthesis | [[AutoReason]] |
+| Harness driven by production traces | OpenTelemetry traces → specialized RLM → coding-agent edits | [[HALO]] |
+| Skill document as trainable state | Bounded add/delete/replace edits ("textual learning rate") to a markdown skill | [[SkillOpt]] |
 | The optimization algorithm itself | Which search strategy the optimizer uses | [[EvoX]] |
 
 This progression — from task outputs → code policies → scaffolding → architecture → training data → learning algorithm → the optimizer — represents increasing levels of meta-cognition in self-improvement. [[ASI-Evolve]] is the first system to target multiple levels (architecture + data + RL algorithm) simultaneously in a single automated loop.
@@ -54,8 +59,9 @@ A recurring theme is that **rich diagnostic feedback substantially outperforms s
 - [[optimize_anything]] formalizes this as **Actionable Side Information (ASI)** — compiler errors, profiler traces, test output — elevated to a first-class API concept
 - [[auto-harness (tool)]] stores persistent learnings across runs in `learnings.md`, allowing context recovery between optimization sessions
 - [[AutoHarness (paper)]] uses environmental feedback (legal/illegal move signals) to iteratively refine constraint code
+- [[HALO]] makes the richest signal in the wiki — full OpenTelemetry production traces — tractable by inserting a *specialized trace-analysis RLM* between the raw traces and the harness-editor. The RLM's only job is to compress many traces into a diagnostic report; the coding agent then acts on the compressed signal
 
-The implication: systems that explain *why* they failed improve faster than systems that only signal *how much* they failed.
+The implication: systems that explain *why* they failed improve faster than systems that only signal *how much* they failed. A corollary is becoming clear: when feedback is *too* rich, a dedicated compressor (a la HALO's RLM, or [[ASI-Evolve]]'s Analyzer) is itself a load-bearing component.
 
 ## Loop Architectures
 
@@ -66,7 +72,13 @@ The agent edits its own code or prompts directly. Used by [[auto-harness (tool)]
 A curriculum agent generates tasks; an executor agent solves them. Each improves the other. Used by [[Agent0]]. Eliminates need for human-curated training data — capability emerges from zero.
 
 ### Population-based / evolutionary
-A population of candidates is maintained and evolved. Selection pressure applied via fitness functions. Used by [[EvoX]] and [[optimize_anything (GEPA)]]. Particularly powerful for discrete, structured search spaces.
+A population of candidates is maintained and evolved. Selection pressure applied via fitness functions. Used by [[EvoX]], [[optimize_anything (GEPA)]], and [[EvoForge]] (which adds a population dimension on top of the [[AutoAgent (KevinRGU)]] `program.md → agent.py` hill-climb). Particularly powerful for discrete, structured search spaces.
+
+### Specialist optimizer / target separation
+A recent architectural pattern: the *thing being improved* and the *thing doing the improving* are different specialized components. [[HALO]] separates an RLM trace-analyzer from a coding agent; [[AutoReason]] separates the author from independent blind judges; [[SkillOpt]] separates a frozen target model from a reflection-and-edit optimizer with its own meta-skill. The motivation is similar across all three: the proposal agent and the evaluation/diagnosis agent have different jobs that fight each other when collapsed into one loop.
+
+### Inference-time per-query tournaments ([[AutoReason]])
+Not all self-improvement happens at training or deployment time. AutoReason runs a *per-query* refinement loop: each iteration generates an incumbent, an adversarial revision, and a synthesis; a fresh blind judge panel votes via Borda count; the loop terminates when the incumbent wins twice in a row. Tournament gating fixes three structural failures of vanilla critique-revise loops (prompt bias, scope creep, lack of restraint). This adds a third time axis — alongside per-deployment harness loops and long-horizon research loops — at which "improvement" can happen.
 
 ### Multi-agent co-evolution with shared memory ([[CORAL]])
 Multiple autonomous agents explore in parallel, each running a full self-improvement loop, sharing a persistent three-layer knowledge store (Attempts/Notes/Skills). No external algorithm prescribes which candidates to retrieve — agents direct their own search. Emergent coordination behaviors arise from shared memory access alone: copycatting (agents adopt successful peer techniques), cross-referencing (synthesis of patterns across agents), and consensus formation (agents co-author notes at convergence). Four-agent runs outperform best-of-4 independent single-agent runs — gains are collaborative, not additive.
@@ -86,6 +98,8 @@ Without regression gating, self-improvement risks catastrophic forgetting or pro
 - [[EvoX]] uses stagnation detection to trigger strategy switches, avoiding premature convergence
 - [[optimize_anything]] uses **Pareto-efficient multi-metric search** to avoid collapsing multiple objectives into a single scalar
 - [[Autogenesis]] proposes **auditable lineage + rollback** as protocol primitives — every entity (prompt, tool, memory) is versioned, every modification carries rationale, and any degradation can be reverted. Safety is built into the substrate rather than the optimizer
+- [[SkillOpt]] uses a held-out validation gate *and* mines rejected edits as a negative-example buffer for the optimizer — failed proposals become structured negative signal rather than discarded noise (analogous to hard-negative mining)
+- [[AutoReason]]'s Borda-count tournament is itself the gate: a change only lands when an independent judge panel ranks it above the incumbent, eliminating the "always revise" bias of vanilla self-refinement
 
 ## Empirical Results
 
@@ -109,6 +123,16 @@ Without regression gating, self-improvement risks catastrophic forgetting or pro
 | TRACE | ToolSandBox | base +4 perfect | **+7 perfect scores** | — |
 | WebXSkill | WebArena | baseline | +9.8 pts | — |
 | WebXSkill | WebVoyager | baseline | +12.9 pts | — |
+| EvoForge | GPT-5-nano harness | baseline | 10× baseline, 2× Codex CLI | — |
+| HonedHaiku | Bug-fixing holdout (Haiku 3.5) | 64.96% | **84.62%** | +19.66pp |
+| AutoReason | CodeContests (Sonnet 4.6, 150 problems) | 73% | 77% | +4pp |
+| AutoReason | vs best-of-6 sampling (matched compute) | 31% | **40%** | same budget, better outcome |
+| HALO | AppWorld dev (Gemini 3 Flash) | 36.8% | 52.6% | +15.8pp (test +10.7pp) |
+| HALO | AppWorld dev (Sonnet 4.6) | 73.7% | **89.5%** | +15.8pp (test +10.7pp) |
+| SkillOpt | 7 models × 6 benchmarks | — | **best-or-tied-best 52/52** | avg 9–25% |
+| SkillOpt | ALFWorld | 70.9% | 85.8% | +14.9pp |
+| SkillOpt | cross-model skill transfer | — | +15.2% | strongest transfer evidence in the wiki |
+| SkillOpt | cross-harness skill transfer | — | +31.8% | — |
 
 ## Modular Decomposition of the Improvement Problem
 
@@ -123,15 +147,30 @@ The common idea: when a global reward is sparse, *decompose into locally-dense s
 
 ## Knowledge Accumulation as a First-Class Mechanism
 
-A theme that emerges strongly from the newest sources: **persistent, structured knowledge accumulation** is what separates genuinely compounding self-improvement from random search. Three approaches:
+A theme that emerges strongly from the newest sources: **persistent, structured knowledge accumulation** is what separates genuinely compounding self-improvement from random search. Approaches range from a flat file to typed multi-layer stores:
 
 - [[auto-harness]]: flat `learnings.md` file, injected into context each session
 - [[ASI-Evolve]]: embedding-indexed Cognition Base (human priors + agent analyses); retrieved via semantic search
 - [[CORAL]]: three-layer store (Attempts for lineage, Notes for analysis, Skills for reusable procedures); shared across parallel agents
+- [[SkillOpt]]: single `best_skill.md` *is* the accumulated knowledge, plus a secondary store of rejected-edit negatives that informs future proposals
 
 The right form of accumulation depends on the time horizon and the number of agents. Single-agent sequential loops benefit from simple document stores; multi-agent parallel runs require concurrent access and explicit distillation into transferable skills.
 
+SkillOpt's transfer results (+15.2% cross-model, +31.8% cross-harness, +10.4% when used as the optimizer's own meta-skill) are the strongest evidence in the wiki that accumulated knowledge artifacts are not model- or harness-specific — i.e., that the "knowledge" being accumulated really is about the *task*, not about an incidental detail of how it was learned.
+
 See [[concepts/knowledge-accumulation]].
+
+## The Productive Band (Goldilocks Zone) for Prompt Optimization
+
+Two independent sources converged on the same shape: text-only optimization (no weight changes) has a baseline-dependent productive range.
+
+| Baseline regime | What [[HonedHaiku]] saw | What [[AutoReason]] saw |
+|-----------------|------------------------|------------------------|
+| Very weak (<~50%) | Model can't execute complex methodologies; no gain | — |
+| Productive (~50–70%) | +19.7pp on unseen bugs (Haiku 3.5: 65% → 85%) | Tournament gains largest here |
+| Saturated (>~85%) | Prompt is no longer the bottleneck | Diminishing returns above ~60% on Haiku 4.5 |
+
+[[SkillOpt]] partially contradicts this: it achieves best-or-tied-best across all 7 models including weaker ones. The likely reason is that its *bounded structured edits* are more learnable than free-form prompt mutations — i.e., constraining the edit space widens the productive band. This is consistent with SkillOpt's framing of edit-count as a *textual learning rate*: a smaller "step size" is what lets weaker models benefit.
 
 ## Open Questions
 
@@ -145,6 +184,10 @@ See [[concepts/knowledge-accumulation]].
 - [[TRACE]] relies on supervising LLM agents to diagnose capability gaps and generate environments; can this diagnostic step itself be automated by the agent being improved, making the loop fully autonomous?
 - [[Autogenesis]] proposes a protocol where self-modification is a first-class primitive with lineage and rollback. Does such a protocol need industry adoption (like MCP) to matter, or can individual frameworks implement the ideas without a shared standard?
 - Modular decomposition ([[TRACE]], skill libraries) vs. monolithic end-to-end training ([[AgentFlow]], SKILL-0): are these genuinely different tradeoffs, or does one strictly dominate as systems scale?
+- The *optimizer/target separation* pattern ([[HALO]], [[AutoReason]], [[SkillOpt]]) keeps reappearing. Is collapsing the proposal and the evaluation/diagnosis into one agent fundamentally limited, or just inconvenient at current model scales?
+- [[SkillOpt]] treats edit count as a "textual learning rate". Are there analogues for other gradient-descent hyperparameters (momentum, weight decay, schedules) in the text-optimization regime?
+- [[HALO]]'s OpenTelemetry-driven loop assumes you have production traffic to learn from. For agents that don't yet have users, what's the equivalent? Synthetic traffic from an adversarial agent? Curriculum from a companion?
+- Inference-time loops like [[AutoReason]] sit beside training-time and deployment-time loops. Should these three time scales compose (per-query refinement *inside* per-deployment harness optimization *inside* long-horizon architecture search), or do their objectives interfere?
 
 ## See Also
 

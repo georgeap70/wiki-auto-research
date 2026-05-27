@@ -3,6 +3,21 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-05-26] lint | overview refresh — folded evoforge, honedhaiku, autoreason, halo, skillopt into wiki/overview.md
+
+User flagged that the overview was stale (last_updated 2026-04-18) — five newer sources were already in the index but missing from the synthesis. Read all five source pages and integrated their distinctive contributions:
+
+- Expanded the "What Can Be Optimized" table with 5 new rows (population of harnesses, system prompt only, per-query output, production-trace-driven harness, skill document as trainable state)
+- Added two new loop architectures: *Specialist optimizer/target separation* (HALO + AutoReason + SkillOpt converge on this pattern) and *Inference-time per-query tournaments* (AutoReason)
+- New section: **The Productive Band (Goldilocks Zone) for Prompt Optimization** — HonedHaiku and AutoReason independently observed a baseline-dependent productive range; SkillOpt's bounded edits ("textual learning rate") may widen this band
+- Extended Knowledge Accumulation section with SkillOpt's transfer evidence (strongest in the wiki: +15.2% cross-model, +31.8% cross-harness)
+- Added 10 new rows to the empirical results table (EvoForge, HonedHaiku, AutoReason, HALO ×2 models, SkillOpt ×4 settings)
+- Added gating mechanisms from SkillOpt (rejected-edit buffer as negative mining) and AutoReason (Borda tournament as the gate)
+- Added HALO's signal-compressor framing in the feedback-signals section (when feedback is too rich, a dedicated compressor becomes load-bearing)
+- Added 4 new open questions covering optimizer/target separation, textual hyperparameters, what HALO does without production traffic, and composition of inference/deployment/training-time loops
+
+Frontmatter bumped: sources list updated, last_updated → 2026-05-26.
+
 ---
 
 ## [2026-04-28] ingest | skillopt — skill document as the trainable state of a frozen LLM
