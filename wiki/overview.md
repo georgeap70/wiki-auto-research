@@ -2,8 +2,8 @@
 title: Self-Improving Agentic Systems — Overview
 type: overview
 tags: [self-improvement, agentic-ai, meta-learning, optimization]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill, evoforge, honedhaiku, autoreason, halo, skillopt]
-last_updated: 2026-05-26
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill, evoforge, honedhaiku, autoreason, halo, skillopt, rlm-gepa]
+last_updated: 2026-05-30
 ---
 
 # Self-Improving Agentic Systems — Overview
@@ -47,6 +47,7 @@ The key insight across this literature is that the optimization target can be an
 | The output itself (per-query) | Inference-time tournament between incumbent / revision / synthesis | [AutoReason](sources/autoreason.md) |
 | Harness driven by production traces | OpenTelemetry traces → specialized RLM → coding-agent edits | [HALO](sources/halo.md) |
 | Skill document as trainable state | Bounded add/delete/replace edits ("textual learning rate") to a markdown skill | [SkillOpt](sources/skillopt.md) |
+| Skill instructions on an RLM runtime | GEPA proposes surgical edits to prose layered on top of a fixed RLM/DSPy structure; `AgentSpec` declares what's in-scope | [RLM-GEPA](sources/rlm-gepa.md) |
 | The optimization algorithm itself | Which search strategy the optimizer uses | [EvoX](sources/evox.md) |
 
 This progression — from task outputs → code policies → scaffolding → architecture → training data → learning algorithm → the optimizer — represents increasing levels of meta-cognition in self-improvement. [ASI-Evolve](sources/asi-evolve.md) is the first system to target multiple levels (architecture + data + RL algorithm) simultaneously in a single automated loop.
@@ -60,6 +61,7 @@ A recurring theme is that **rich diagnostic feedback substantially outperforms s
 - [auto-harness (tool)](sources/auto-harness.md) stores persistent learnings across runs in `learnings.md`, allowing context recovery between optimization sessions
 - [AutoHarness (paper)](sources/autoharness-arxiv.md) uses environmental feedback (legal/illegal move signals) to iteratively refine constraint code
 - [HALO](sources/halo.md) makes the richest signal in the wiki — full OpenTelemetry production traces — tractable by inserting a *specialized trace-analysis RLM* between the raw traces and the harness-editor. The RLM's only job is to compress many traces into a diagnostic report; the coding agent then acts on the compressed signal
+- [RLM-GEPA](sources/rlm-gepa.md) codifies the feedback contract: *"optimization quality is bounded by the evidence your metric returns."* Effective feedback must *name specific failures* (missing findings, unsupported claims, wrong cells) rather than *prescribe rewrites*. This is a clean restatement of the ASI thesis applied to skill-instruction optimization
 
 The implication: systems that explain *why* they failed improve faster than systems that only signal *how much* they failed. A corollary is becoming clear: when feedback is *too* rich, a dedicated compressor (a la HALO's RLM, or [ASI-Evolve](sources/asi-evolve.md)'s Analyzer) is itself a load-bearing component.
 
@@ -75,7 +77,7 @@ A curriculum agent generates tasks; an executor agent solves them. Each improves
 A population of candidates is maintained and evolved. Selection pressure applied via fitness functions. Used by [EvoX](sources/evox.md), [optimize_anything (GEPA)](sources/optimize-anything.md), and [EvoForge](sources/evoforge.md) (which adds a population dimension on top of the [AutoAgent (KevinRGU)](sources/autoagent-kevinrgu.md) `program.md → agent.py` hill-climb). Particularly powerful for discrete, structured search spaces.
 
 ### Specialist optimizer / target separation
-A recent architectural pattern: the *thing being improved* and the *thing doing the improving* are different specialized components. [HALO](sources/halo.md) separates an RLM trace-analyzer from a coding agent; [AutoReason](sources/autoreason.md) separates the author from independent blind judges; [SkillOpt](sources/skillopt.md) separates a frozen target model from a reflection-and-edit optimizer with its own meta-skill. The motivation is similar across all three: the proposal agent and the evaluation/diagnosis agent have different jobs that fight each other when collapsed into one loop.
+A recent architectural pattern: the *thing being improved* and the *thing doing the improving* are different specialized components. [HALO](sources/halo.md) separates an RLM trace-analyzer from a coding agent; [AutoReason](sources/autoreason.md) separates the author from independent blind judges; [SkillOpt](sources/skillopt.md) separates a frozen target model from a reflection-and-edit optimizer with its own meta-skill; [RLM-GEPA](sources/rlm-gepa.md) separates an *executor* (runs the RLM on examples, collects traces) from a *proposer* (reads scored traces, edits skill instructions). The motivation is similar across all four: the proposal agent and the evaluation/diagnosis agent have different jobs that fight each other when collapsed into one loop.
 
 ### Inference-time per-query tournaments ([AutoReason](sources/autoreason.md))
 Not all self-improvement happens at training or deployment time. AutoReason runs a *per-query* refinement loop: each iteration generates an incumbent, an adversarial revision, and a synthesis; a fresh blind judge panel votes via Borda count; the loop terminates when the incumbent wins twice in a row. Tournament gating fixes three structural failures of vanilla critique-revise loops (prompt bias, scope creep, lack of restraint). This adds a third time axis — alongside per-deployment harness loops and long-horizon research loops — at which "improvement" can happen.
@@ -153,6 +155,7 @@ A theme that emerges strongly from the newest sources: **persistent, structured 
 - [ASI-Evolve](sources/asi-evolve.md): embedding-indexed Cognition Base (human priors + agent analyses); retrieved via semantic search
 - [CORAL](sources/coral.md): three-layer store (Attempts for lineage, Notes for analysis, Skills for reusable procedures); shared across parallel agents
 - [SkillOpt](sources/skillopt.md): single `best_skill.md` *is* the accumulated knowledge, plus a secondary store of rejected-edit negatives that informs future proposals
+- [RLM-GEPA](sources/rlm-gepa.md): optimized skill instructions layered on top of a fixed RLM/DSPy structure; transfer across use cases is the explicit design goal, with `AgentSpec` declaring the transfer boundary
 
 The right form of accumulation depends on the time horizon and the number of agents. Single-agent sequential loops benefit from simple document stores; multi-agent parallel runs require concurrent access and explicit distillation into transferable skills.
 
@@ -184,7 +187,9 @@ Two independent sources converged on the same shape: text-only optimization (no 
 - [TRACE](sources/trace.md) relies on supervising LLM agents to diagnose capability gaps and generate environments; can this diagnostic step itself be automated by the agent being improved, making the loop fully autonomous?
 - [Autogenesis](sources/autogenesis.md) proposes a protocol where self-modification is a first-class primitive with lineage and rollback. Does such a protocol need industry adoption (like MCP) to matter, or can individual frameworks implement the ideas without a shared standard?
 - Modular decomposition ([TRACE](sources/trace.md), skill libraries) vs. monolithic end-to-end training ([AgentFlow](sources/agentflow.md), SKILL-0): are these genuinely different tradeoffs, or does one strictly dominate as systems scale?
-- The *optimizer/target separation* pattern ([HALO](sources/halo.md), [AutoReason](sources/autoreason.md), [SkillOpt](sources/skillopt.md)) keeps reappearing. Is collapsing the proposal and the evaluation/diagnosis into one agent fundamentally limited, or just inconvenient at current model scales?
+- The *optimizer/target separation* pattern ([HALO](sources/halo.md), [AutoReason](sources/autoreason.md), [SkillOpt](sources/skillopt.md), [RLM-GEPA](sources/rlm-gepa.md)) keeps reappearing. Is collapsing the proposal and the evaluation/diagnosis into one agent fundamentally limited, or just inconvenient at current model scales?
+- [RLM-GEPA](sources/rlm-gepa.md)'s `AgentSpec` makes "what the optimizer needs to know that it can't infer" a typed, declared input. Should this become a first-class concept across the literature — every optimizer accompanied by a declared spec — or does it just push the prompt-engineering problem one level up?
+- The MIT-CSAIL Recursive Language Model substrate underlies both [HALO](sources/halo.md) (RLM as trace compressor) and [RLM-GEPA](sources/rlm-gepa.md) (RLM as runtime). Will "use an RLM" become the default scaffold for production agents the way "use a transformer" became for models — and if so, do harness-optimization techniques designed for non-RLM agents transfer cleanly?
 - [SkillOpt](sources/skillopt.md) treats edit count as a "textual learning rate". Are there analogues for other gradient-descent hyperparameters (momentum, weight decay, schedules) in the text-optimization regime?
 - [HALO](sources/halo.md)'s OpenTelemetry-driven loop assumes you have production traffic to learn from. For agents that don't yet have users, what's the equivalent? Synthetic traffic from an adversarial agent? Curriculum from a companion?
 - Inference-time loops like [AutoReason](sources/autoreason.md) sit beside training-time and deployment-time loops. Should these three time scales compose (per-query refinement *inside* per-deployment harness optimization *inside* long-horizon architecture search), or do their objectives interfere?

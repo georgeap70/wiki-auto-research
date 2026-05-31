@@ -3,6 +3,33 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-05-30] ingest | rlm-gepa — GEPA-based optimizer for Recursive LM skill instructions (Trampoline AI)
+
+Source dropped: `sources/rlm_gepa` (three URLs — repo, subdir, paywalled X post).
+
+predict-rlm (Trampoline AI, MIT license) is a production-grade Recursive Language Model runtime built on the MIT CSAIL line of work (Alex L. Zhang, Tim Kraska, Omar Khattab). Root LM interacts with a programmatic REPL and issues sub-calls via DSPy signatures; runs in a WASM sandbox. The pitch: *"a single line can represent 1M sub-calls — in direct contrast to agents like Claude Code that must mechanically emit each sub-agent call one at a time"*; the root LM stays *"well within its comfortable operating range"* by avoiding long raw context.
+
+`rlm_gepa` is the subproject that optimizes the *text components* of an RLM (typically skill instructions) using a GEPA-style proposer over scored execution traces.
+
+Pages created:
+- `wiki/sources/rlm-gepa.md`
+
+Pages updated:
+- `wiki/index.md` — added row to source summaries and source file map; updated last_updated note
+- `wiki/overview.md` — added row to "What can be optimized" table; added to optimizer/target separation paragraph (now four systems); added to feedback-signals section with the evidence-bounded contract; added to knowledge-accumulation list; added two new open questions (AgentSpec as cross-literature standard; RLM as default scaffold)
+- `CLAUDE.md` — added `rlm_gepa → wiki/sources/rlm-gepa.md` slug entry
+- `wiki/concepts/harness-optimization.md` — added RLM-GEPA entry to "Approaches" list and to the comparison table
+- `wiki/concepts/feedback-signals.md` — added two new named signal types: **Evidence-bounded feedback contract** ("name failures, don't prescribe rewrites" sharpened into a design constraint) and **Declared optimization context (AgentSpec)** (typed, declared brief on what's in-scope)
+- `wiki/concepts/knowledge-accumulation.md` — added RLM-GEPA entry; noted the convergent finding with SkillOpt (independent groups arriving at "structured prose skill instructions as the natural unit of accumulation")
+
+Key analytical claims added:
+- The optimizer/target separation pattern now has four exemplars: HALO, AutoReason, SkillOpt, RLM-GEPA. RLM-GEPA's specific split is executor (runs RLM, collects traces) vs. proposer (reads traces, edits skill instructions).
+- The "RLM" in HALO and the "RLM" in predict-rlm are the *same primitive* from the same MIT CSAIL line of work — not different things sharing a name. HALO uses an RLM specialized for trace analysis; predict-rlm provides the general runtime plus an optimization framework. The wiki should treat "RLM" as a substrate, not a system.
+- The evidence-bounded feedback contract is a clean restatement of optimize_anything's ASI, sharpened into a design rule: the metric authors failure *descriptions*, the proposer authors *fixes*. Prescriptive metrics collapse the optimizer/target separation.
+- AgentSpec is a new category of feedback — not "this run failed because X" but a standing typed brief on what kinds of behavioral changes count as in-scope. Most prior systems leave this implicit and force the optimizer to infer it from traces.
+
+No empirical results recorded — the X post is paywalled (HTTP 402) and the repo is positioned as production infrastructure rather than a benchmark-driven artifact.
+
 ## [2026-05-26] lint | overview refresh — folded evoforge, honedhaiku, autoreason, halo, skillopt into wiki/overview.md
 
 User flagged that the overview was stale (last_updated 2026-04-18) — five newer sources were already in the index but missing from the synthesis. Read all five source pages and integrated their distinctive contributions:

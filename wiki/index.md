@@ -1,6 +1,6 @@
 # Self-Improving Agentic Systems — Wiki Index
 
-A catalog of all pages. Read this first when answering queries. Last updated: 2026-04-28 (+ skillopt).
+A catalog of all pages. Read this first when answering queries. Last updated: 2026-05-30 (+ rlm-gepa).
 
 ---
 
@@ -41,6 +41,7 @@ One page per raw source. See `sources/` directory for raw URLs.
 | [AutoReason](sources/autoreason.md) | `sources/autoreason` | [github](https://github.com/NousResearch/autoreason) | Nous Research: tournament-based self-refinement (incumbent vs. adversarial vs. synthesis, Borda voting); fixes prompt bias, scope creep, lack-of-restraint in critique-revise loops; +4pp on CodeContests, 40% vs 31% over best-of-6 |
 | [HALO](sources/halo.md) | `sources/halo` | [github](https://github.com/context-labs/halo) | Context Labs: production OpenTelemetry traces → specialized RLM engine → coding agent edits harness → redeploy; +15.8pp dev / +10.7pp test on AppWorld for both Gemini 3 Flash and Sonnet 4.6 |
 | [SkillOpt](sources/skillopt.md) | `sources/skillOpt` | [project](https://microsoft.github.io/SkillOpt/) | Microsoft Research: skill document as "trainable state" of a frozen LLM; rollout → reflection → bounded edits (textual learning rate) → validation; best-or-tied-best on 52/52 settings (7 models × 6 benchmarks); strongest cross-model (+15.2%) and cross-harness (+31.8%) transfer in the wiki (arXiv 2605.23904) |
+| [RLM-GEPA](sources/rlm-gepa.md) | `sources/rlm_gepa` | [github](https://github.com/Trampoline-AI/predict-rlm) | Trampoline AI: GEPA-based optimizer for Recursive LM skill instructions; `AgentSpec` declares what's in-scope so the optimizer doesn't have to infer project context; evidence-bounded feedback contract (name failures, don't prescribe rewrites); production-grade infra built on MIT CSAIL RLM line of work |
 
 ---
 
@@ -97,3 +98,4 @@ One page per raw source. See `sources/` directory for raw URLs.
 | `autoreason` | [sources/autoreason.md](sources/autoreason.md) |
 | `halo` | [sources/halo.md](sources/halo.md) |
 | `skillOpt` | [sources/skillopt.md](sources/skillopt.md) |
+| `rlm_gepa` | [sources/rlm-gepa.md](sources/rlm-gepa.md) |

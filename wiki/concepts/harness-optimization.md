@@ -2,8 +2,8 @@
 title: Harness Optimization
 type: concept
 tags: [harness, system-prompt, scaffolding, code-synthesis, constraint-enforcement]
-sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt]
-last_updated: 2026-04-28
+sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt, rlm_gepa]
+last_updated: 2026-05-30
 ---
 
 # Harness Optimization
@@ -86,6 +86,12 @@ last_updated: 2026-04-28
 - Key feature: rejected-edit buffer as negative signal; optimizer-side meta-skill; strongest cross-model/cross-harness transfer evidence in the wiki
 - Result: best-or-tied-best on 52/52 model×benchmark combinations; ALFWorld 70.9% → 85.8%; +15.2% cross-model, +31.8% cross-harness transfer without re-optimization
 
+### RLM-GEPA (Trampoline AI) — [[sources/rlm-gepa]]
+- Optimizes: skill instructions (prose) layered on top of a fixed Recursive Language Model runtime; DSPy signatures and tools are held constant
+- Method: executor loop runs the RLM and collects `RunTrace` + score + feedback; proposer loop reads scored traces and issues GEPA-style surgical edits; an `AgentSpec` declares what behavioral changes are in-scope
+- Key feature: **AgentSpec** as a typed, declared description of optimization context (use cases, runtime affordances, scoring methodology, counterfactual axes) — solves the "what should the optimizer know that it can't infer" problem; evidence-bounded feedback contract (name failures, don't prescribe rewrites)
+- Result: no published benchmarks — positioned as production-grade infrastructure
+
 ## Comparison
 
 | System | Feedback type | Scope | Human involvement |
@@ -99,6 +105,7 @@ last_updated: 2026-04-28
 | HonedHaiku | PR test suite pass/fail | System prompt | Define challenges once |
 | HALO | OpenTelemetry production traces | Full harness | Deploy + define benchmarks |
 | SkillOpt | Rollout scores + rejected-edit buffer | Structured skill document | Define benchmarks once |
+| RLM-GEPA | RunTrace + score + failure-description feedback | Skill instructions over a fixed RLM/DSPy structure | Author RLM, dataset, metric, and AgentSpec |
 
 ## Connections
 

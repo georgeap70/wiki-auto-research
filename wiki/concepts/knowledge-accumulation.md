@@ -2,8 +2,8 @@
 title: Knowledge Accumulation in Self-Improving Systems
 type: concept
 tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage]
-sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt]
-last_updated: 2026-04-28
+sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa]
+last_updated: 2026-05-30
 ---
 
 # Knowledge Accumulation
@@ -106,6 +106,17 @@ What distinguishes SkillOpt's accumulation from learnings.md ([[sources/auto-har
 - **Optimizer-side meta-skill**: the optimizer agent maintains its *own* slowly-updating skill document about how to write better edits — a small meta-evolution layer on top of the primary accumulation
 
 The transfer evidence is the strongest in the wiki: `best_skill.md` produces +15.2% cross-model, +31.8% cross-harness, +10.4% self-optimizer gains without re-optimization. This argues that **structured prose skill documents are genuinely model- and harness-agnostic** as accumulated knowledge — a property weight-based accumulation ([[sources/skill-rl-skill0]] SKILL-0, [[sources/trace]]) cannot match.
+
+### Skill Instructions over an RLM Runtime — [[sources/rlm-gepa]]
+
+[[sources/rlm-gepa]] also treats *skill instructions* as the accumulation artifact, but lays them on top of a fixed Recursive Language Model runtime (DSPy signatures + tools held constant). Transfer across use cases is the explicit design goal, with `AgentSpec` declaring the boundary within which transfer should hold.
+
+The contrast with [[sources/skillopt]] is instructive — they converge on the same artifact (a structured prose skill document) from different starting points:
+
+- SkillOpt accumulates against a *frozen LLM*; bounded edits via "textual learning rate"
+- RLM-GEPA accumulates against a *fixed RLM/DSPy structure*; surgical edits proposed by GEPA, scoped by AgentSpec
+
+Both treat the prose layer as the unit of accumulation and the structured substrate underneath (model weights, or DSPy signatures and tools) as immutable. This convergence — independent groups arriving at "structured prose skill instructions are the natural granularity for accumulated knowledge" — is one of the strongest cross-source patterns in the wiki.
 
 ### Protocol-Native Lineage — [[sources/autogenesis]]
 

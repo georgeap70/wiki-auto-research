@@ -2,8 +2,8 @@
 title: Feedback Signals — Scalar vs. Rich Diagnostic
 type: concept
 tags: [feedback, diagnostics, ASI, execution-traces, rich-context, capability-isolation]
-sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt]
-last_updated: 2026-04-28
+sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt, rlm_gepa]
+last_updated: 2026-05-30
 ---
 
 # Feedback Signals
@@ -50,6 +50,10 @@ Rich feedback tells the system *why* it failed and *what specific conditions* pr
 **Peer judgment via blind tournament** — [[sources/autoreason]] uses fresh, context-isolated judges that rank candidate outputs via Borda count. The signal is *which output is preferred by independent voters*, not *what specifically is wrong with this output*. This sidesteps the prompt-bias problem (asking a model to critique reliably hallucinates flaws) by replacing critique with comparison.
 
 **Rejected-edit buffer (negative signal)** — [[sources/skillopt]] retains *failed* candidate edits as explicit negative examples for the optimizer. Most systems discard rejected proposals; SkillOpt treats them as a second persistent signal source — structurally analogous to hard-negative mining in contrastive learning. Combined with separate success/failure batch analysis, this gives the optimizer dense information about *what not to try* alongside the usual "what to try next" signal.
+
+**Evidence-bounded feedback contract** — [[sources/rlm-gepa]] makes the rich-feedback principle into an explicit design constraint: *"optimization quality is bounded by the evidence your metric returns."* Effective feedback should *name specific failures* (missing findings, unsupported claims, wrong cells/clauses) but **not** prescribe text rewrites. This is the same principle as ASI, sharpened into a contract: the metric authors a *failure description*, the proposer authors the *fix*. Prescriptive metrics ("the prompt should say X") collapse the optimizer/target separation and tend to overfit.
+
+**Declared optimization context (AgentSpec)** — [[sources/rlm-gepa]] introduces `AgentSpec` as a typed companion to the trace-level feedback: a structured description of *what's in-scope* for the optimizer (use cases, runtime affordances, scoring methodology, counterfactual axes for generalization). Most prior systems leave this context implicit, forcing the proposer to infer it from traces alone. AgentSpec treats it as a first-class input — a different category of feedback than "this run failed because X," more like a standing brief on the project.
 
 ## Why Rich Feedback Wins
 

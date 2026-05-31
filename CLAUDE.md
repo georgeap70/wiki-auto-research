@@ -53,6 +53,7 @@ Raw source files → wiki source pages:
 | skydicover                 | wiki/sources/evox.md          |
 | autoagent                  | wiki/sources/autoagent-hkuds.md |
 | autoagent2                 | wiki/sources/autoagent-kevinrgu.md |
+| rlm_gepa                   | wiki/sources/rlm-gepa.md      |
 
 ## Workflows
 
