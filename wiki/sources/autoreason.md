@@ -55,7 +55,7 @@ The output itself — essays, code, reasoning — not the model, prompt, or harn
 | Word-count-controlled comparison | Wins 21/28 — gains aren't from longer outputs |
 
 ### Diminishing returns
-Haiku 4.5 transition point at 60% accuracy: above that, incremental gains shrink. The technique is most effective on models in the productive band (similar in spirit to the [[sources/honedhaiku|Goldilocks band]]).
+Haiku 4.5 transition point at 60% accuracy: above that, incremental gains shrink. The technique is most effective on models in the productive band (similar in spirit to the [Goldilocks band](honedhaiku.md)).
 
 ## Ablations
 
@@ -65,8 +65,8 @@ Haiku 4.5 transition point at 60% accuracy: above that, incremental gains shrink
 
 ## Connections
 
-- [[concepts/self-improvement-loop]] — AutoReason is a per-query inference-time loop; complementary to per-deployment harness loops
-- [[concepts/regression-gating]] — the Borda tournament *is* the gating mechanism; voters must prefer the change for it to land
-- [[concepts/feedback-signals]] — uses peer judgment (multi-agent voting) as the signal rather than execution traces or scalar rewards
-- [[sources/honedhaiku]] — both observe a productive band where optimization works; AutoReason's diminishing returns at 60%+ echoes HonedHaiku's 50–70% Goldilocks band
-- [[sources/coral]] — both leverage multi-agent independence (fresh contexts, blind judging), though for different purposes (CORAL: parallel exploration; AutoReason: bias-free judgment)
+- [concepts/self-improvement-loop](../concepts/self-improvement-loop.md) — AutoReason is a per-query inference-time loop; complementary to per-deployment harness loops
+- [concepts/regression-gating](../concepts/regression-gating.md) — the Borda tournament *is* the gating mechanism; voters must prefer the change for it to land
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — uses peer judgment (multi-agent voting) as the signal rather than execution traces or scalar rewards
+- [sources/honedhaiku](honedhaiku.md) — both observe a productive band where optimization works; AutoReason's diminishing returns at 60%+ echoes HonedHaiku's 50–70% Goldilocks band
+- [sources/coral](coral.md) — both leverage multi-agent independence (fresh contexts, blind judging), though for different purposes (CORAL: parallel exploration; AutoReason: bias-free judgment)

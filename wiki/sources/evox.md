@@ -53,7 +53,7 @@ By making the strategy evolvable, EvoX can **escape local optima** by switching 
 
 ## Relation to Self-Improvement
 
-EvoX is the most meta of the approaches in this collection. It demonstrates **[[concepts/self-improvement-loop|self-improvement]] at the algorithm level**:
+EvoX is the most meta of the approaches in this collection. It demonstrates **[self-improvement](../concepts/self-improvement-loop.md) at the algorithm level**:
 
 | Level | What improves | System |
 |-------|--------------|--------|
@@ -65,7 +65,7 @@ EvoX is the most meta of the approaches in this collection. It demonstrates **[[
 
 ## Connections
 
-- [[concepts/evolutionary-optimization]] — EvoX extends classical evolutionary ideas with LLM operators and meta-strategy evolution
-- [[sources/optimize-anything]] — both use evolutionary frameworks with LLMs; EvoX focuses on strategy evolution, GEPA on Pareto + ASI
-- [[concepts/self-improvement-loop]] — the meta-loop in EvoX is itself an instance of the core improvement loop
-- [[sources/autoresearch-vs-hpo]] — both demonstrate that dynamic search space expansion beats fixed strategies
+- [concepts/evolutionary-optimization](../concepts/evolutionary-optimization.md) — EvoX extends classical evolutionary ideas with LLM operators and meta-strategy evolution
+- [sources/optimize-anything](optimize-anything.md) — both use evolutionary frameworks with LLMs; EvoX focuses on strategy evolution, GEPA on Pareto + ASI
+- [concepts/self-improvement-loop](../concepts/self-improvement-loop.md) — the meta-loop in EvoX is itself an instance of the core improvement loop
+- [sources/autoresearch-vs-hpo](autoresearch-vs-hpo.md) — both demonstrate that dynamic search space expansion beats fixed strategies

@@ -39,11 +39,11 @@ The design principle: *"Program the God of Agents, not the agents directly."* Hu
 4. Repeat until convergence
 ```
 
-This is the same hill-climbing loop as [[sources/autoagent-kevinrgu]], but run across a population simultaneously. Knowledge synthesis after each round allows agents to learn from each other's successful mutations — a weaker form of the cross-agent sharing seen in [[sources/coral]].
+This is the same hill-climbing loop as [sources/autoagent-kevinrgu](autoagent-kevinrgu.md), but run across a population simultaneously. Knowledge synthesis after each round allows agents to learn from each other's successful mutations — a weaker form of the cross-agent sharing seen in [sources/coral](coral.md).
 
 ## What is being optimized
 
-System prompt, tools, configuration, and agent orchestration — the full harness. Score metric is a 0.0–1.0 scalar from benchmark task test suites. Identical gating criterion to [[sources/autoagent-kevinrgu]]: *"Keep if better, discard if not."*
+System prompt, tools, configuration, and agent orchestration — the full harness. Score metric is a 0.0–1.0 scalar from benchmark task test suites. Identical gating criterion to [sources/autoagent-kevinrgu](autoagent-kevinrgu.md): *"Keep if better, discard if not."*
 
 ## Key results
 
@@ -52,8 +52,8 @@ System prompt, tools, configuration, and agent orchestration — the full harnes
 
 ## Connections to other work
 
-- [[sources/autoagent-kevinrgu]] — same `program.md → agent.py` architecture; EvoForge adds population dimension
-- [[sources/coral]] — both evolve agent populations; CORAL shares full memory; EvoForge shares synthesized learnings
-- [[sources/group-evolve]] — both use population-level parallelism; GEA uses shared experience pool + performance-novelty selection; EvoForge uses scalar score + knowledge synthesis
-- [[concepts/harness-optimization]] — EvoForge is harness optimization at population scale
-- [[concepts/evolutionary-optimization]] — population + selection is the evolutionary primitive
+- [sources/autoagent-kevinrgu](autoagent-kevinrgu.md) — same `program.md → agent.py` architecture; EvoForge adds population dimension
+- [sources/coral](coral.md) — both evolve agent populations; CORAL shares full memory; EvoForge shares synthesized learnings
+- [sources/group-evolve](group-evolve.md) — both use population-level parallelism; GEA uses shared experience pool + performance-novelty selection; EvoForge uses scalar score + knowledge synthesis
+- [concepts/harness-optimization](../concepts/harness-optimization.md) — EvoForge is harness optimization at population scale
+- [concepts/evolutionary-optimization](../concepts/evolutionary-optimization.md) — population + selection is the evolutionary primitive

@@ -44,19 +44,19 @@ Why this matters:
 - Proposed edits are **surgical**, not exploratory
 - The agent improves *faster per iteration* because it understands *why* failures occur
 
-This is the empirical backing for the [[concepts/feedback-signals|rich feedback signals]] thesis.
+This is the empirical backing for the [rich feedback signals](../concepts/feedback-signals.md) thesis.
 
 ## Relation to Other Systems
 
 | System | What it optimizes | Feedback type |
 |--------|-------------------|---------------|
-| [[sources/auto-harness]] | System prompt + tools | Pass/fail + learnings.md |
+| [sources/auto-harness](auto-harness.md) | System prompt + tools | Pass/fail + learnings.md |
 | Meta-Harness | Full harness (prompt + scaffolding) | Rich traces + full source |
-| [[sources/autoharness-arxiv]] | Constraint code | Environmental action feedback |
+| [sources/autoharness-arxiv](autoharness-arxiv.md) | Constraint code | Environmental action feedback |
 
 ## Connections
 
-- [[concepts/harness-optimization]] — central example of full-harness optimization
-- [[concepts/feedback-signals]] — strongest argument in the literature for rich diagnostic traces over scalar reward
-- [[sources/optimize-anything]] — also formalizes rich feedback as ASI; converging ideas from different groups
-- [[entities/claude-code]] — used as the optimizer agent
+- [concepts/harness-optimization](../concepts/harness-optimization.md) — central example of full-harness optimization
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — strongest argument in the literature for rich diagnostic traces over scalar reward
+- [sources/optimize-anything](optimize-anything.md) — also formalizes rich feedback as ASI; converging ideas from different groups
+- entities/claude-code — used as the optimizer agent

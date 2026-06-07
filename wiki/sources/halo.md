@@ -38,7 +38,7 @@ This is a clean separation of concerns: the RLM understands *what's broken at sc
 
 ## What is being optimized
 
-The **harness** — surrounding infrastructure, prompts, tool wiring — not model weights. This is the same target as [[sources/auto-harness]] and [[sources/meta-harness]], but with explicit production-trace input as the primary feedback channel.
+The **harness** — surrounding infrastructure, prompts, tool wiring — not model weights. This is the same target as [sources/auto-harness](auto-harness.md) and [sources/meta-harness](meta-harness.md), but with explicit production-trace input as the primary feedback channel.
 
 ## Failure modes the RLM surfaces
 
@@ -62,9 +62,9 @@ AppWorld is a multi-app service benchmark with separate dev and test splits.
 
 ## Connections
 
-- [[sources/auto-harness]] — closest analog: NeoSigma also uses production traces to drive overnight harness rewrites; HALO formalizes this as a methodology with a specialized trace-analysis component (RLM) and a tracing standard (OpenTelemetry)
-- [[sources/meta-harness]] — both rely on rich trace context for proposal quality; HALO emphasizes *cross-trace* pattern analysis vs. Meta-Harness's deep single-trace inspection
-- [[sources/trace]] — TRACE also contrasts trajectories to find capability gaps, but trains LoRA adapters; HALO edits harness code instead. Different proposal target, similar diagnosis primitive (cross-run pattern extraction)
-- [[concepts/harness-optimization]] — production-trace-driven variant
-- [[concepts/feedback-signals]] — OpenTelemetry traces are among the richest feedback signals in the wiki; the RLM is itself a *signal-compressor* (turning many traces into a finite-length report)
-- [[concepts/self-improvement-loop]] — explicit deploy → trace → analyze → edit → redeploy production loop; one of the few systems explicitly designed around live deployment traffic
+- [sources/auto-harness](auto-harness.md) — closest analog: NeoSigma also uses production traces to drive overnight harness rewrites; HALO formalizes this as a methodology with a specialized trace-analysis component (RLM) and a tracing standard (OpenTelemetry)
+- [sources/meta-harness](meta-harness.md) — both rely on rich trace context for proposal quality; HALO emphasizes *cross-trace* pattern analysis vs. Meta-Harness's deep single-trace inspection
+- [sources/trace](trace.md) — TRACE also contrasts trajectories to find capability gaps, but trains LoRA adapters; HALO edits harness code instead. Different proposal target, similar diagnosis primitive (cross-run pattern extraction)
+- [concepts/harness-optimization](../concepts/harness-optimization.md) — production-trace-driven variant
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — OpenTelemetry traces are among the richest feedback signals in the wiki; the RLM is itself a *signal-compressor* (turning many traces into a finite-length report)
+- [concepts/self-improvement-loop](../concepts/self-improvement-loop.md) — explicit deploy → trace → analyze → edit → redeploy production loop; one of the few systems explicitly designed around live deployment traffic

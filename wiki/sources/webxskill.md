@@ -14,7 +14,7 @@ last_updated: 2026-04-18
 
 **arXiv:** [2604.13318](https://arxiv.org/abs/2604.13318) (April 2026)
 **Code:** [github.com/aiming-lab/WebXSkill](https://github.com/aiming-lab/WebXSkill) — code placeholder, "coming soon"
-**Labs:** Microsoft Research + UNC (aiming-lab, same lab as [[sources/agent0]])
+**Labs:** Microsoft Research + UNC (aiming-lab, same lab as [sources/agent0](agent0.md))
 
 ## Summary
 
@@ -51,15 +51,15 @@ Dual deployment is the architectural novelty: the same skill artifact serves exe
 
 | Axis | WebXSkill | Comparable sources |
 |------|-----------|-------------------|
-| Skill representation | Parameterized program + NL guidance (dual) | [[sources/skill-rl-skill0]] SKILL-RL: NL + executable artifact; [[sources/coral]] Skills: NL description + executable |
+| Skill representation | Parameterized program + NL guidance (dual) | [sources/skill-rl-skill0](skill-rl-skill0.md) SKILL-RL: NL + executable artifact; [sources/coral](coral.md) Skills: NL description + executable |
 | Deployment | Grounded (auto-exec) **or** guided (instructions) | Most other systems: one mode only |
-| Retrieval | URL-graph context-aware | [[sources/skill-rl-skill0]] hierarchical (general → task-specific); [[sources/coral]] agent-directed read |
+| Retrieval | URL-graph context-aware | [sources/skill-rl-skill0](skill-rl-skill0.md) hierarchical (general → task-specific); [sources/coral](coral.md) agent-directed read |
 | Domain | Web agents specifically | Most skill systems target general agents |
-| Skill acquisition | Mined from synthetic trajectories | [[sources/skill-rl-skill0]] distilled during RL training; [[sources/coral]] authored by peer agents |
+| Skill acquisition | Mined from synthetic trajectories | [sources/skill-rl-skill0](skill-rl-skill0.md) distilled during RL training; [sources/coral](coral.md) authored by peer agents |
 
 ## Relation to Self-Improvement
 
-WebXSkill is closer to **skill-library construction** than to a fully closed self-improvement loop. The loop runs once (extract → organize → deploy), not iteratively. However, the extraction stage itself could be re-run as new trajectories accumulate, making this a single-step version of the continuous-skill-evolution pattern seen in [[sources/skill-rl-skill0]] (SkillBank) and [[sources/coral]] (Skills store).
+WebXSkill is closer to **skill-library construction** than to a fully closed self-improvement loop. The loop runs once (extract → organize → deploy), not iteratively. However, the extraction stage itself could be re-run as new trajectories accumulate, making this a single-step version of the continuous-skill-evolution pattern seen in [sources/skill-rl-skill0](skill-rl-skill0.md) (SkillBank) and [sources/coral](coral.md) (Skills store).
 
 Mapped onto measure → fail → propose → gate → repeat:
 
@@ -71,7 +71,7 @@ Mapped onto measure → fail → propose → gate → repeat:
 
 ## Relation to aiming-lab
 
-WebXSkill shares the `aiming-lab` GitHub org with [[sources/agent0]]. Where Agent0 is two-agent co-evolution for general tool-integrated reasoning, WebXSkill is a skill-library approach for web agents specifically. Both emphasize bootstrapping capability without heavy supervised data.
+WebXSkill shares the `aiming-lab` GitHub org with [sources/agent0](agent0.md). Where Agent0 is two-agent co-evolution for general tool-integrated reasoning, WebXSkill is a skill-library approach for web agents specifically. Both emphasize bootstrapping capability without heavy supervised data.
 
 ## Open Questions
 
@@ -82,8 +82,8 @@ WebXSkill shares the `aiming-lab` GitHub org with [[sources/agent0]]. Where Agen
 
 ## Connections
 
-- [[concepts/knowledge-accumulation]] — skill library is a persistent knowledge store; dual representation is novel
-- [[concepts/self-improvement-loop]] — single-pass skill construction; not a continuous loop but the building blocks for one
-- [[sources/skill-rl-skill0]] — closest analog; WebXSkill's dual representation vs. SKILL-RL's hierarchical SkillBank vs. SKILL-0's weight internalization
-- [[sources/coral]] — Skills store with NL + executable artifacts; similar idea, different domain and coordination model
-- [[sources/agent0]] — same lab (aiming-lab); different mechanism (co-evolution vs. skill extraction)
+- [concepts/knowledge-accumulation](../concepts/knowledge-accumulation.md) — skill library is a persistent knowledge store; dual representation is novel
+- [concepts/self-improvement-loop](../concepts/self-improvement-loop.md) — single-pass skill construction; not a continuous loop but the building blocks for one
+- [sources/skill-rl-skill0](skill-rl-skill0.md) — closest analog; WebXSkill's dual representation vs. SKILL-RL's hierarchical SkillBank vs. SKILL-0's weight internalization
+- [sources/coral](coral.md) — Skills store with NL + executable artifacts; similar idea, different domain and coordination model
+- [sources/agent0](agent0.md) — same lab (aiming-lab); different mechanism (co-evolution vs. skill extraction)

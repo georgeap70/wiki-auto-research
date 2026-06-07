@@ -33,7 +33,7 @@ All of these share the same API: `optimize(artifact, evaluate, side_info)`.
 ### Actionable Side Information (ASI)
 Rich diagnostic feedback — compiler errors, profiler traces, test output, execution logs — is elevated to a **first-class input** to the optimizer, not reduced to a scalar. The proposer LLM reads ASI to understand *why* a candidate failed before proposing the next one.
 
-This formalizes what [[sources/meta-harness]] and [[sources/autoharness-arxiv]] discovered empirically: rich context produces better proposals than scalar reward alone.
+This formalizes what [sources/meta-harness](meta-harness.md) and [sources/autoharness-arxiv](autoharness-arxiv.md) discovered empirically: rich context produces better proposals than scalar reward alone.
 
 ### Pareto-Efficient Multi-Metric Search
 Rather than collapsing multiple objectives (correctness, speed, cost, robustness) into a weighted scalar, GEPA maintains a **Pareto frontier** of non-dominated candidates. This avoids:
@@ -63,8 +63,8 @@ No human wrote the intermediate steps. The optimizer grew the system from near-n
 
 ## Connections
 
-- [[concepts/feedback-signals]] — ASI formalizes rich feedback as a first-class concept
-- [[concepts/evolutionary-optimization]] — GEPA is built on Pareto + genetic search with LLM operators
-- [[sources/meta-harness]] — converging on the same rich-feedback principle from a different direction
-- [[sources/autoresearch-vs-hpo]] — also demonstrates optimization over full code space
-- [[entities/evox]] — also evolves the optimization process itself; complementary approach
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — ASI formalizes rich feedback as a first-class concept
+- [concepts/evolutionary-optimization](../concepts/evolutionary-optimization.md) — GEPA is built on Pareto + genetic search with LLM operators
+- [sources/meta-harness](meta-harness.md) — converging on the same rich-feedback principle from a different direction
+- [sources/autoresearch-vs-hpo](autoresearch-vs-hpo.md) — also demonstrates optimization over full code space
+- entities/evox — also evolves the optimization process itself; complementary approach

@@ -61,12 +61,12 @@ Prompt optimization has a performance ceiling and floor:
 Claude Haiku's 65% baseline placed it squarely in the productive band. Stronger models (already at 85%+) would show minimal gains.
 
 ### Training diversity is critical
-A 3-challenge training run overfitted and regressed on holdout. Scaling to 20 challenges across 5 repositories fixed generalization. This is the same insight as GEPA in [[sources/optimize-anything]]: diverse training set prevents the optimizer from learning dataset-specific heuristics.
+A 3-challenge training run overfitted and regressed on holdout. Scaling to 20 challenges across 5 repositories fixed generalization. This is the same insight as GEPA in [sources/optimize-anything](optimize-anything.md): diverse training set prevents the optimizer from learning dataset-specific heuristics.
 
 ## Connections
 
-- [[sources/optimize-anything]] — GEPA is the optimization primitive used here; same Pareto-mutation-selection loop applied to prompts rather than code
-- [[sources/deep-research]] — also applies GEPA to system prompt optimization; different domain (research pipeline vs. coding)
-- [[concepts/harness-optimization]] — system prompt optimization is the simplest form of harness optimization
-- [[concepts/evolutionary-optimization]] — GEPA is the evolutionary algorithm underlying both this work and optimize_anything
-- [[concepts/feedback-signals]] — PR test suite pass/fail is a rich, grounded signal (real code, real tests)
+- [sources/optimize-anything](optimize-anything.md) — GEPA is the optimization primitive used here; same Pareto-mutation-selection loop applied to prompts rather than code
+- [sources/deep-research](deep-research.md) — also applies GEPA to system prompt optimization; different domain (research pipeline vs. coding)
+- [concepts/harness-optimization](../concepts/harness-optimization.md) — system prompt optimization is the simplest form of harness optimization
+- [concepts/evolutionary-optimization](../concepts/evolutionary-optimization.md) — GEPA is the evolutionary algorithm underlying both this work and optimize_anything
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — PR test suite pass/fail is a rich, grounded signal (real code, real tests)

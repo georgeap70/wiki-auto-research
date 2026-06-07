@@ -12,7 +12,7 @@ Population-based search methods applied to agentic self-improvement. Rather than
 
 ## Why Evolutionary Methods?
 
-Single-agent self-edit (like [[sources/auto-harness]]) can get stuck in local optima: the agent makes locally good changes but misses globally better configurations that require intermediate "worse" steps.
+Single-agent self-edit (like [sources/auto-harness](../sources/auto-harness.md)) can get stuck in local optima: the agent makes locally good changes but misses globally better configurations that require intermediate "worse" steps.
 
 Evolutionary methods address this by:
 - Maintaining diversity via a population
@@ -28,12 +28,12 @@ Classical genetic algorithms use random mutation and structured crossover. In ag
 |-----------|-----------|
 | Random mutation | Semantically informed edit proposals |
 | Structured crossover | LLM-synthesized combination of two candidates |
-| Fitness function | Task benchmark + [[concepts/feedback-signals|rich diagnostic feedback]] |
-| Selection | Pareto frontier ([[sources/optimize-anything]]) or tournament |
+| Fitness function | Task benchmark + [rich diagnostic feedback](feedback-signals.md) |
+| Selection | Pareto frontier ([sources/optimize-anything](../sources/optimize-anything.md)) or tournament |
 
 LLMs as operators bring domain knowledge to the search — they don't randomly permute code, they understand what changes are likely to improve performance.
 
-## GEPA (Genetic-Pareto + LLMs) — [[sources/optimize-anything]]
+## GEPA (Genetic-Pareto + LLMs) — [sources/optimize-anything](../sources/optimize-anything.md)
 
 GEPA combines:
 - **Pareto-efficient multi-metric selection**: maintains a frontier of non-dominated candidates, avoiding scalar aggregation
@@ -42,7 +42,7 @@ GEPA combines:
 
 The ARC-AGI case study: a 10-line stub evolved into a 300+ line architecture with rule induction, pattern matching, and verification. The population-based approach allowed the system to grow structurally — individual iterations might degrade one aspect while advancing another, but the Pareto frontier retains all valuable variants.
 
-## ASI-Evolve (Database Sampling Policies) — [[sources/asi-evolve]]
+## ASI-Evolve (Database Sampling Policies) — [sources/asi-evolve](../sources/asi-evolve.md)
 
 ASI-Evolve uses the same evolutionary insight (population + selection) but applied to a database of research nodes rather than an explicit population. Selection policies determine which prior work the Researcher agent builds upon:
 
@@ -55,7 +55,7 @@ ASI-Evolve uses the same evolutionary insight (population + selection) but appli
 
 The Novelty Check (filtering near-duplicate motivations) acts as an implicit diversity maintenance mechanism — ensuring the population of attempted designs doesn't collapse onto the same region.
 
-## CORAL (Multi-Agent Co-Evolution) — [[sources/coral]]
+## CORAL (Multi-Agent Co-Evolution) — [sources/coral](../sources/coral.md)
 
 CORAL is the most autonomous evolutionary system in this collection: multiple agents run independently, each exploring the solution space using their own strategies, while sharing a common knowledge store. No external algorithm prescribes which candidates to retrieve or evaluate.
 
@@ -69,9 +69,9 @@ This is **Stage 2 Agent Autonomy** in CORAL's taxonomy — contrasted with Stage
 
 Multi-agent co-evolution yields gains beyond additional compute: four-agent CORAL outperformed best-of-4 independent single-agent runs on all stress-test tasks. Gains derive from cross-agent knowledge transfer: 36% of four-agent attempts used another agent's commit as parent; cross-agent commits improved at 17% vs. 9% overall improvement rate.
 
-## GEPA for Prompt Optimization — [[sources/deep-research]]
+## GEPA for Prompt Optimization — [sources/deep-research](../sources/deep-research.md)
 
-GEPA was introduced by [[sources/optimize-anything]] for architecture and code search. [[sources/deep-research]] applies the same primitive to **system prompt search** across a four-agent Deep Research pipeline:
+GEPA was introduced by [sources/optimize-anything](../sources/optimize-anything.md) for architecture and code search. [sources/deep-research](../sources/deep-research.md) applies the same primitive to **system prompt search** across a four-agent Deep Research pipeline:
 
 - Maintains a population of prompt candidates per agent
 - Prunes strictly dominated candidates (Pareto pruning)
@@ -80,7 +80,7 @@ GEPA was introduced by [[sources/optimize-anything]] for architecture and code s
 
 Result: GEPA with a custom meta-prompt (0.705) outperforms expert-designed prompts + TextGrad (0.672) on PhD-level CS research queries. This demonstrates GEPA's generality: the same selection mechanism works across code, architecture, and natural-language prompt spaces.
 
-## Group-Evolving Agents (Group as Unit) — [[sources/group-evolve]]
+## Group-Evolving Agents (Group as Unit) — [sources/group-evolve](../sources/group-evolve.md)
 
 GEA challenges the assumption that the **individual** is the right evolutionary unit. In all prior systems (GEPA, EvoX, ASI-Evolve, CORAL), selection and mutation operate on individual candidates or individual agents. GEA promotes the **group** to be the fundamental unit:
 
@@ -98,7 +98,7 @@ This makes experience sharing an explicit architectural choice rather than a sid
 
 The framework bug repair result is particularly notable: the group's pooled diagnostic experience enables much faster root-cause identification than any single agent's exploration.
 
-## EvoX (Meta-Evolution) — [[sources/evox]]
+## EvoX (Meta-Evolution) — [sources/evox](../sources/evox.md)
 
 EvoX adds a second evolutionary loop on top of the standard one:
 
@@ -117,9 +117,9 @@ The outer loop monitors stagnation and switches strategies accordingly. This is 
 
 **Key insight**: No single search strategy dominates across all tasks and all phases of optimization. Adaptive strategy selection beats any fixed strategy.
 
-## EvoForge (Population Harness Evolution) — [[sources/evoforge]]
+## EvoForge (Population Harness Evolution) — [sources/evoforge](../sources/evoforge.md)
 
-EvoForge applies the hill-climbing harness loop from [[sources/autoagent-kevinrgu]] to an entire population simultaneously. Each agent in the population independently mutates its `agent.py` harness, scores against a benchmark, and keeps improvements. After each round, successful mutations are synthesized into shared learnings.
+EvoForge applies the hill-climbing harness loop from [sources/autoagent-kevinrgu](../sources/autoagent-kevinrgu.md) to an entire population simultaneously. Each agent in the population independently mutates its `agent.py` harness, scores against a benchmark, and keeps improvements. After each round, successful mutations are synthesized into shared learnings.
 
 Key characteristics:
 - **Three-tier abstraction**: `evolve.md` (population strategy) → `program.md` (per-agent intent) → `agent.py` (implementation)
@@ -129,7 +129,7 @@ Key characteristics:
 
 This is the simplest extension of single-agent harness hill-climbing to the population setting — parallelism for throughput and diversity, without the complex co-evolution dynamics of CORAL or GEA.
 
-## Evo (Tree-Search Autoresearch Orchestrator) — [[sources/evo]]
+## Evo (Tree-Search Autoresearch Orchestrator) — [sources/evo](../sources/evo.md)
 
 Evo sits between single-thread hill-climbing and flat population evolution: the orchestrator maintains a **tree of committed experiments** and applies a configurable **frontier strategy** to pick which branch to extend each round.
 
@@ -144,39 +144,39 @@ Evo sits between single-thread hill-climbing and flat population evolution: the 
 Within a round, parallel subagents run in isolated git worktrees; each picks up shared state (failure traces, annotations, *discarded hypotheses*), forms a hypothesis, edits, and benchmarks. Between rounds, RLM-inspired cross-cutting scan subagents read trace batches and surface gate-failure intersections and shared root causes — feedback compression as a between-round phase.
 
 Key differences from flat population evolution:
-- **Tree preserves lineage** — every candidate's ancestry is explicit; the dashboard makes the tree inspectable. Closer in spirit to [[sources/autogenesis]]'s versioned-resource lineage than to EvoForge's flat generations.
+- **Tree preserves lineage** — every candidate's ancestry is explicit; the dashboard makes the tree inspectable. Closer in spirit to [sources/autogenesis](../sources/autogenesis.md)'s versioned-resource lineage than to EvoForge's flat generations.
 - **Frontier strategy = selection operator** — the population analog of "which parents are eligible to mutate" is exposed as a tuning knob, including a `pareto_per_task` variant that brings GEPA's intuition (don't average specialists into mediocrity) into a tree-search context.
-- **Discarded-hypothesis storage** — negative results are kept in shared state and read by future subagents; conceptually analogous to [[sources/skillopt]]'s rejected-edit buffer at the granularity of experimental directions.
+- **Discarded-hypothesis storage** — negative results are kept in shared state and read by future subagents; conceptually analogous to [sources/skillopt](../sources/skillopt.md)'s rejected-edit buffer at the granularity of experimental directions.
 - **Multi-backend execution** — worktree/pool/ssh/modal/e2b/daytona/aws/azure are packaged into the orchestrator; the same loop runs locally during development and on cloud sandboxes for an overnight run.
 
-## GEPA for Coding Prompts — [[sources/honedhaiku]]
+## GEPA for Coding Prompts — [sources/honedhaiku](../sources/honedhaiku.md)
 
-[[sources/deep-research]] showed GEPA generalizes from code to prompt search. HonedHaiku applies the same primitive to **bug-fixing system prompts**:
+[sources/deep-research](../sources/deep-research.md) showed GEPA generalizes from code to prompt search. HonedHaiku applies the same primitive to **bug-fixing system prompts**:
 
 - Mutation-selection loop: GEPA proposes prompt variants; Agentelo scores against real PR test suites
 - Converged in 4 of 20 allocated iterations
 - Training diversity: 3-challenge run overfits; 20 challenges across 5 repos generalizes
 
-Key finding — the **Goldilocks band**: GEPA only moves performance in the ~50–70% baseline range. Below 50%, the model can't execute complex prompts. Above 85%, prompts are no longer the bottleneck. This constrains the applicability of prompt optimization as a self-improvement method and is a practical complement to the theoretical analysis in [[concepts/feedback-signals]].
+Key finding — the **Goldilocks band**: GEPA only moves performance in the ~50–70% baseline range. Below 50%, the model can't execute complex prompts. Above 85%, prompts are no longer the bottleneck. This constrains the applicability of prompt optimization as a self-improvement method and is a practical complement to the theoretical analysis in [concepts/feedback-signals](feedback-signals.md).
 
 ## The Hierarchy of Evolution
 
 | Level | What evolves | System |
 |-------|-------------|--------|
 | Solutions | Task answers, code | Many systems |
-| Operators | How mutations are made | GEPA ([[sources/optimize-anything]]) |
-| Strategy | Which operators to use | EvoX ([[sources/evox]]), ASI-Evolve sampling policies |
-| Agent coordination | Who knows what; which approach to copy | CORAL ([[sources/coral]]) |
-| **Evolutionary unit** | **Individual → group as selection unit** | **GEA ([[sources/group-evolve]])** |
-| Harness population | Multiple harnesses evolve in parallel | EvoForge ([[sources/evoforge]]) |
-| Experiment tree + frontier | Tree-shaped lineage with configurable selection per round | Evo ([[sources/evo]]) |
+| Operators | How mutations are made | GEPA ([sources/optimize-anything](../sources/optimize-anything.md)) |
+| Strategy | Which operators to use | EvoX ([sources/evox](../sources/evox.md)), ASI-Evolve sampling policies |
+| Agent coordination | Who knows what; which approach to copy | CORAL ([sources/coral](../sources/coral.md)) |
+| **Evolutionary unit** | **Individual → group as selection unit** | **GEA ([sources/group-evolve](../sources/group-evolve.md))** |
+| Harness population | Multiple harnesses evolve in parallel | EvoForge ([sources/evoforge](../sources/evoforge.md)) |
+| Experiment tree + frontier | Tree-shaped lineage with configurable selection per round | Evo ([sources/evo](../sources/evo.md)) |
 | Objectives | What fitness means | Open question |
 
 ## Connections
 
-- [[concepts/self-improvement-loop]] — evolutionary loops are a population-based instantiation of the core measure-fail-propose-gate cycle
-- [[concepts/harness-optimization]] — EvoForge and HonedHaiku both optimize harnesses; EvoForge at population scale, HonedHaiku at prompt level
-- [[concepts/regression-gating]] — Pareto gating replaces scalar threshold gating in evolutionary settings
-- [[concepts/feedback-signals]] — ASI is particularly important when LLMs act as proposal operators; HonedHaiku's PR test suites are a high-quality grounded signal
-- [[sources/optimize-anything]] — GEPA implementation
-- [[sources/evox]] — meta-evolution implementation
+- [concepts/self-improvement-loop](self-improvement-loop.md) — evolutionary loops are a population-based instantiation of the core measure-fail-propose-gate cycle
+- [concepts/harness-optimization](harness-optimization.md) — EvoForge and HonedHaiku both optimize harnesses; EvoForge at population scale, HonedHaiku at prompt level
+- [concepts/regression-gating](regression-gating.md) — Pareto gating replaces scalar threshold gating in evolutionary settings
+- [concepts/feedback-signals](feedback-signals.md) — ASI is particularly important when LLMs act as proposal operators; HonedHaiku's PR test suites are a high-quality grounded signal
+- [sources/optimize-anything](../sources/optimize-anything.md) — GEPA implementation
+- [sources/evox](../sources/evox.md) — meta-evolution implementation

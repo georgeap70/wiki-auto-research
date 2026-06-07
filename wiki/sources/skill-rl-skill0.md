@@ -98,14 +98,14 @@ Training phase:
 
 Both papers attack the same failure mode: agents that reset to the same starting point every episode. But they propose complementary solutions:
 
-- SKILL-RL: **external persistence** via SkillBank (same paradigm as [[sources/coral]]'s Skills store, [[sources/auto-harness]]'s learnings.md)
+- SKILL-RL: **external persistence** via SkillBank (same paradigm as [sources/coral](coral.md)'s Skills store, [sources/auto-harness](auto-harness.md)'s learnings.md)
 - SKILL-0: **internal persistence** via weight update — the first system in this wiki where skills are stored in the model itself rather than a retrieval system
 
-SKILL-0's internalization is conceptually adjacent to [[sources/agentflow]]'s Flow-GRPO, but applied to **skill knowledge** rather than task policy.
+SKILL-0's internalization is conceptually adjacent to [sources/agentflow](agentflow.md)'s Flow-GRPO, but applied to **skill knowledge** rather than task policy.
 
 ## Connections
 
-- [[concepts/knowledge-accumulation]] — SkillBank (SKILL-RL) and weight internalization (SKILL-0) are two distinct persistence mechanisms; SKILL-0 is the only system in the wiki that stores accumulated knowledge in weights
-- [[concepts/feedback-signals]] — RL reward signal is the primary feedback; both systems use sparse binary reward augmented by skill context
-- [[sources/coral]] — CORAL's Skills store is the closest analog to SKILL-RL's SkillBank; both extract reusable procedures from agent experience
-- [[sources/agentflow]] — both SKILL-0 and AgentFlow optimize model weights; AgentFlow targets task policy, SKILL-0 targets skill internalization
+- [concepts/knowledge-accumulation](../concepts/knowledge-accumulation.md) — SkillBank (SKILL-RL) and weight internalization (SKILL-0) are two distinct persistence mechanisms; SKILL-0 is the only system in the wiki that stores accumulated knowledge in weights
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — RL reward signal is the primary feedback; both systems use sparse binary reward augmented by skill context
+- [sources/coral](coral.md) — CORAL's Skills store is the closest analog to SKILL-RL's SkillBank; both extract reusable procedures from agent experience
+- [sources/agentflow](agentflow.md) — both SKILL-0 and AgentFlow optimize model weights; AgentFlow targets task policy, SKILL-0 targets skill internalization

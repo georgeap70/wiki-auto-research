@@ -50,7 +50,7 @@ CORAL introduces a three-stage taxonomy of autonomous discovery systems:
 
 Access via symlinks from isolated agent worktrees to centralized `.coral/public/`, enabling concurrent reads/writes without locking.
 
-See [[concepts/knowledge-accumulation]].
+See [concepts/knowledge-accumulation](../concepts/knowledge-accumulation.md).
 
 ### Per-Agent Loop
 
@@ -64,7 +64,7 @@ Agent instruction: "You are fully autonomous. Do not ask for permission."
 
 ### Heartbeat Mechanism (Three Trigger Types)
 
-Prevents fixation — a core failure mode of self-improvement loops. See [[concepts/self-improvement-loop]].
+Prevents fixation — a core failure mode of self-improvement loops. See [concepts/self-improvement-loop](../concepts/self-improvement-loop.md).
 
 | Trigger | Frequency | Purpose |
 |---------|-----------|---------|
@@ -154,11 +154,11 @@ These behaviors emerge purely from shared memory access and the heartbeat mechan
 
 | Axis | CORAL | Comparable sources |
 |------|-------|-------------------|
-| What optimized | Code solutions (math, systems, ML) | [[sources/evox]] (search strategy), [[sources/optimize-anything]] (architecture) |
-| Loop | Autonomous multi-agent co-evolution | [[sources/agent0]] (two-agent), [[sources/evox]] (meta-evolution) |
-| Feedback | Task grader scalar + qualitative shared notes | [[sources/meta-harness]] (execution traces), [[sources/asi-evolve]] (Analyzer distillation) |
-| Knowledge | Attempts/Notes/Skills three-layer memory | [[sources/auto-harness]] (learnings.md), [[sources/asi-evolve]] (Cognition Base) |
-| Gating | Isolated worktrees, health monitoring, stagnation pivot | [[concepts/regression-gating]] |
+| What optimized | Code solutions (math, systems, ML) | [sources/evox](evox.md) (search strategy), [sources/optimize-anything](optimize-anything.md) (architecture) |
+| Loop | Autonomous multi-agent co-evolution | [sources/agent0](agent0.md) (two-agent), [sources/evox](evox.md) (meta-evolution) |
+| Feedback | Task grader scalar + qualitative shared notes | [sources/meta-harness](meta-harness.md) (execution traces), [sources/asi-evolve](asi-evolve.md) (Analyzer distillation) |
+| Knowledge | Attempts/Notes/Skills three-layer memory | [sources/auto-harness](auto-harness.md) (learnings.md), [sources/asi-evolve](asi-evolve.md) (Cognition Base) |
+| Gating | Isolated worktrees, health monitoring, stagnation pivot | [concepts/regression-gating](../concepts/regression-gating.md) |
 
 Most distinctive: **agent autonomy over the full search process** (no external algorithm controlling retrieval or selection) combined with **emergent multi-agent coordination** from shared persistent memory.
 

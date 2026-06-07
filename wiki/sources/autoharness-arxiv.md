@@ -12,7 +12,7 @@ last_updated: 2026-04-04
 
 # AutoHarness (arXiv paper)
 
-> **Note**: This is a different project from [[sources/auto-harness|NeoSigma's auto-harness repo]], despite the similar name.
+> **Note**: This is a different project from [NeoSigma's auto-harness repo](auto-harness.md), despite the similar name.
 
 ## Summary
 
@@ -32,18 +32,18 @@ In constrained action environments (games, APIs, formal systems), LLM agents fre
 ## Key Results
 
 - Smaller models equipped with auto-synthesized harnesses **outperform larger foundation models** without harnesses
-- Demonstrates that **[[concepts/code-synthesis|self-generated code]] can substitute for expensive inference** at a smaller model scale
+- Demonstrates that **self-generated code can substitute for expensive inference** at a smaller model scale
 - The harness effectively externalizes constraint knowledge from the model's weights into code
 
 ## Key Insight
 
 Constraint violations are a type of structured failure with **rich diagnostic signal** (which move was illegal, why). AutoHarness exploits this: environmental feedback is specific enough that the agent can diagnose the failure and write corrective code, rather than just adjusting its output distribution.
 
-This is [[concepts/self-improvement-loop|self-improvement]] at the **code policy layer** — the agent improves not by changing its reasoning, but by building a more constrained action space for itself.
+This is [self-improvement](../concepts/self-improvement-loop.md) at the **code policy layer** — the agent improves not by changing its reasoning, but by building a more constrained action space for itself.
 
 ## Connections
 
-- [[concepts/harness-optimization]] — primary example of constraint-harness synthesis
-- [[concepts/feedback-signals]] — rich environmental feedback (illegal move signals) drives iterative refinement
-- [[sources/auto-harness]] (NeoSigma repo) — optimizes the whole harness layer; this paper focuses narrowly on constraint-enforcement code
-- [[entities/optimize-anything]] — similarly argues that rich "actionable side information" beats scalar reward
+- [concepts/harness-optimization](../concepts/harness-optimization.md) — primary example of constraint-harness synthesis
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — rich environmental feedback (illegal move signals) drives iterative refinement
+- [sources/auto-harness](auto-harness.md) (NeoSigma repo) — optimizes the whole harness layer; this paper focuses narrowly on constraint-enforcement code
+- entities/optimize-anything — similarly argues that rich "actionable side information" beats scalar reward

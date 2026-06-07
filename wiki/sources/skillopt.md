@@ -20,7 +20,7 @@ Treats a compact natural-language **skill document** as the trainable state of a
 
 In standard ML, weights are the trainable state. In SkillOpt, the trainable state is a markdown document — a structured set of procedural instructions that the frozen target model reads at runtime. Optimization changes the *document*, not the model.
 
-This is a refinement of the harness-optimization paradigm: rather than evolving system prompts ([[sources/honedhaiku]]) or full agent code ([[sources/evoforge]], [[sources/autoagent-kevinrgu]]), SkillOpt evolves a **structured skill artifact** with explicit add/delete/replace operators and a "textual learning rate" governing edit magnitude.
+This is a refinement of the harness-optimization paradigm: rather than evolving system prompts ([sources/honedhaiku](honedhaiku.md)) or full agent code ([sources/evoforge](evoforge.md), [sources/autoagent-kevinrgu](autoagent-kevinrgu.md)), SkillOpt evolves a **structured skill artifact** with explicit add/delete/replace operators and a "textual learning rate" governing edit magnitude.
 
 ## Loop architecture
 
@@ -34,7 +34,7 @@ This is a refinement of the harness-optimization paradigm: rather than evolving 
 4. Validation    — candidate skill kept only if held-out perf improves
 ```
 
-The clean **target / optimizer separation** echoes [[sources/halo]] (RLM analyzer vs. coding agent) and [[sources/autoreason]] (incumbent vs. judges) — three different specialized-component architectures for diagnosis-vs-editing decoupling.
+The clean **target / optimizer separation** echoes [sources/halo](halo.md) (RLM analyzer vs. coding agent) and [sources/autoreason](autoreason.md) (incumbent vs. judges) — three different specialized-component architectures for diagnosis-vs-editing decoupling.
 
 ## What's novel
 
@@ -45,10 +45,10 @@ The optimizer can only propose a bounded number of operations per round. This is
 Edits that fail the validation gate are *stored* and fed back to the optimizer as negative examples. Most other systems in the wiki discard rejected proposals; SkillOpt mines them. This is structurally similar to hard-negative mining in contrastive learning.
 
 ### Optimizer-side meta-skill
-The optimizer model itself maintains a *meta-skill* — instructions about how to write better skill edits — that updates more slowly than the target skill. This is a small meta-evolution layer (cf. [[sources/evox]]) but applied to the optimizer rather than the search strategy.
+The optimizer model itself maintains a *meta-skill* — instructions about how to write better skill edits — that updates more slowly than the target skill. This is a small meta-evolution layer (cf. [sources/evox](evox.md)) but applied to the optimizer rather than the search strategy.
 
 ### Separate success/failure analysis
-Reflection analyzes successful batches and failed batches *independently* before merging proposals. This avoids the bias toward fixing failures at the expense of preserving wins — a subtler version of the prompt-bias problem identified by [[sources/autoreason]].
+Reflection analyzes successful batches and failed batches *independently* before merging proposals. This avoids the bias toward fixing failures at the expense of preserving wins — a subtler version of the prompt-bias problem identified by [sources/autoreason](autoreason.md).
 
 ## Key results
 
@@ -72,11 +72,11 @@ This is the strongest transfer evidence in the wiki: optimized skill docs are no
 
 ## Connections
 
-- [[sources/skill-rl-skill0]] — both call their unit a "skill", but the storage differs: SKILL-RL maintains an external SkillBank consulted during RL; SKILL-0 internalizes skills into weights via curriculum; SkillOpt evolves a single skill *document* with no weight changes. SkillOpt is the lightest-weight of the three
-- [[sources/webxskill]] — WebXSkill's skills are *executable programs* with NL guidance; SkillOpt's skills are pure prose. WebXSkill compiles to code; SkillOpt stays at the prompt layer
-- [[sources/honedhaiku]] — both evolve text without touching weights; HonedHaiku optimizes a system prompt via GEPA mutations, SkillOpt evolves a skill doc via bounded reflection-driven edits. SkillOpt's gains span weaker models too (the Goldilocks band may be wider when edits are structured)
-- [[sources/halo]], [[sources/autoreason]] — share the *optimizer separated from target* architecture; SkillOpt adds rejected-edit memory on the optimizer side
-- [[sources/optimize-anything]] — GEPA also operates on text via LLM mutations; SkillOpt restricts the edit space (bounded add/delete/replace) rather than allowing free-form mutation
-- [[concepts/harness-optimization]] — SkillOpt sits at the structured-prompt sub-layer of harness optimization
-- [[concepts/knowledge-accumulation]] — `best_skill.md` is the persistent accumulated knowledge; rejected-edit buffer is a secondary persistent store
-- [[concepts/regression-gating]] — validation-on-held-out is the gate; same primitive as [[sources/meta-harness]]
+- [sources/skill-rl-skill0](skill-rl-skill0.md) — both call their unit a "skill", but the storage differs: SKILL-RL maintains an external SkillBank consulted during RL; SKILL-0 internalizes skills into weights via curriculum; SkillOpt evolves a single skill *document* with no weight changes. SkillOpt is the lightest-weight of the three
+- [sources/webxskill](webxskill.md) — WebXSkill's skills are *executable programs* with NL guidance; SkillOpt's skills are pure prose. WebXSkill compiles to code; SkillOpt stays at the prompt layer
+- [sources/honedhaiku](honedhaiku.md) — both evolve text without touching weights; HonedHaiku optimizes a system prompt via GEPA mutations, SkillOpt evolves a skill doc via bounded reflection-driven edits. SkillOpt's gains span weaker models too (the Goldilocks band may be wider when edits are structured)
+- [sources/halo](halo.md), [sources/autoreason](autoreason.md) — share the *optimizer separated from target* architecture; SkillOpt adds rejected-edit memory on the optimizer side
+- [sources/optimize-anything](optimize-anything.md) — GEPA also operates on text via LLM mutations; SkillOpt restricts the edit space (bounded add/delete/replace) rather than allowing free-form mutation
+- [concepts/harness-optimization](../concepts/harness-optimization.md) — SkillOpt sits at the structured-prompt sub-layer of harness optimization
+- [concepts/knowledge-accumulation](../concepts/knowledge-accumulation.md) — `best_skill.md` is the persistent accumulated knowledge; rejected-edit buffer is a secondary persistent store
+- [concepts/regression-gating](../concepts/regression-gating.md) — validation-on-held-out is the gate; same primitive as [sources/meta-harness](meta-harness.md)

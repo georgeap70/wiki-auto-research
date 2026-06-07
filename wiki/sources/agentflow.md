@@ -44,7 +44,7 @@ This allows on-policy training directly within live environments — unlike offl
 
 Formally a **scalar binary reward** — but with a critical distinction: the trajectory-level outcome is **credit-assigned to every intermediate action**. This is not the same as a dense reward; it's a sparse scalar redistributed across the sequence.
 
-This is a notable contrast to the rest of the wiki's rich-feedback thesis (see [[concepts/feedback-signals]]): AgentFlow achieves strong results with only a terminal binary signal, suggesting that **credit assignment mechanism** matters as much as signal richness.
+This is a notable contrast to the rest of the wiki's rich-feedback thesis (see [concepts/feedback-signals](../concepts/feedback-signals.md)): AgentFlow achieves strong results with only a terminal binary signal, suggesting that **credit assignment mechanism** matters as much as signal richness.
 
 ## Loop Structure
 
@@ -83,7 +83,7 @@ Performance sometimes surpasses GPT-4o on these benchmarks despite a 7B backbone
 
 ## Connections
 
-- [[concepts/self-improvement-loop]] — introduces a qualitatively new loop type: in-the-flow on-policy training
-- [[concepts/feedback-signals]] — challenges the rich-feedback-wins thesis with a scalar-but-credit-assigned approach
-- [[sources/asi-evolve]] — both optimize more fundamental parameters (weights vs. architecture/RL algorithm); both are fully autonomous
-- [[sources/agent0]] — both use multi-turn loops, but Agent0 bootstraps from zero data via two-agent co-evolution while AgentFlow trains a fixed modular architecture
+- [concepts/self-improvement-loop](../concepts/self-improvement-loop.md) — introduces a qualitatively new loop type: in-the-flow on-policy training
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — challenges the rich-feedback-wins thesis with a scalar-but-credit-assigned approach
+- [sources/asi-evolve](asi-evolve.md) — both optimize more fundamental parameters (weights vs. architecture/RL algorithm); both are fully autonomous
+- [sources/agent0](agent0.md) — both use multi-turn loops, but Agent0 bootstraps from zero data via two-agent co-evolution while AgentFlow trains a fixed modular architecture

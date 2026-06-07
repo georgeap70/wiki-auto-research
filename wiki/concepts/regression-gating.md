@@ -24,7 +24,7 @@ Gating is the checkpoint: the proposed change must pass a validation test before
 ### Threshold Gating (Pass Rate)
 Accept a change only if the pass rate on a regression suite stays above a threshold.
 
-Used by [[sources/auto-harness]] and [[sources/auto-harness|NeoSigma AI]]:
+Used by [sources/auto-harness](../sources/auto-harness.md) and [NeoSigma AI](../sources/auto-harness.md):
 - Threshold: **80%** of prior tasks must still pass
 - If a change passes 3 new tasks but breaks 2 old ones, it may still be rejected
 - Gives the optimizer room to improve (not 100%) while preventing wholesale regression
@@ -34,7 +34,7 @@ Used by [[sources/auto-harness]] and [[sources/auto-harness|NeoSigma AI]]:
 ### Pareto Gating (Multi-Metric)
 Accept a change only if it is not dominated — i.e., it is better on at least one metric and no worse on any other metric, compared to existing candidates.
 
-Used by [[sources/optimize-anything]]:
+Used by [sources/optimize-anything](../sources/optimize-anything.md):
 - No single threshold — instead maintain a frontier of non-dominated solutions
 - Naturally handles multi-objective scenarios (speed vs. correctness vs. cost)
 - Avoids collapsing objectives into a scalar (which can hide regressions on one axis)
@@ -42,7 +42,7 @@ Used by [[sources/optimize-anything]]:
 ### Held-Out Eval Gating
 Test proposed changes on a held-out set of tasks not seen during proposal generation.
 
-Used by [[sources/meta-harness]]:
+Used by [sources/meta-harness](../sources/meta-harness.md):
 - Prevents overfitting to the failure cases that triggered the proposal
 - More expensive (requires maintaining a separate eval set)
 - Stronger anti-overfitting guarantee than regression-only testing
@@ -50,7 +50,7 @@ Used by [[sources/meta-harness]]:
 ### Stagnation-Based Gating
 Accept a strategy change only if the current strategy has plateaued.
 
-Used by [[sources/evox]]:
+Used by [sources/evox](../sources/evox.md):
 - Outer loop monitors improvement rate over N iterations
 - Only switches strategy when stagnation is detected
 - Prevents premature strategy abandonment (explores long enough before switching)
@@ -59,7 +59,7 @@ Used by [[sources/evox]]:
 
 A qualitatively different approach: instead of treating gating as a one-shot accept/reject decision, make every commitment *reversible*. If a change is later shown to degrade behavior, roll back to any prior version.
 
-Used by [[sources/autogenesis]]:
+Used by [sources/autogenesis](../sources/autogenesis.md):
 - Every resource modification (prompt, tool, memory schema) is versioned
 - Each change carries **decision rationale** alongside the diff (semantic lineage, not just syntactic)
 - Assessment happens before commitment, but **rollback is always available** after
@@ -69,7 +69,7 @@ This is a generalization of threshold/Pareto gating: instead of making the accep
 
 ### Tournament Gating (Borda Vote)
 
-Used by [[sources/autoreason]] for inference-time per-query refinement:
+Used by [sources/autoreason](../sources/autoreason.md) for inference-time per-query refinement:
 
 - Each iteration produces three candidates: incumbent (A), adversarial revision (B), synthesis (AB)
 - A panel of fresh, blind judges ranks the three; **Borda count** aggregates rankings
@@ -85,20 +85,20 @@ This is gating *as the loop's primary control mechanism*, not as a safety check 
 
 ### Inheritable Tree Gates (Hard Veto)
 
-Used by [[sources/evo]] for tree-search autoresearch:
+Used by [sources/evo](../sources/evo.md) for tree-search autoresearch:
 
 > *"evo introduces gates: pass/fail checks that run on every experiment. An experiment that fails a gate is discarded even if its score beats the current best. Gates inherit down the experiment tree: a gate registered at the root runs on every descendant. Narrower gates can be attached to specific branches."*
 
 Two properties distinguish this from threshold or Pareto gating:
 
-1. **Inheritance down the tree** — registering a gate at the root applies to every descendant. Branches can attach narrower gates that apply only locally. This maps regression-suite semantics onto a tree of experiments (analogous to [[sources/autogenesis]]'s versioned-resource lineage applied to safety constraints rather than artifacts).
-2. **Hard veto over score** — gates dominate the scalar reward. This is a stronger commitment than the [[sources/auto-harness]] 80% threshold (a soft majority rule): any gate failure discards the experiment regardless of how much it beats the current best.
+1. **Inheritance down the tree** — registering a gate at the root applies to every descendant. Branches can attach narrower gates that apply only locally. This maps regression-suite semantics onto a tree of experiments (analogous to [sources/autogenesis](../sources/autogenesis.md)'s versioned-resource lineage applied to safety constraints rather than artifacts).
+2. **Hard veto over score** — gates dominate the scalar reward. This is a stronger commitment than the [sources/auto-harness](../sources/auto-harness.md) 80% threshold (a soft majority rule): any gate failure discards the experiment regardless of how much it beats the current best.
 
 Gates can be a test suite, an invariant script, or a score floor on a held-out slice. Notably, when Evo's `discover` skill builds a benchmark from scratch, it **auto-attaches a held-out-slice score-floor gate** — generalization protection becomes a default of the bootstrap step, not something the user has to remember to wire up.
 
 ### Edit Budget (Textual Learning Rate)
 
-A distinct primitive from [[sources/skillopt]]: rather than gating *whether* a change is accepted, gate *how large* any proposed change can be. The optimizer is constrained to add/delete/replace at most N operations per round.
+A distinct primitive from [sources/skillopt](../sources/skillopt.md): rather than gating *whether* a change is accepted, gate *how large* any proposed change can be. The optimizer is constrained to add/delete/replace at most N operations per round.
 
 - Small budget → small steps; preserves functional rules; analogous to a small learning rate
 - Large budget → fast escape from poor local minima; risks overwriting useful structure
@@ -108,7 +108,7 @@ This is **prior restraint** rather than post-hoc rejection: bad large edits are 
 Conceptually adjacent to:
 - Trust-region methods in numerical optimization
 - The "step size" parameter in policy-gradient RL
-- The patience limit in [[sources/deep-research]]'s GEPA setup, but applied to edit magnitude rather than iteration count
+- The patience limit in [sources/deep-research](../sources/deep-research.md)'s GEPA setup, but applied to edit magnitude rather than iteration count
 
 ## Design Considerations
 
@@ -121,7 +121,7 @@ Conceptually adjacent to:
 
 ## The Regression Suite as a Growing Asset
 
-A key insight from [[sources/auto-harness]]: **each failure cluster that gets mined and converted to an eval case grows the regression suite**. This means:
+A key insight from [sources/auto-harness](../sources/auto-harness.md): **each failure cluster that gets mined and converted to an eval case grows the regression suite**. This means:
 - Early iterations have weak gating (few test cases)
 - Later iterations have stronger gating (accumulated test cases)
 - The system becomes harder to break as it gets better
@@ -130,6 +130,6 @@ This is a form of compounding safety, analogous to compounding capability.
 
 ## Connections
 
-- [[concepts/self-improvement-loop]] — gating is the gate phase of the core loop
-- [[concepts/feedback-signals]] — gating typically uses scalar pass/fail, while proposals use rich diagnostics
-- [[concepts/harness-optimization]] — all harness optimizers in this wiki use some form of regression gating
+- [concepts/self-improvement-loop](self-improvement-loop.md) — gating is the gate phase of the core loop
+- [concepts/feedback-signals](feedback-signals.md) — gating typically uses scalar pass/fail, while proposals use rich diagnostics
+- [concepts/harness-optimization](harness-optimization.md) — all harness optimizers in this wiki use some form of regression gating

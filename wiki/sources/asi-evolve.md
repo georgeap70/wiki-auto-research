@@ -35,7 +35,7 @@ Three agent roles collaborate in a four-stage cycle:
 Learn → Design (Researcher) → Experiment (Engineer) → Analyze (Analyzer)
 ```
 
-**Learn:** Sample n nodes from the solution database. Retrieve relevant entries from the [[concepts/knowledge-accumulation|Cognition Base]] via semantic search (embedding-indexed). Inject retrieved context into the Researcher's prompt.
+**Learn:** Sample n nodes from the solution database. Retrieve relevant entries from the [Cognition Base](../concepts/knowledge-accumulation.md) via semantic search (embedding-indexed). Inject retrieved context into the Researcher's prompt.
 
 **Design (Researcher agent):** Generate a complete candidate program plus a natural-language *motivation* explaining why this design is promising. Supports full-code generation and diff-based editing modes.
 
@@ -46,7 +46,7 @@ Learn → Design (Researcher) → Experiment (Engineer) → Analyze (Analyzer)
 
 **Analyze (Analyzer agent):** Receive the full program + complete experimental output (logs, metrics, traces). Distill into a compact, decision-oriented report capturing causal analysis — *why* this result happened, what it implies for future designs. Store the complete node (motivation, code, results, analysis, score) in the database.
 
-The Analyzer is the key innovation here: rather than feeding raw experimental output downstream (risking context explosion), it interprets multi-dimensional feedback before storage. See [[concepts/feedback-signals]].
+The Analyzer is the key innovation here: rather than feeding raw experimental output downstream (risking context explosion), it interprets multi-dimensional feedback before storage. See [concepts/feedback-signals](../concepts/feedback-signals.md).
 
 ---
 
@@ -126,11 +126,11 @@ Both components compound; neither alone is sufficient for the full benefit.
 
 | Axis | ASI-Evolve | Comparable sources |
 |------|------------|-------------------|
-| What optimized | Data / Architecture / RL algorithms | [[sources/optimize-anything]] (architecture), [[sources/evox]] (search strategy) |
-| Loop | Learn-Design-Experiment-Analyze | [[sources/meta-harness]] (trace-informed single-agent) |
-| Feedback | Analyzer distillation + benchmark scores | [[sources/meta-harness]] (raw traces), [[sources/optimize-anything]] (ASI) |
-| Cognition | Embedding-indexed literature base | [[sources/auto-harness]] (learnings.md) |
-| Gating | Novelty check + multi-stage scaling | [[concepts/regression-gating]] |
+| What optimized | Data / Architecture / RL algorithms | [sources/optimize-anything](optimize-anything.md) (architecture), [sources/evox](evox.md) (search strategy) |
+| Loop | Learn-Design-Experiment-Analyze | [sources/meta-harness](meta-harness.md) (trace-informed single-agent) |
+| Feedback | Analyzer distillation + benchmark scores | [sources/meta-harness](meta-harness.md) (raw traces), [sources/optimize-anything](optimize-anything.md) (ASI) |
+| Cognition | Embedding-indexed literature base | [sources/auto-harness](auto-harness.md) (learnings.md) |
+| Gating | Novelty check + multi-stage scaling | [concepts/regression-gating](../concepts/regression-gating.md) |
 
 The most distinctive contribution: treating the **Analyzer as a compression layer** — preventing context explosion in high-D_feedback domains by summarizing experimental results before they enter the next iteration.
 

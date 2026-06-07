@@ -67,7 +67,7 @@ No code repository is linked in the paper as of submission.
 | Safety mechanism | Lineage + rollback at every operation | Regression gating, Pareto frontiers, held-out evals |
 | Scope | Cross-cutting — applies to prompts, tools, memory, agents, environments | Usually one of: prompts, harness code, weights, architecture |
 
-Related in spirit to [[sources/autoagent-kevinrgu]] (which defines a `program.md` / `agent.py` abstraction boundary for self-editing harnesses) and to [[sources/coral]] (which uses git + Attempts lineage for multi-agent coordination). AGP generalizes both: lineage is not a convenience but a protocol primitive.
+Related in spirit to [sources/autoagent-kevinrgu](autoagent-kevinrgu.md) (which defines a `program.md` / `agent.py` abstraction boundary for self-editing harnesses) and to [sources/coral](coral.md) (which uses git + Attempts lineage for multi-agent coordination). AGP generalizes both: lineage is not a convenience but a protocol primitive.
 
 ## Relation to the Self-Improvement Loop
 
@@ -78,7 +78,7 @@ AGP maps cleanly onto the measure → fail → propose → gate → repeat cycle
 - **Gate** — the Assessment operator; regression + safety checks run before commitment
 - **Repeat** — Commitment updates the baseline; prior versions remain rollback targets
 
-The novelty is not the loop itself but making the loop *inspectable* and *reversible* at every step. See [[concepts/regression-gating]] for how this compares with threshold and Pareto gating in other systems.
+The novelty is not the loop itself but making the loop *inspectable* and *reversible* at every step. See [concepts/regression-gating](../concepts/regression-gating.md) for how this compares with threshold and Pareto gating in other systems.
 
 ## Open Questions
 
@@ -89,8 +89,8 @@ The novelty is not the loop itself but making the loop *inspectable* and *revers
 
 ## Connections
 
-- [[concepts/self-improvement-loop]] — AGP formalizes the proposal/gate/commit phases as protocol operators
-- [[concepts/regression-gating]] — Assessment + rollback is a generalization of threshold/Pareto gating
-- [[concepts/knowledge-accumulation]] — lineage store is a form of session-level knowledge accumulation
-- [[sources/autoagent-kevinrgu]] — defines its own abstraction boundary between declarative directive and executable harness; AGP generalizes this
-- [[sources/coral]] — uses git lineage for multi-agent coordination; AGP proposes lineage as a universal primitive
+- [concepts/self-improvement-loop](../concepts/self-improvement-loop.md) — AGP formalizes the proposal/gate/commit phases as protocol operators
+- [concepts/regression-gating](../concepts/regression-gating.md) — Assessment + rollback is a generalization of threshold/Pareto gating
+- [concepts/knowledge-accumulation](../concepts/knowledge-accumulation.md) — lineage store is a form of session-level knowledge accumulation
+- [sources/autoagent-kevinrgu](autoagent-kevinrgu.md) — defines its own abstraction boundary between declarative directive and executable harness; AGP generalizes this
+- [sources/coral](coral.md) — uses git lineage for multi-agent coordination; AGP proposes lineage as a universal primitive

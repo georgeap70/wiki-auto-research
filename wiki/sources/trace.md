@@ -36,7 +36,7 @@ TRACE decomposes agent improvement into **capability-specific** training rather 
                  appropriate adapter (base model used as classifier)
 ```
 
-The diagnostic and generation steps are performed by supervising LLM agents (an "analysis agent" and a "generation agent") — not by the target agent itself diagnosing its own failures. This is a distinction from fully autonomous systems like [[sources/auto-harness]] or [[sources/coral]].
+The diagnostic and generation steps are performed by supervising LLM agents (an "analysis agent" and a "generation agent") — not by the target agent itself diagnosing its own failures. This is a distinction from fully autonomous systems like [sources/auto-harness](auto-harness.md) or [sources/coral](coral.md).
 
 ## Why Capability Decomposition Beats Direct GRPO
 
@@ -64,14 +64,14 @@ Single adapters (before routing) already outperform direct GRPO — the decompos
 
 | Axis | TRACE | Comparable sources |
 |------|-------|-------------------|
-| What is optimized | Weights — multiple **LoRA adapters**, one per capability | [[sources/agentflow]] trains a single planner; [[sources/skill-rl-skill0]] SKILL-0 internalizes skills into base weights |
-| Feedback signal | Capability-isolated reward in synthesized environment (dense per capability, sparse globally) | [[sources/agentflow]] uses trajectory-level binary outcome broadcast; [[sources/meta-harness]] uses rich execution traces |
-| Composition at inference | Router classifier over adapter set | [[sources/skill-rl-skill0]] SKILL-RL retrieves from external SkillBank; SKILL-0 eliminates retrieval |
+| What is optimized | Weights — multiple **LoRA adapters**, one per capability | [sources/agentflow](agentflow.md) trains a single planner; [sources/skill-rl-skill0](skill-rl-skill0.md) SKILL-0 internalizes skills into base weights |
+| Feedback signal | Capability-isolated reward in synthesized environment (dense per capability, sparse globally) | [sources/agentflow](agentflow.md) uses trajectory-level binary outcome broadcast; [sources/meta-harness](meta-harness.md) uses rich execution traces |
+| Composition at inference | Router classifier over adapter set | [sources/skill-rl-skill0](skill-rl-skill0.md) SKILL-RL retrieves from external SkillBank; SKILL-0 eliminates retrieval |
 | Autonomy | Supervised: analysis & generation agents diagnose and build environments | Most other systems: the agent drives its own improvement |
 
 ## Relationship to Skill-Based Approaches
 
-TRACE's "capabilities" are closely related to [[sources/skill-rl-skill0|skills]] but differ in:
+TRACE's "capabilities" are closely related to [skills](skill-rl-skill0.md) but differ in:
 
 - **Granularity** — capabilities are broader behavioral competencies (e.g., "handle nested tool errors"), skills are narrower procedures
 - **Representation** — capabilities are stored in LoRA adapter weights, skills in text (SkillBank) or base weights (SKILL-0)
@@ -89,7 +89,7 @@ TRACE is best understood as a **semi-autonomous self-improvement system**:
 - **Gate** — implicit: adapter is accepted if it improves performance in its synthetic environment
 - **Compose** — router selects the appropriate adapter at inference
 
-The agent being improved does not drive its own diagnosis — external LLM agents do. This makes TRACE less autonomous than [[sources/agent0]] or [[sources/coral]], but the capability-decomposition mechanism could in principle be integrated into a fully autonomous loop.
+The agent being improved does not drive its own diagnosis — external LLM agents do. This makes TRACE less autonomous than [sources/agent0](agent0.md) or [sources/coral](coral.md), but the capability-decomposition mechanism could in principle be integrated into a fully autonomous loop.
 
 ## Open Questions
 
@@ -100,8 +100,8 @@ The agent being improved does not drive its own diagnosis — external LLM agent
 
 ## Connections
 
-- [[concepts/self-improvement-loop]] — semi-autonomous variant; external LLMs drive the diagnose/generate steps
-- [[concepts/feedback-signals]] — capability-isolated rewards turn a globally sparse signal into locally dense signals; an alternative strategy to both rich traces and credit assignment
-- [[concepts/knowledge-accumulation]] — capabilities persist as LoRA adapter weights; accumulation is in weight space with explicit modular structure
-- [[sources/agentflow]] — both train policy weights; AgentFlow uses one planner with broadcast reward; TRACE uses per-capability adapters with isolated rewards
-- [[sources/skill-rl-skill0]] — conceptually adjacent; SKILL-RL externalizes skills, SKILL-0 internalizes them into one model, TRACE modularizes them across adapters
+- [concepts/self-improvement-loop](../concepts/self-improvement-loop.md) — semi-autonomous variant; external LLMs drive the diagnose/generate steps
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — capability-isolated rewards turn a globally sparse signal into locally dense signals; an alternative strategy to both rich traces and credit assignment
+- [concepts/knowledge-accumulation](../concepts/knowledge-accumulation.md) — capabilities persist as LoRA adapter weights; accumulation is in weight space with explicit modular structure
+- [sources/agentflow](agentflow.md) — both train policy weights; AgentFlow uses one planner with broadcast reward; TRACE uses per-capability adapters with isolated rewards
+- [sources/skill-rl-skill0](skill-rl-skill0.md) — conceptually adjacent; SKILL-RL externalizes skills, SKILL-0 internalizes them into one model, TRACE modularizes them across adapters

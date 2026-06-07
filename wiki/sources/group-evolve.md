@@ -50,7 +50,7 @@ Offspring are initialized from this shared pool, meaning each new agent inherits
 | CORAL multi-agent | Individual agents + shared notes | Async writes to shared memory |
 | **GEA** | **Group** | **Explicit shared experience pool as evolutionary primitive** |
 
-The key distinction from [[sources/coral]]: CORAL's sharing emerges from agents independently reading/writing a common memory store. GEA makes group membership and experience aggregation **explicit architectural choices**, with selection operating on groups rather than individuals.
+The key distinction from [sources/coral](coral.md): CORAL's sharing emerges from agents independently reading/writing a common memory store. GEA makes group membership and experience aggregation **explicit architectural choices**, with selection operating on groups rather than individuals.
 
 ## Results
 
@@ -73,8 +73,8 @@ The key distinction from [[sources/coral]]: CORAL's sharing emerges from agents 
 
 ## Connections
 
-- [[concepts/evolutionary-optimization]] — new variant: group-as-unit evolution with performance-novelty selection
-- [[concepts/knowledge-accumulation]] — shared experience pool is a form of explicit cross-agent knowledge transfer
-- [[concepts/self-improvement-loop]] — open-ended evolution without a fixed stopping condition
-- [[sources/coral]] — comparison: CORAL uses async shared memory; GEA uses explicit group pooling
-- [[sources/evox]] — comparison: EvoX meta-evolves the search strategy; GEA meta-evolves the unit of selection
+- [concepts/evolutionary-optimization](../concepts/evolutionary-optimization.md) — new variant: group-as-unit evolution with performance-novelty selection
+- [concepts/knowledge-accumulation](../concepts/knowledge-accumulation.md) — shared experience pool is a form of explicit cross-agent knowledge transfer
+- [concepts/self-improvement-loop](../concepts/self-improvement-loop.md) — open-ended evolution without a fixed stopping condition
+- [sources/coral](coral.md) — comparison: CORAL uses async shared memory; GEA uses explicit group pooling
+- [sources/evox](evox.md) — comparison: EvoX meta-evolves the search strategy; GEA meta-evolves the unit of selection

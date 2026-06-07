@@ -22,11 +22,11 @@ The setup is unusually well-fit to the harness-optimization literature in this w
 | Generalization risk | High — overfitting to specific repos or specific CWEs is the central failure mode |
 | Model | Closed-weight (Claude Code) — no weight updates available |
 
-Because the model is closed-weight and the artifact is a text-level skill, the entire wiki section on **weight optimization** ([[sources/agentflow]], [[sources/trace]], [[sources/skill-rl-skill0]]) is out of scope from the start. The relevant literature is **harness optimization** + **text-artifact optimization**.
+Because the model is closed-weight and the artifact is a text-level skill, the entire wiki section on **weight optimization** ([sources/agentflow](sources/agentflow.md), [sources/trace](sources/trace.md), [sources/skill-rl-skill0](sources/skill-rl-skill0.md)) is out of scope from the start. The relevant literature is **harness optimization** + **text-artifact optimization**.
 
 ## Primary recommendation
 
-### [[sources/skillopt]] (Microsoft Research) + [[sources/evo]] (evo-hq), combined
+### [sources/skillopt](sources/skillopt.md) (Microsoft Research) + [sources/evo](sources/evo.md) (evo-hq), combined
 
 Use **Evo** as the orchestration substrate and **SkillOpt's discipline** as the proposal style inside it.
 
@@ -39,7 +39,7 @@ It is the only system in the wiki that *literally* treats a skill document (`bes
 - **Rejected-edit buffer** as a persistent negative-signal store — when an edit fails the gate, it is retained as structured "what not to try" rather than discarded; the optimizer reads from this buffer on future rounds
 - **Best-or-tied-best on 52/52 settings** across 7 models × 6 benchmarks, with the strongest cross-model (+15.2%) and cross-harness (+31.8%) transfer evidence in the wiki — directly relevant if you want the optimized skill to keep working when you change the underlying model (Sonnet → Opus, or vice versa)
 
-The "textual learning rate" framing is the load-bearing intuition: **a smaller edit budget widens the productive band** ([[concepts/regression-gating]]). Vuln detection is a domain where you want the optimizer to *refine* a careful checklist of patterns, not regenerate the prompt from scratch every round.
+The "textual learning rate" framing is the load-bearing intuition: **a smaller edit budget widens the productive band** ([concepts/regression-gating](concepts/regression-gating.md)). Vuln detection is a domain where you want the optimizer to *refine* a careful checklist of patterns, not regenerate the prompt from scratch every round.
 
 #### Why Evo
 
@@ -50,7 +50,7 @@ Of all the orchestrators in the wiki, Evo is the only one that **ships as Claude
 | "Define what to scan and how to score it" | `/evo:discover` — interactive setup of benchmark + metric direction; can be seeded with a one-line directive |
 | "Don't overfit to my labeled repos" | **Held-out-slice score-floor gate auto-attached at discovery** — generalization protection is the default, not something you have to remember to wire up |
 | "Run experiments in parallel" | Subagents in isolated git worktrees |
-| "Maintain specialists across CWE categories" | `pareto_per_task` frontier strategy — credited to [[sources/optimize-anything|GEPA]]; keeps branches that win on specific CWEs even when their aggregate lags |
+| "Maintain specialists across CWE categories" | `pareto_per_task` frontier strategy — credited to [GEPA](sources/optimize-anything.md); keeps branches that win on specific CWEs even when their aggregate lags |
 | "Don't accept a regression even if F1 went up" | **Gates inherit down the experiment tree and hard-veto over score** — *"An experiment that fails a gate is discarded even if its score beats the current best"* |
 | "Find compound failure patterns across runs" | RLM-inspired **cross-cutting scan subagents** between rounds — surface gate-failure intersections and shared root causes across traces |
 | "Scans are slow; I want overnight runs" | Eight execution backends (worktree/pool/ssh/modal/e2b/daytona/aws/azure) |
@@ -69,7 +69,7 @@ The `pareto_per_task` strategy is particularly load-bearing for vulnerability de
 
 ## Secondary fits — useful as control arms or supplements
 
-### [[sources/honedhaiku]] (Tim Waldin) — closest empirical analog
+### [sources/honedhaiku](sources/honedhaiku.md) (Tim Waldin) — closest empirical analog
 
 HonedHaiku applies GEPA to Claude Haiku system prompts for **bug fixing** — the security-shaped sibling of vulnerability detection. It reports +19.7pp on unseen bugs (Haiku 3.5: 65% → 85%) and converged in 4 of 20 allocated iterations.
 
@@ -78,11 +78,11 @@ Two lessons port directly:
 - **The Goldilocks band**: prompt-only optimization moved the needle in the ~50–70% baseline range. Below 50%, the model couldn't execute complex methodologies; above ~85%, the prompt was no longer the bottleneck. **Check your baseline detection rate first**: if it's outside this band, expect smaller returns from prompt-only optimization — and lean on SkillOpt's bounded edits, which partially widen the band.
 - **Training diversity matters more than iteration count**: a 3-challenge run overfit; 20 challenges across 5 repos generalized. The analog: don't optimize against 3 hand-picked CVEs; sample broadly across CWE categories and repo styles.
 
-### [[sources/optimize-anything]] (GEPA) — the underlying primitive
+### [sources/optimize-anything](sources/optimize-anything.md) (GEPA) — the underlying primitive
 
 GEPA is the search primitive both HonedHaiku and the suggested `pareto_per_task` Evo strategy rest on. If you want to *implement* the optimizer yourself rather than use Evo's packaged form, GEPA is the reference. The core idea — Pareto frontier over multi-metric scoring + LLM-proposed edits + **Actionable Side Information (ASI)** as the feedback channel — is exactly the shape of your problem.
 
-### [[sources/rlm-gepa]]'s `AgentSpec` — adopt the *idea* even if not the framework
+### [sources/rlm-gepa](sources/rlm-gepa.md)'s `AgentSpec` — adopt the *idea* even if not the framework
 
 Even if you don't use the predict-rlm runtime, write down explicitly what behavioral changes are *in-scope* for the optimizer. Example:
 
@@ -114,13 +114,13 @@ Out-of-scope:
 
 Vulnerability detection is exactly the domain where an optimizer drifts if scope isn't declared — it will start adding language-detection heuristics, rewriting tool wiring, etc. AgentSpec is cheap insurance.
 
-### [[sources/auto-harness]] (NeoSigma) — single-thread baseline
+### [sources/auto-harness](sources/auto-harness.md) (NeoSigma) — single-thread baseline
 
 The closest single-thread control arm: agent edits its own harness, gates with an 80% regression threshold, keeps a `learnings.md` between sessions. If you want a *baseline* that does not depend on Evo's tree-search or SkillOpt's bounded edits, this is the simplest reproducible loop in the wiki.
 
 ## What about scan-time refinement?
 
-### [[sources/autoreason]] — orthogonal, not core, but worth considering at scan time
+### [sources/autoreason](sources/autoreason.md) — orthogonal, not core, but worth considering at scan time
 
 AutoReason's per-query tournament (incumbent vs. adversarial revision vs. synthesis, with a blind Borda-count judge panel) is an **inference-time** loop. It does not optimize the skill. But it could resolve a different problem inside your scanner: *"Is this candidate finding actually a vulnerability or a false positive?"* The tournament gating addresses three pathologies that show up in naive critique-revise (prompt bias, scope creep, lack-of-restraint) — all of which are real in security triage.
 
@@ -130,32 +130,32 @@ Use it as a **separate axis** in your workflow comparison, not as an optimizer c
 
 | Skipped | Why |
 |---------|-----|
-| [[sources/agent0]] | Two-agent bootstrap from zero data — you have ground truth, this isn't the right tool |
-| [[sources/agentflow]] | RL on planner weights — Claude is closed-weight |
-| [[sources/trace]] | LoRA adapters per capability — same closed-weight problem |
-| [[sources/skill-rl-skill0]] | RL training; closed-weight |
-| [[sources/asi-evolve]] | Architecture + data + RL algorithm search — vastly out of scope; this is for AI-research-as-research, not scanner optimization |
-| [[sources/coral]] | Multi-agent shared-memory co-evolution — heavier than the problem needs; Evo's tree gives most of the benefit at lower complexity |
-| [[sources/group-evolve]] | Group-level evolution with shared experience pool — interesting but heavier than needed; Evo + SkillOpt cover the same ground for skills specifically |
-| [[sources/evoforge]] | Population of full agent.py rewrites — broader scope than skill optimization; Evo's tree-shaped parallelism is the right level |
-| [[sources/autoagent-hkuds]], [[sources/autoagent-kevinrgu]] | Full harness rewrite via dialogue or hill-climb — too broad; you want to optimize *skills*, not regenerate the agent |
-| [[sources/meta-harness]] | Closest research analog to skill optimization, but it's a Stanford artifact tied to its specific benchmark; SkillOpt is the productized successor |
-| [[sources/halo]] | Production OpenTelemetry traces as the feedback loop — only applies if you have live scanner traffic in production. For an offline experiment with labeled repos, the simpler held-out gate is enough |
-| [[sources/deep-research]] | GEPA applied to a four-agent research pipeline — same primitive as HonedHaiku, narrower context; HonedHaiku is the better analog for your case |
-| [[sources/evox]] | Meta-evolution of the search strategy itself — overkill; Evo's configurable frontier strategy gives you 80% of this at zero cost |
-| [[sources/autogenesis]] | Self-modification protocol with typed resources — a governance layer, not an optimizer; relevant if you formalize the experiment infrastructure later |
+| [sources/agent0](sources/agent0.md) | Two-agent bootstrap from zero data — you have ground truth, this isn't the right tool |
+| [sources/agentflow](sources/agentflow.md) | RL on planner weights — Claude is closed-weight |
+| [sources/trace](sources/trace.md) | LoRA adapters per capability — same closed-weight problem |
+| [sources/skill-rl-skill0](sources/skill-rl-skill0.md) | RL training; closed-weight |
+| [sources/asi-evolve](sources/asi-evolve.md) | Architecture + data + RL algorithm search — vastly out of scope; this is for AI-research-as-research, not scanner optimization |
+| [sources/coral](sources/coral.md) | Multi-agent shared-memory co-evolution — heavier than the problem needs; Evo's tree gives most of the benefit at lower complexity |
+| [sources/group-evolve](sources/group-evolve.md) | Group-level evolution with shared experience pool — interesting but heavier than needed; Evo + SkillOpt cover the same ground for skills specifically |
+| [sources/evoforge](sources/evoforge.md) | Population of full agent.py rewrites — broader scope than skill optimization; Evo's tree-shaped parallelism is the right level |
+| [sources/autoagent-hkuds](sources/autoagent-hkuds.md), [sources/autoagent-kevinrgu](sources/autoagent-kevinrgu.md) | Full harness rewrite via dialogue or hill-climb — too broad; you want to optimize *skills*, not regenerate the agent |
+| [sources/meta-harness](sources/meta-harness.md) | Closest research analog to skill optimization, but it's a Stanford artifact tied to its specific benchmark; SkillOpt is the productized successor |
+| [sources/halo](sources/halo.md) | Production OpenTelemetry traces as the feedback loop — only applies if you have live scanner traffic in production. For an offline experiment with labeled repos, the simpler held-out gate is enough |
+| [sources/deep-research](sources/deep-research.md) | GEPA applied to a four-agent research pipeline — same primitive as HonedHaiku, narrower context; HonedHaiku is the better analog for your case |
+| [sources/evox](sources/evox.md) | Meta-evolution of the search strategy itself — overkill; Evo's configurable frontier strategy gives you 80% of this at zero cost |
+| [sources/autogenesis](sources/autogenesis.md) | Self-modification protocol with typed resources — a governance layer, not an optimizer; relevant if you formalize the experiment infrastructure later |
 
 ## The single biggest lever — pick before you pick the optimizer
 
 **The benchmark and metric design matter more than the optimizer choice.**
 
-Vulnerability detection has a brutal precision/recall tension and a long tail of CWEs. The single biggest lever in your setup is whether your failure descriptions are **evidence-bounded** (per [[sources/rlm-gepa]]'s contract): *"missed CVE-2023-X in file Y at line N"* or *"false positive: matched `eval(` inside a test fixture at file Z"* gives the optimizer concrete material to act on. A single F1 number does not.
+Vulnerability detection has a brutal precision/recall tension and a long tail of CWEs. The single biggest lever in your setup is whether your failure descriptions are **evidence-bounded** (per [sources/rlm-gepa](sources/rlm-gepa.md)'s contract): *"missed CVE-2023-X in file Y at line N"* or *"false positive: matched `eval(` inside a test fixture at file Z"* gives the optimizer concrete material to act on. A single F1 number does not.
 
 Concretely, set up the metric so that for each evaluation it returns:
 
 1. **Scalar**: per-CWE precision/recall + macro-F1 across CWE categories
 2. **Per-failure descriptions**: missed findings (which CVE, which file, which line) and false positives (which file, which line, what was matched, why it was wrong)
-3. **No prescriptive rewrites in the feedback** — the metric names failures, the proposer proposes fixes ([[concepts/feedback-signals]] evidence-bounded contract)
+3. **No prescriptive rewrites in the feedback** — the metric names failures, the proposer proposes fixes ([concepts/feedback-signals](concepts/feedback-signals.md) evidence-bounded contract)
 
 This shape is what every system in the *primary fit* list above expects, and it composes with the AgentSpec scope declaration above.
 
@@ -171,7 +171,7 @@ A concrete plan that uses the primary recommendation:
 6. **Constrain edit budget** per round (SkillOpt-style) — start at ~3 ops per round, treat this as a hyperparameter, vary it.
 7. **Compare against**:
    - An unoptimized hand-written skill (baseline)
-   - The [[sources/auto-harness|auto-harness]] single-thread loop on the same skill (single-thread control)
+   - The [auto-harness](sources/auto-harness.md) single-thread loop on the same skill (single-thread control)
    - The same Evo run with the `argmax` frontier strategy (ablation: does `pareto_per_task` matter?)
    - The same Evo run with no rejected-edit / discarded-hypothesis store (ablation: does negative-signal storage matter?)
 8. **Generalization probes** at the end:
@@ -181,9 +181,9 @@ A concrete plan that uses the primary recommendation:
 
 ## Connections
 
-- [[concepts/harness-optimization]] — the umbrella concept for everything in scope here
-- [[concepts/feedback-signals]] — evidence-bounded feedback is the single most important design choice
-- [[concepts/regression-gating]] — held-out-slice gating (Evo auto-attaches it; SkillOpt uses it) is the central anti-overfitting mechanism
-- [[concepts/evolutionary-optimization]] — Pareto-per-task selection is the right shape for the multi-CWE objective
-- [[concepts/self-improvement-loop]] — the measure → fail → propose → gate cycle is the abstract skeleton you are instantiating
-- [[overview]] — wiki-wide synthesis; see especially the *Productive Band* and *Modular Decomposition* sections, both of which apply
+- [concepts/harness-optimization](concepts/harness-optimization.md) — the umbrella concept for everything in scope here
+- [concepts/feedback-signals](concepts/feedback-signals.md) — evidence-bounded feedback is the single most important design choice
+- [concepts/regression-gating](concepts/regression-gating.md) — held-out-slice gating (Evo auto-attaches it; SkillOpt uses it) is the central anti-overfitting mechanism
+- [concepts/evolutionary-optimization](concepts/evolutionary-optimization.md) — Pareto-per-task selection is the right shape for the multi-CWE objective
+- [concepts/self-improvement-loop](concepts/self-improvement-loop.md) — the measure → fail → propose → gate cycle is the abstract skeleton you are instantiating
+- [overview](overview.md) — wiki-wide synthesis; see especially the *Productive Band* and *Modular Decomposition* sections, both of which apply

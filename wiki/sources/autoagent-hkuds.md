@@ -45,10 +45,10 @@ Agents can iteratively improve through feedback mechanisms, supporting both sing
 
 ## Relationship to Self-Improvement
 
-AutoAgent sits at the boundary of this wiki's core topic. It does not autonomously self-optimize on a benchmark overnight (contrast: [[sources/auto-harness]], [[sources/autoagent-kevinrgu]]). Instead, it demonstrates that **natural language can be sufficient as the full interface for agent harness construction and iteration** — the human directs, the system implements. This is a human-in-the-loop point on the autonomy spectrum.
+AutoAgent sits at the boundary of this wiki's core topic. It does not autonomously self-optimize on a benchmark overnight (contrast: [sources/auto-harness](auto-harness.md), [sources/autoagent-kevinrgu](autoagent-kevinrgu.md)). Instead, it demonstrates that **natural language can be sufficient as the full interface for agent harness construction and iteration** — the human directs, the system implements. This is a human-in-the-loop point on the autonomy spectrum.
 
 ## Connections
 
-- [[concepts/harness-optimization]] — the whole harness is NL-specified, a different approach to harness construction vs. autonomous code editing
-- [[sources/autoagent-kevinrgu]] — same name, different project; kevinrgu/autoagent automates the optimization loop autonomously while this one requires NL direction
-- [[sources/meta-harness]] — both treat the full harness as optimizable; Meta-Harness does it autonomously, this one via NL dialogue
+- [concepts/harness-optimization](../concepts/harness-optimization.md) — the whole harness is NL-specified, a different approach to harness construction vs. autonomous code editing
+- [sources/autoagent-kevinrgu](autoagent-kevinrgu.md) — same name, different project; kevinrgu/autoagent automates the optimization loop autonomously while this one requires NL direction
+- [sources/meta-harness](meta-harness.md) — both treat the full harness as optimizable; Meta-Harness does it autonomously, this one via NL dialogue

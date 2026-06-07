@@ -43,7 +43,7 @@ The agent discovers architectural improvements that are **outside the search spa
 
 ## Framing: Optimization as Self-Improvement
 
-This is [[concepts/self-improvement-loop|self-improvement]] at the **model-training level**. The agent:
+This is [self-improvement](../concepts/self-improvement-loop.md) at the **model-training level**. The agent:
 - Measures: training loss, validation metrics
 - Fails: identifies underperforming configurations
 - Proposes: changes ranging from hyperparameter tweaks to structural rewrites
@@ -53,7 +53,7 @@ The agent expands its own search space mid-run — a form of meta-adaptation tha
 
 ## Connections
 
-- [[entities/optimize-anything]] generalizes this idea: if it's text and it's measurable, it can be optimized
-- [[concepts/feedback-signals]] — agent uses training logs + domain knowledge, not just scalar loss
-- [[concepts/self-improvement-loop]] — demonstrates the loop at the ML training layer
-- [[entities/evox]] — also expands search space dynamically, but via evolutionary strategy switching rather than domain reasoning
+- entities/optimize-anything generalizes this idea: if it's text and it's measurable, it can be optimized
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — agent uses training logs + domain knowledge, not just scalar loss
+- [concepts/self-improvement-loop](../concepts/self-improvement-loop.md) — demonstrates the loop at the ML training layer
+- entities/evox — also expands search space dynamically, but via evolutionary strategy switching rather than domain reasoning

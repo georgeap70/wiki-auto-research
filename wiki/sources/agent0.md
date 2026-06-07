@@ -41,7 +41,7 @@ The co-evolution structure eliminates the bottleneck of **human data curation**.
 
 ## Relation to Self-Improvement
 
-Agent0 represents **[[concepts/self-improvement-loop|self-improvement]] at the task-solution level** via [[concepts/two-agent-coevolution|two-agent co-evolution]]. The loop:
+Agent0 represents **[self-improvement](../concepts/self-improvement-loop.md) at the task-solution level** via two-agent co-evolution. The loop:
 - `measure` — executor performance on curriculum tasks
 - `fail` — tasks where executor fails
 - `propose` — curriculum agent generates new harder tasks; executor updates via tool-integrated reasoning
@@ -49,6 +49,6 @@ Agent0 represents **[[concepts/self-improvement-loop|self-improvement]] at the t
 
 ## Connections
 
-- [[entities/optimize-anything]] also starts from minimal initialization and expands via LLM proposals
-- [[entities/evox]] uses population-based evolution rather than two-agent dynamics
-- [[concepts/feedback-signals]] — Agent0 uses implicit feedback (pass/fail on tasks) rather than rich diagnostics
+- entities/optimize-anything also starts from minimal initialization and expands via LLM proposals
+- entities/evox uses population-based evolution rather than two-agent dynamics
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — Agent0 uses implicit feedback (pass/fail on tasks) rather than rich diagnostics

@@ -35,7 +35,7 @@ The central novelty is the **separation of concerns** between:
 | `program.md` | Human engineer | High-level behavioral directive |
 | `agent.py` | Meta-agent (auto-edited) | Implementation: system prompt, tools, routing |
 
-This treats agent engineering as a **searchable design space** rather than hand-crafted work. The human's role is reduced to specifying intent; the meta-agent handles implementation search. Contrast with [[sources/auto-harness]], where there is no explicit directive file — the agent infers what to improve from benchmark failures alone.
+This treats agent engineering as a **searchable design space** rather than hand-crafted work. The human's role is reduced to specifying intent; the meta-agent handles implementation search. Contrast with [sources/auto-harness](auto-harness.md), where there is no explicit directive file — the agent infers what to improve from benchmark failures alone.
 
 Additionally, `agent.py` uses **marked editable and fixed sections** to constrain the search space: the meta-agent can only modify designated regions, preventing accidental breakage of core infrastructure.
 
@@ -48,14 +48,14 @@ No published benchmark numbers in the repository. The framework is presented as 
 | System | Directive format | What is optimized | Benchmark results |
 |--------|-----------------|-------------------|------------------|
 | **AutoAgent (KevinRGU)** | `program.md` (NL Markdown) | Full harness via hill-climbing | None published |
-| [[sources/auto-harness]] | None (implicit from failures) | System prompt + tools | +39% on Tau3 |
-| [[sources/meta-harness]] | None (implicit from source + traces) | Full harness | Rich trace → better proposals |
-| [[sources/autoagent-hkuds]] | Conversational NL (human-directed) | Full harness | GAIA comparable to Claude 3.5 |
+| [sources/auto-harness](auto-harness.md) | None (implicit from failures) | System prompt + tools | +39% on Tau3 |
+| [sources/meta-harness](meta-harness.md) | None (implicit from source + traces) | Full harness | Rich trace → better proposals |
+| [sources/autoagent-hkuds](autoagent-hkuds.md) | Conversational NL (human-directed) | Full harness | GAIA comparable to Claude 3.5 |
 
 ## Connections
 
-- [[concepts/harness-optimization]] — primary example of harness optimization via meta-agent loop
-- [[concepts/self-improvement-loop]] — instantiates the measure→fail→propose→gate cycle at the harness layer
-- [[concepts/regression-gating]] — uses score-driven gating (numeric improvement required)
-- [[concepts/feedback-signals]] — gating signal is scalar (benchmark score); failure analysis is implicit
-- [[sources/autoagent-hkuds]] — same name, different project; HKUDS is NL-directed, this one is fully autonomous
+- [concepts/harness-optimization](../concepts/harness-optimization.md) — primary example of harness optimization via meta-agent loop
+- [concepts/self-improvement-loop](../concepts/self-improvement-loop.md) — instantiates the measure→fail→propose→gate cycle at the harness layer
+- [concepts/regression-gating](../concepts/regression-gating.md) — uses score-driven gating (numeric improvement required)
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — gating signal is scalar (benchmark score); failure analysis is implicit
+- [sources/autoagent-hkuds](autoagent-hkuds.md) — same name, different project; HKUDS is NL-directed, this one is fully autonomous

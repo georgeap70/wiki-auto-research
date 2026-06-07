@@ -20,7 +20,7 @@ last_updated: 2026-04-04
 ## The System
 
 Given:
-- A benchmark (e.g., [[entities/tau3|Tau3]])
+- A benchmark (e.g., Tau3)
 - The agent's own `agent/agent.py`
 
 The agent executes a loop:
@@ -53,14 +53,14 @@ The four-phase cycle described:
 
 ## Key Design Choices
 
-- **[[concepts/regression-gating|Regression gating at 80%]]**: changes are rejected if they degrade previously passing tasks
+- **[Regression gating at 80%](../concepts/regression-gating.md)**: changes are rejected if they degrade previously passing tasks
 - **`learnings.md`**: persistent memory that survives context resets across optimization runs
 - **No model retraining**: improvement is entirely at the scaffolding layer — makes the approach model-agnostic
 - **Docker isolation**: prevents the agent from accidentally breaking its own environment
 
 ## Connections
 
-- [[entities/meta-harness]] optimizes the same layer (system prompts + scaffolding) but with richer diagnostic context
-- [[sources/autoharness-arxiv]] (different paper, similar name) focuses on synthesizing constraint code rather than iterating on the whole harness
-- [[concepts/harness-optimization]] — this is a primary example
-- [[concepts/feedback-signals]] — uses production traces for failure mining (rich signal), but scalar pass/fail for gating
+- entities/meta-harness optimizes the same layer (system prompts + scaffolding) but with richer diagnostic context
+- [sources/autoharness-arxiv](autoharness-arxiv.md) (different paper, similar name) focuses on synthesizing constraint code rather than iterating on the whole harness
+- [concepts/harness-optimization](../concepts/harness-optimization.md) — this is a primary example
+- [concepts/feedback-signals](../concepts/feedback-signals.md) — uses production traces for failure mining (rich signal), but scalar pass/fail for gating
