@@ -2,8 +2,8 @@
 title: Harness Optimization
 type: concept
 tags: [harness, system-prompt, scaffolding, code-synthesis, constraint-enforcement]
-sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt, rlm_gepa]
-last_updated: 2026-05-30
+sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt, rlm_gepa, evo-hq]
+last_updated: 2026-06-06
 ---
 
 # Harness Optimization
@@ -86,6 +86,12 @@ last_updated: 2026-05-30
 - Key feature: rejected-edit buffer as negative signal; optimizer-side meta-skill; strongest cross-model/cross-harness transfer evidence in the wiki
 - Result: best-or-tied-best on 52/52 model×benchmark combinations; ALFWorld 70.9% → 85.8%; +15.2% cross-model, +31.8% cross-harness transfer without re-optimization
 
+### Evo (evo-hq) — [[sources/evo]]
+- Optimizes: any code metric `discover` can identify in the repo (e.g., parser speed, accuracy on a held-out task)
+- Method: `discover` instruments the benchmark; parallel subagents in isolated git worktrees hill-climb against it; tree-search over committed branches with configurable frontier strategy (`argmax`/`top_k`/`epsilon_greedy`/`softmax`/`pareto_per_task`); RLM-inspired cross-cutting scan subagents read trace batches between rounds and write findings to shared state
+- Key feature: gates as first-class primitives that **inherit down the experiment tree**; gate failure overrides score improvement; held-out-slice score-floor gate auto-attached during `discover`; 8 execution backends (worktree/pool/ssh/modal/e2b/daytona/aws/azure); dashboard for inspecting the tree and tuning frontier strategy
+- Result: no published benchmark numbers — packaged orchestrator rather than a research artifact
+
 ### RLM-GEPA (Trampoline AI) — [[sources/rlm-gepa]]
 - Optimizes: skill instructions (prose) layered on top of a fixed Recursive Language Model runtime; DSPy signatures and tools are held constant
 - Method: executor loop runs the RLM and collects `RunTrace` + score + feedback; proposer loop reads scored traces and issues GEPA-style surgical edits; an `AgentSpec` declares what behavioral changes are in-scope
@@ -106,6 +112,7 @@ last_updated: 2026-05-30
 | HALO | OpenTelemetry production traces | Full harness | Deploy + define benchmarks |
 | SkillOpt | Rollout scores + rejected-edit buffer | Structured skill document | Define benchmarks once |
 | RLM-GEPA | RunTrace + score + failure-description feedback | Skill instructions over a fixed RLM/DSPy structure | Author RLM, dataset, metric, and AgentSpec |
+| Evo | Score + gate pass/fail + cross-cutting scan findings (gate intersections, shared root causes) + shared discarded-hypothesis bucket | Any repo metric, via auto-discovered benchmark | Run `/evo:discover` once; configure frontier strategy; optionally pause between rounds |
 
 ## Connections
 

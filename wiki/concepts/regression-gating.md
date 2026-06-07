@@ -2,8 +2,8 @@
 title: Regression Gating
 type: concept
 tags: [safety, regression, gating, threshold, pareto, lineage, rollback]
-sources: [auto-harness, optimize-anything, evox, meta-harness, autogenesis, autoreason, skillOpt]
-last_updated: 2026-04-28
+sources: [auto-harness, optimize-anything, evox, meta-harness, autogenesis, autoreason, skillOpt, evo-hq]
+last_updated: 2026-06-06
 ---
 
 # Regression Gating
@@ -82,6 +82,19 @@ Tournament gating directly addresses three pathologies of naive critique-revise 
 - **Lack of restraint**: models never choose "no change". The incumbent-wins path makes "no change" a first-class outcome
 
 This is gating *as the loop's primary control mechanism*, not as a safety check on top of an otherwise-unconstrained edit. Ablation: removing either B or AB collapses performance, indicating both adversarial change and synthesis are necessary for the tournament to function.
+
+### Inheritable Tree Gates (Hard Veto)
+
+Used by [[sources/evo]] for tree-search autoresearch:
+
+> *"evo introduces gates: pass/fail checks that run on every experiment. An experiment that fails a gate is discarded even if its score beats the current best. Gates inherit down the experiment tree: a gate registered at the root runs on every descendant. Narrower gates can be attached to specific branches."*
+
+Two properties distinguish this from threshold or Pareto gating:
+
+1. **Inheritance down the tree** — registering a gate at the root applies to every descendant. Branches can attach narrower gates that apply only locally. This maps regression-suite semantics onto a tree of experiments (analogous to [[sources/autogenesis]]'s versioned-resource lineage applied to safety constraints rather than artifacts).
+2. **Hard veto over score** — gates dominate the scalar reward. This is a stronger commitment than the [[sources/auto-harness]] 80% threshold (a soft majority rule): any gate failure discards the experiment regardless of how much it beats the current best.
+
+Gates can be a test suite, an invariant script, or a score floor on a held-out slice. Notably, when Evo's `discover` skill builds a benchmark from scratch, it **auto-attaches a held-out-slice score-floor gate** — generalization protection becomes a default of the bootstrap step, not something the user has to remember to wire up.
 
 ### Edit Budget (Textual Learning Rate)
 

@@ -54,6 +54,7 @@ Raw source files → wiki source pages:
 | autoagent                  | wiki/sources/autoagent-hkuds.md |
 | autoagent2                 | wiki/sources/autoagent-kevinrgu.md |
 | rlm_gepa                   | wiki/sources/rlm-gepa.md      |
+| evo-hq                     | wiki/sources/evo.md           |
 
 ## Workflows
 

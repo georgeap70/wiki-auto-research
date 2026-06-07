@@ -3,6 +3,53 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-06-06] query | which methods fit a vuln-detection-via-Claude-Code-skills experiment? → `wiki/experiment.md`
+
+User is running experiments on vulnerability-detection scanning workflows, implemented as Claude Code skills, against repos with ground-truth labels. Asked which wiki methods are most appropriate.
+
+Filed the recommendation as a new top-level page `wiki/experiment.md` (linked from `index.md` under the Overview section).
+
+Primary recommendation: **SkillOpt + Evo**, composed.
+- SkillOpt because the optimization target is *literally* a skill document; bounded edits + held-out gate + rejected-edit negative buffer; strongest cross-model/cross-harness transfer evidence in the wiki.
+- Evo because it is the only orchestrator that ships as Claude Code skills, auto-attaches a held-out-slice gate at `discover`, has a `pareto_per_task` frontier strategy that fits the multi-CWE objective, and treats gates as hard vetoes over score improvement.
+
+Secondary fits: HonedHaiku (closest empirical analog — GEPA on Claude prompts for bug fixing; Goldilocks band caveat applies), GEPA/optimize_anything (the underlying primitive), RLM-GEPA's AgentSpec (adopt the idea even without the framework), auto-harness (single-thread baseline / control arm). AutoReason flagged as orthogonal but useful at *scan time* (finding-validation tournament).
+
+Skipped with reasons: Agent0 (has ground truth, doesn't need bootstrap), AgentFlow/TRACE/SKILL-RL/SKILL-0 (closed-weight model rules out RL), ASI-Evolve (out of scope), CORAL/Group-Evolve/EvoForge (heavier than needed), AutoAgent variants (too broad — want to optimize skills not regenerate the agent), Meta-Harness (research artifact; SkillOpt is the productized successor), HALO (no live production traffic), Deep Research (HonedHaiku is the closer analog), EvoX (Evo's configurable frontier strategy covers most of this), Autogenesis (governance layer, not optimizer).
+
+Key claim filed: **benchmark and metric design matter more than the optimizer choice.** The metric must return evidence-bounded per-failure descriptions (per RLM-GEPA's contract), not just F1 scalars; with that in place, every primary-fit system above composes cleanly.
+
+Also filed a concrete experimental design: train/dev-gate/holdout/cross-CWE-holdout split, AgentSpec for scope declaration, `pareto_per_task` frontier with CWE as task axis, bounded edit budget as a tunable hyperparameter, ablations against argmax frontier and against the negative-signal buffer, plus cross-model transfer probe at the end.
+
+## [2026-06-06] ingest | evo — autoresearch orchestrator with tree-search + RLM-inspired cross-cutting scans (evo-hq)
+
+Source dropped: `sources/evo-hq` — single URL pointing to [github.com/evo-hq/evo](https://github.com/evo-hq/evo).
+
+Evo (Alok Kumar Bishoyi, Apache-2.0) is one of the first packaged orchestrators for the Karpathy-style autoresearch loop. The `discover` skill explores the repo, picks what to measure, and instruments the benchmark; `optimize` runs the loop. Parallel subagents in isolated git worktrees hill-climb under a *tree-search* frontier (configurable: `argmax` / `top_k` / `epsilon_greedy` / `softmax` / `pareto_per_task`, the last credited to GEPA). Between rounds, *RLM-inspired cross-cutting scan subagents* read trace batches in parallel and surface gate-failure intersections + shared root causes. Gates are first-class primitives that *inherit down the experiment tree*; gate failure overrides score improvement. When `discover` builds a benchmark from scratch, it auto-attaches a held-out-slice score-floor gate. Eight execution backends (worktree/pool/ssh/modal/e2b/daytona/aws/azure) ship with the orchestrator.
+
+Pages created:
+- `wiki/sources/evo.md`
+
+Pages updated:
+- `wiki/index.md` — added row to source summaries and source file map; updated last_updated note to 2026-06-06
+- `wiki/overview.md` — added row to "What can be optimized" table; added new loop architecture **Tree-structured parallel hill-climb** with frontier strategies + cross-cutting scans; added Evo to gating section (inheritable tree gates, hard veto, auto-attached held-out-slice gate); added Evo to feedback-signals section (cross-cutting scans as between-round phase); added three new open questions (tree vs. flat population, packaged autoresearch, discarded-hypothesis storage as standard)
+- `CLAUDE.md` — added `evo-hq → wiki/sources/evo.md` slug entry
+- `wiki/concepts/harness-optimization.md` — added Evo entry to "Approaches" + to the comparison table
+- `wiki/concepts/evolutionary-optimization.md` — added Evo section with the full frontier-strategy table; added row to "Hierarchy of Evolution"
+- `wiki/concepts/regression-gating.md` — added **Inheritable Tree Gates (Hard Veto)** as a new gating approach
+- `wiki/concepts/self-improvement-loop.md` — added Evo's gating mode to the gate-phase list; added **Tree-structured parallel hill-climb with cross-cutting scans** as a new loop architecture
+- `wiki/concepts/feedback-signals.md` — added two new named signal types: **Between-round cross-cutting scans** (Evo's RLM-inspired between-round phase, distinguished from ASI-Evolve's per-experiment Analyzer and HALO's production-traffic RLM by *standing phase of the loop* and *systemic-pattern targeting*) and **Discarded-hypothesis store** (negative-direction signal at experimental-direction granularity, parallel to SkillOpt's rejected-edit buffer at text-edit granularity)
+
+Key analytical claims added:
+- Evo's loop sits *between* single-thread hill-climb and flat population evolution: tree search preserves lineage and exposes the selection operator as a tunable knob, with `pareto_per_task` carrying GEPA's intuition (don't average specialists into mediocrity) into a tree-search context.
+- Gate inheritance down the experiment tree is the safety analog of [Autogenesis](sources/autogenesis.md)'s versioned-resource lineage applied to *safety constraints* rather than artifacts. Combined with the *hard-veto-over-score* commitment, this is the strongest gating commitment in the wiki — stricter than auto-harness's 80% soft threshold and stricter than the implicit accept-if-better rule used by EvoForge / AutoAgent (KevinRGU).
+- Auto-attached held-out-slice score-floor gate at `discover`-time is a notable UX choice: generalization protection becomes the default of the bootstrap step, not something the user has to remember to wire up. This is a quiet but important productization of the held-out-eval gating idea from [Meta-Harness](sources/meta-harness.md).
+- Cross-cutting scans extend the trace-compression pattern of [HALO](sources/halo.md) (production-traffic) and [ASI-Evolve](sources/asi-evolve.md) (experimental output) to a third niche: *between-round trace batches inside a loop*. Crucially they target *gate-failure intersections* and *shared root causes across traces* — systemic patterns over branches, not per-experiment diagnosis. This makes feedback compression a standing phase of the loop rather than a one-shot analyzer.
+- Evo's *discarded-hypothesis* bucket is unusual — most systems retain only successful branches. SkillOpt mined rejected text edits as negatives; Evo does this at the granularity of experimental directions. Plausibly the start of a pattern: negative-result storage as a standard piece of population/tree agentic search.
+- Evo is the first wiki entry to package *multi-backend execution* (worktree/pool/ssh/modal/e2b/daytona/aws/azure) and a *dashboard* as part of the loop primitive, rather than leaving them as integration work.
+
+No empirical results recorded — the repo is positioned as packaged infrastructure rather than a benchmark-driven research artifact (similar stance to [RLM-GEPA](sources/rlm-gepa.md) and [HALO](sources/halo.md)).
+
 ## [2026-05-30] ingest | rlm-gepa — GEPA-based optimizer for Recursive LM skill instructions (Trampoline AI)
 
 Source dropped: `sources/rlm_gepa` (three URLs — repo, subdir, paywalled X post).

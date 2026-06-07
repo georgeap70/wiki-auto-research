@@ -2,8 +2,8 @@
 title: The Self-Improvement Loop
 type: concept
 tags: [core-concept, loop, measure-fail-propose-gate]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt]
-last_updated: 2026-04-28
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt, evo-hq]
+last_updated: 2026-06-06
 ---
 
 # The Self-Improvement Loop
@@ -52,6 +52,7 @@ Accept or reject the proposed change. This is the safety mechanism:
 - **Novelty filtering**: reject candidates whose motivation is near-duplicate of existing ones ([[sources/asi-evolve]])
 - **Heartbeat pivoting**: force algorithmic pivot after N consecutive non-improving evaluations ([[sources/coral]])
 - **Lineage + rollback**: accept changes but keep them reversible via versioned resources with decision rationale ([[sources/autogenesis]])
+- **Inheritable tree gates**: pass/fail checks attached to nodes in the experiment tree; a root gate runs on every descendant; gate failure dominates score improvement ([[sources/evo]])
 
 See [[concepts/regression-gating]] for details.
 
@@ -104,6 +105,11 @@ The agent being improved does not drive its own diagnosis — supervising LLM ag
 
 ### Skill-document gradient descent
 [[sources/skillopt]] frames the entire loop as gradient descent on a *text artifact*. The skill document `best_skill.md` plays the role of model weights; the optimizer model plays the role of the gradient computation; the edit budget plays the role of the learning rate; the validation gate plays the role of accept/reject on each step. Reflection over batched successes and failures plays the role of the loss-and-gradient computation. The result is a self-improvement loop that is structurally near-identical to SGD but operates at the prose-document layer with no weight changes.
+
+### Tree-structured parallel hill-climb with cross-cutting scans
+[[sources/evo]] sits between single-thread hill-climb and flat population evolution. The orchestrator maintains a *tree of committed experiments*. Each round, a configurable **frontier strategy** (`argmax`, `top_k`, `epsilon_greedy`, `softmax`, `pareto_per_task`) picks which committed branch to extend; within the round, parallel subagents in isolated git worktrees each pick up shared state (failure traces, annotations, discarded hypotheses), form a hypothesis, edit, and benchmark. Between rounds, RLM-inspired **cross-cutting scan subagents** read trace batches in parallel and surface compound failure patterns (gate-failure intersections, shared root causes); their findings land in shared state for the next round.
+
+Two distinguishing features: (a) tree shape preserves lineage and exposes the selection operator as a tunable knob (the `pareto_per_task` strategy is credited to GEPA); (b) cross-cutting scans are a *standing between-round phase*, not a one-shot analyzer — feedback compression woven into the loop rather than bolted on at the end.
 
 ### Protocol-governed self-modification
 [[sources/autogenesis]] formalizes the loop as a **protocol** rather than an algorithm. The measure → fail → propose → gate → repeat cycle is implemented as typed operators (Proposal / Assessment / Commitment) over versioned resources (prompts, tools, agents, environments, memory). Every commitment leaves a rollback path; every modification carries decision rationale.

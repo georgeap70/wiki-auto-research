@@ -2,8 +2,8 @@
 title: Feedback Signals — Scalar vs. Rich Diagnostic
 type: concept
 tags: [feedback, diagnostics, ASI, execution-traces, rich-context, capability-isolation]
-sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt, rlm_gepa]
-last_updated: 2026-05-30
+sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt, rlm_gepa, evo-hq]
+last_updated: 2026-06-06
 ---
 
 # Feedback Signals
@@ -54,6 +54,10 @@ Rich feedback tells the system *why* it failed and *what specific conditions* pr
 **Evidence-bounded feedback contract** — [[sources/rlm-gepa]] makes the rich-feedback principle into an explicit design constraint: *"optimization quality is bounded by the evidence your metric returns."* Effective feedback should *name specific failures* (missing findings, unsupported claims, wrong cells/clauses) but **not** prescribe text rewrites. This is the same principle as ASI, sharpened into a contract: the metric authors a *failure description*, the proposer authors the *fix*. Prescriptive metrics ("the prompt should say X") collapse the optimizer/target separation and tend to overfit.
 
 **Declared optimization context (AgentSpec)** — [[sources/rlm-gepa]] introduces `AgentSpec` as a typed companion to the trace-level feedback: a structured description of *what's in-scope* for the optimizer (use cases, runtime affordances, scoring methodology, counterfactual axes for generalization). Most prior systems leave this context implicit, forcing the proposer to infer it from traces alone. AgentSpec treats it as a first-class input — a different category of feedback than "this run failed because X," more like a standing brief on the project.
+
+**Between-round cross-cutting scans** — [[sources/evo]] runs RLM-inspired scan subagents between rounds of its tree search: they read trace batches in parallel and surface *gate-failure intersections* (which gates tend to fail together) and *shared root causes across traces*. Findings land in shared state for the next round. This is feedback compression at yet another scale — between [[sources/asi-evolve|ASI-Evolve's]] per-experiment Analyzer and [[sources/halo|HALO's]] production-traffic RLM — and is distinguished by being a *standing phase* of the loop rather than an analyzer that runs at the end. The signal explicitly targets *systemic* failure patterns over the population of branches, not per-experiment diagnosis.
+
+**Discarded-hypothesis store (negative-direction signal)** — [[sources/evo]] keeps *discarded hypotheses* in shared state, readable by future subagents at startup. Conceptually parallel to [[sources/skillopt|SkillOpt's]] rejected-edit buffer, but at the granularity of *experimental directions* rather than text edits: future subagents see "this approach was tried and shelved" alongside "this approach worked." Most systems retain only successful branches; treating negative experimental results as a first-class signal is unusual.
 
 ## Why Rich Feedback Wins
 

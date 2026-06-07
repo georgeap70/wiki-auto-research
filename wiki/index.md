@@ -1,6 +1,6 @@
 # Self-Improving Agentic Systems — Wiki Index
 
-A catalog of all pages. Read this first when answering queries. Last updated: 2026-05-30 (+ rlm-gepa).
+A catalog of all pages. Read this first when answering queries. Last updated: 2026-06-06 (+ evo).
 
 ---
 
@@ -9,6 +9,7 @@ A catalog of all pages. Read this first when answering queries. Last updated: 20
 | Page | Summary |
 |------|---------|
 | [Overview](overview.md) | High-level synthesis of the field: the core loop, what can be optimized, key findings, open questions |
+| [Experiment](experiment.md) | Applying the wiki to a specific use case: optimizing Claude Code skills for vulnerability detection against ground-truth-labeled repos; primary recommendation = SkillOpt + Evo |
 
 ---
 
@@ -42,6 +43,7 @@ One page per raw source. See `sources/` directory for raw URLs.
 | [HALO](sources/halo.md) | `sources/halo` | [github](https://github.com/context-labs/halo) | Context Labs: production OpenTelemetry traces → specialized RLM engine → coding agent edits harness → redeploy; +15.8pp dev / +10.7pp test on AppWorld for both Gemini 3 Flash and Sonnet 4.6 |
 | [SkillOpt](sources/skillopt.md) | `sources/skillOpt` | [project](https://microsoft.github.io/SkillOpt/) | Microsoft Research: skill document as "trainable state" of a frozen LLM; rollout → reflection → bounded edits (textual learning rate) → validation; best-or-tied-best on 52/52 settings (7 models × 6 benchmarks); strongest cross-model (+15.2%) and cross-harness (+31.8%) transfer in the wiki (arXiv 2605.23904) |
 | [RLM-GEPA](sources/rlm-gepa.md) | `sources/rlm_gepa` | [github](https://github.com/Trampoline-AI/predict-rlm) | Trampoline AI: GEPA-based optimizer for Recursive LM skill instructions; `AgentSpec` declares what's in-scope so the optimizer doesn't have to infer project context; evidence-bounded feedback contract (name failures, don't prescribe rewrites); production-grade infra built on MIT CSAIL RLM line of work |
+| [Evo](sources/evo.md) | `sources/evo-hq` | [github](https://github.com/evo-hq/evo) | evo-hq (Alok Kumar Bishoyi): autoresearch orchestrator; `discover` instruments the benchmark, parallel subagents in isolated worktrees hill-climb under tree-search frontier strategies (`argmax`/`top_k`/`epsilon_greedy`/`softmax`/`pareto_per_task`); RLM-inspired cross-cutting scans between rounds; gates inherit down the experiment tree; held-out-slice score floor auto-attached on discover; 8 execution backends |
 
 ---
 
@@ -99,3 +101,4 @@ One page per raw source. See `sources/` directory for raw URLs.
 | `halo` | [sources/halo.md](sources/halo.md) |
 | `skillOpt` | [sources/skillopt.md](sources/skillopt.md) |
 | `rlm_gepa` | [sources/rlm-gepa.md](sources/rlm-gepa.md) |
+| `evo-hq` | [sources/evo.md](sources/evo.md) |

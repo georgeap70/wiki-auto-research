@@ -2,8 +2,8 @@
 title: Self-Improving Agentic Systems — Overview
 type: overview
 tags: [self-improvement, agentic-ai, meta-learning, optimization]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill, evoforge, honedhaiku, autoreason, halo, skillopt, rlm-gepa]
-last_updated: 2026-05-30
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill, evoforge, honedhaiku, autoreason, halo, skillopt, rlm-gepa, evo-hq]
+last_updated: 2026-06-06
 ---
 
 # Self-Improving Agentic Systems — Overview
@@ -48,6 +48,7 @@ The key insight across this literature is that the optimization target can be an
 | Harness driven by production traces | OpenTelemetry traces → specialized RLM → coding-agent edits | [HALO](sources/halo.md) |
 | Skill document as trainable state | Bounded add/delete/replace edits ("textual learning rate") to a markdown skill | [SkillOpt](sources/skillopt.md) |
 | Skill instructions on an RLM runtime | GEPA proposes surgical edits to prose layered on top of a fixed RLM/DSPy structure; `AgentSpec` declares what's in-scope | [RLM-GEPA](sources/rlm-gepa.md) |
+| Arbitrary repo metric via auto-discovery | `discover` skill instruments the benchmark; parallel subagents hill-climb under tree-search frontier strategies; gates inherit down the tree | [Evo](sources/evo.md) |
 | The optimization algorithm itself | Which search strategy the optimizer uses | [EvoX](sources/evox.md) |
 
 This progression — from task outputs → code policies → scaffolding → architecture → training data → learning algorithm → the optimizer — represents increasing levels of meta-cognition in self-improvement. [ASI-Evolve](sources/asi-evolve.md) is the first system to target multiple levels (architecture + data + RL algorithm) simultaneously in a single automated loop.
@@ -62,6 +63,7 @@ A recurring theme is that **rich diagnostic feedback substantially outperforms s
 - [AutoHarness (paper)](sources/autoharness-arxiv.md) uses environmental feedback (legal/illegal move signals) to iteratively refine constraint code
 - [HALO](sources/halo.md) makes the richest signal in the wiki — full OpenTelemetry production traces — tractable by inserting a *specialized trace-analysis RLM* between the raw traces and the harness-editor. The RLM's only job is to compress many traces into a diagnostic report; the coding agent then acts on the compressed signal
 - [RLM-GEPA](sources/rlm-gepa.md) codifies the feedback contract: *"optimization quality is bounded by the evidence your metric returns."* Effective feedback must *name specific failures* (missing findings, unsupported claims, wrong cells) rather than *prescribe rewrites*. This is a clean restatement of the ASI thesis applied to skill-instruction optimization
+- [Evo](sources/evo.md) runs RLM-inspired *cross-cutting scan subagents* between rounds: they read trace batches in parallel and surface compound failure patterns — explicitly *gate-failure intersections* and *shared root causes across traces*. Where HALO compresses production traffic and ASI-Evolve compresses experimental output, Evo compresses *within-loop* trace batches as a standing between-round phase
 
 The implication: systems that explain *why* they failed improve faster than systems that only signal *how much* they failed. A corollary is becoming clear: when feedback is *too* rich, a dedicated compressor (a la HALO's RLM, or [ASI-Evolve](sources/asi-evolve.md)'s Analyzer) is itself a load-bearing component.
 
@@ -75,6 +77,9 @@ A curriculum agent generates tasks; an executor agent solves them. Each improves
 
 ### Population-based / evolutionary
 A population of candidates is maintained and evolved. Selection pressure applied via fitness functions. Used by [EvoX](sources/evox.md), [optimize_anything (GEPA)](sources/optimize-anything.md), and [EvoForge](sources/evoforge.md) (which adds a population dimension on top of the [AutoAgent (KevinRGU)](sources/autoagent-kevinrgu.md) `program.md → agent.py` hill-climb). Particularly powerful for discrete, structured search spaces.
+
+### Tree-structured parallel hill-climb ([Evo](sources/evo.md))
+A variant between single-thread hill-climb and flat population evolution. The orchestrator maintains a *tree* of committed experiments and, after each round, applies a *frontier strategy* (`argmax`, `top_k`, `epsilon_greedy`, `softmax`, `pareto_per_task`) to pick which committed branch to extend. Within a round, parallel subagents in isolated worktrees each form a hypothesis from shared state (failure traces, annotations, *discarded hypotheses*), edit, and benchmark. Between rounds, RLM-inspired scan subagents read trace batches in parallel and write cross-cutting findings back into shared state. The `pareto_per_task` strategy is credited to GEPA. This is the first wiki entry that packages multi-backend execution (worktree/pool/ssh/modal/e2b/daytona/aws/azure) and a dashboard as part of the loop primitive.
 
 ### Specialist optimizer / target separation
 A recent architectural pattern: the *thing being improved* and the *thing doing the improving* are different specialized components. [HALO](sources/halo.md) separates an RLM trace-analyzer from a coding agent; [AutoReason](sources/autoreason.md) separates the author from independent blind judges; [SkillOpt](sources/skillopt.md) separates a frozen target model from a reflection-and-edit optimizer with its own meta-skill; [RLM-GEPA](sources/rlm-gepa.md) separates an *executor* (runs the RLM on examples, collects traces) from a *proposer* (reads scored traces, edits skill instructions). The motivation is similar across all four: the proposal agent and the evaluation/diagnosis agent have different jobs that fight each other when collapsed into one loop.
@@ -102,6 +107,7 @@ Without regression gating, self-improvement risks catastrophic forgetting or pro
 - [Autogenesis](sources/autogenesis.md) proposes **auditable lineage + rollback** as protocol primitives — every entity (prompt, tool, memory) is versioned, every modification carries rationale, and any degradation can be reverted. Safety is built into the substrate rather than the optimizer
 - [SkillOpt](sources/skillopt.md) uses a held-out validation gate *and* mines rejected edits as a negative-example buffer for the optimizer — failed proposals become structured negative signal rather than discarded noise (analogous to hard-negative mining)
 - [AutoReason](sources/autoreason.md)'s Borda-count tournament is itself the gate: a change only lands when an independent judge panel ranks it above the incumbent, eliminating the "always revise" bias of vanilla self-refinement
+- [Evo](sources/evo.md) treats gates as first-class primitives that **inherit down the experiment tree**: a gate at the root runs on every descendant; narrower gates attach to specific branches. Gate failure overrides score improvement (*"An experiment that fails a gate is discarded even if its score beats the current best"*), a stronger commitment than soft-threshold gating. The held-out-slice score-floor gate is *auto-attached* during the `discover` bootstrap, so even a naive user gets generalization protection by default
 
 ## Empirical Results
 
@@ -193,6 +199,8 @@ Two independent sources converged on the same shape: text-only optimization (no 
 - [SkillOpt](sources/skillopt.md) treats edit count as a "textual learning rate". Are there analogues for other gradient-descent hyperparameters (momentum, weight decay, schedules) in the text-optimization regime?
 - [HALO](sources/halo.md)'s OpenTelemetry-driven loop assumes you have production traffic to learn from. For agents that don't yet have users, what's the equivalent? Synthetic traffic from an adversarial agent? Curriculum from a companion?
 - Inference-time loops like [AutoReason](sources/autoreason.md) sit beside training-time and deployment-time loops. Should these three time scales compose (per-query refinement *inside* per-deployment harness optimization *inside* long-horizon architecture search), or do their objectives interfere?
+- [Evo](sources/evo.md) is one of the first packaged orchestrators for [Karpathy-style autoresearch](sources/autoresearch-vs-hpo.md). Does the *tree*-shaped exploration (with configurable frontier strategies) genuinely beat flat-population evolution ([EvoForge](sources/evoforge.md), [Group-Evolving Agents](sources/group-evolve.md)) in practice, or is the tree mostly a UX/lineage win that doesn't change the search outcomes?
+- Evo's *discarded-hypothesis* bucket is unusual — most systems retain only successful branches. [SkillOpt](sources/skillopt.md) mined rejected text edits as a negative-signal buffer; Evo does this at the granularity of *experimental directions*. Does negative-hypothesis storage become a standard piece of population-based agentic search, the way replay buffers became standard in deep RL?
 
 ## See Also
 

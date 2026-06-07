@@ -2,8 +2,8 @@
 title: Evolutionary Optimization for Agentic Systems
 type: concept
 tags: [evolution, genetic, pareto, population, meta-evolution, EvoX, GEPA, multi-agent]
-sources: [evox, optimize-anything, asi-evolve, coral, deep-research, group-evolve, evoforge, honedhaiku]
-last_updated: 2026-04-22
+sources: [evox, optimize-anything, asi-evolve, coral, deep-research, group-evolve, evoforge, honedhaiku, evo-hq]
+last_updated: 2026-06-06
 ---
 
 # Evolutionary Optimization
@@ -129,6 +129,26 @@ Key characteristics:
 
 This is the simplest extension of single-agent harness hill-climbing to the population setting — parallelism for throughput and diversity, without the complex co-evolution dynamics of CORAL or GEA.
 
+## Evo (Tree-Search Autoresearch Orchestrator) — [[sources/evo]]
+
+Evo sits between single-thread hill-climbing and flat population evolution: the orchestrator maintains a **tree of committed experiments** and applies a configurable **frontier strategy** to pick which branch to extend each round.
+
+| Frontier strategy | Behavior |
+|-------------------|----------|
+| `argmax` | extend the highest-scoring branch |
+| `top_k` | round-robin among the K best |
+| `epsilon_greedy` | best most of the time, random sometimes |
+| `softmax` | sample weighted by score |
+| `pareto_per_task` | *"keep specialists the aggregate hides"* — credited to GEPA |
+
+Within a round, parallel subagents run in isolated git worktrees; each picks up shared state (failure traces, annotations, *discarded hypotheses*), forms a hypothesis, edits, and benchmarks. Between rounds, RLM-inspired cross-cutting scan subagents read trace batches and surface gate-failure intersections and shared root causes — feedback compression as a between-round phase.
+
+Key differences from flat population evolution:
+- **Tree preserves lineage** — every candidate's ancestry is explicit; the dashboard makes the tree inspectable. Closer in spirit to [[sources/autogenesis]]'s versioned-resource lineage than to EvoForge's flat generations.
+- **Frontier strategy = selection operator** — the population analog of "which parents are eligible to mutate" is exposed as a tuning knob, including a `pareto_per_task` variant that brings GEPA's intuition (don't average specialists into mediocrity) into a tree-search context.
+- **Discarded-hypothesis storage** — negative results are kept in shared state and read by future subagents; conceptually analogous to [[sources/skillopt]]'s rejected-edit buffer at the granularity of experimental directions.
+- **Multi-backend execution** — worktree/pool/ssh/modal/e2b/daytona/aws/azure are packaged into the orchestrator; the same loop runs locally during development and on cloud sandboxes for an overnight run.
+
 ## GEPA for Coding Prompts — [[sources/honedhaiku]]
 
 [[sources/deep-research]] showed GEPA generalizes from code to prompt search. HonedHaiku applies the same primitive to **bug-fixing system prompts**:
@@ -149,6 +169,7 @@ Key finding — the **Goldilocks band**: GEPA only moves performance in the ~50�
 | Agent coordination | Who knows what; which approach to copy | CORAL ([[sources/coral]]) |
 | **Evolutionary unit** | **Individual → group as selection unit** | **GEA ([[sources/group-evolve]])** |
 | Harness population | Multiple harnesses evolve in parallel | EvoForge ([[sources/evoforge]]) |
+| Experiment tree + frontier | Tree-shaped lineage with configurable selection per round | Evo ([[sources/evo]]) |
 | Objectives | What fitness means | Open question |
 
 ## Connections
