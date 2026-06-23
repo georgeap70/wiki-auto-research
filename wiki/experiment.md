@@ -3,7 +3,7 @@ title: Experiment — Optimizing Vulnerability-Detection Scanning Workflows
 type: analysis
 tags: [experiment, vulnerability-detection, security, claude-code-skills, harness-optimization, application]
 sources: [skillopt, evo-hq, honedhaiku, optimize-anything, rlm_gepa, auto-harness]
-last_updated: 2026-06-06
+last_updated: 2026-06-23
 ---
 
 # Experiment — Optimizing Vulnerability-Detection Scanning Workflows
@@ -20,9 +20,10 @@ The setup is unusually well-fit to the harness-optimization literature in this w
 | Feedback channel | Ground-truth labels → both a scalar (precision/recall/F1) and rich per-failure descriptions (which CVE was missed, which file produced a false positive, which CWE category degraded) |
 | Search space | Discrete prose + small code edits to the skill |
 | Generalization risk | High — overfitting to specific repos or specific CWEs is the central failure mode |
-| Model | Closed-weight (Claude Code) — no weight updates available |
+| Model | A **categorical optimization axis** spanning closed-weight (Claude) and open-weight models — selected among, not weight-updated (see [multi-objective extension](#multi-objective-extension--optimizing-across-precision-recall-cost-model) below) |
+| Objectives | **Multi-objective**: precision, recall, **and** per-scan runtime cost — in genuine tension, so a Pareto frontier rather than a single scalar |
 
-Because the model is closed-weight and the artifact is a text-level skill, the entire wiki section on **weight optimization** ([sources/agentflow](sources/agentflow.md), [sources/trace](sources/trace.md), [sources/skill-rl-skill0](sources/skill-rl-skill0.md)) is out of scope from the start. The relevant literature is **harness optimization** + **text-artifact optimization**.
+Because no model is weight-updated (open-weight models are *selected among*, not fine-tuned) and the artifact is a text-level skill, the entire wiki section on **weight optimization** ([sources/agentflow](sources/agentflow.md), [sources/trace](sources/trace.md), [sources/skill-rl-skill0](sources/skill-rl-skill0.md)) is out of scope from the start. The relevant literature is **harness optimization** + **text-artifact optimization**. (If you ever decide to *train* the open-weight models rather than select among them, that cluster re-enters scope.)
 
 ## Primary recommendation
 
@@ -66,6 +67,52 @@ The `pareto_per_task` strategy is particularly load-bearing for vulnerability de
 | Proposal style | SkillOpt-style | Bounded edits per round; separate success/failure reflection; maintain a rejected-edit buffer alongside Evo's discarded-hypothesis store |
 | Gating | Evo's gates + SkillOpt's held-out | Held-out repo gate (auto-attached by `discover`) + per-CWE score-floor gates attached to relevant branches |
 | Generalization probe | SkillOpt's cross-model transfer | Periodically score the current best skill under a *different* Claude model to detect overfitting |
+
+## Multi-objective extension — optimizing across (precision, recall, cost, model)
+
+The framing above optimizes detection quality with the model held fixed. The real objective is broader: **maximize precision and recall while minimizing per-scan runtime cost, across a discrete set of closed- and open-weight models.** This changes the problem in two specific ways that reshuffle the method ranking.
+
+### The two structural shifts
+
+1. **Cost makes a Pareto frontier mandatory.** With (precision, recall) alone you could half-justify collapsing to F1. Adding cost gives three numeric objectives in genuine tension — a slower, more thorough scan buys recall; a cheaper model buys cost at the expense of precision. Any method that gates or selects on a *single scalar* now actively destroys the thing you care about: the tradeoff curve. This **promotes [GEPA](sources/optimize-anything.md) from "underlying primitive / DIY fallback" to the core selection mechanism**, and **demotes scalar-gated methods** ([auto-harness](sources/auto-harness.md)'s 80% regression gate, plain F1-driven [HonedHaiku](sources/honedhaiku.md)) to single-objective control arms only.
+2. **Model becomes a search axis, not a frozen base.** The original framing treated cross-model behavior only as a *generalization probe*. Here `model` is a first-class categorical coordinate spanning open + closed weights.
+
+### Does GEPA handle this out of the box?
+
+Split the answer by axis — GEPA treats the numeric objectives and the model axis very differently.
+
+**(precision, recall, cost) — yes, this is GEPA's advertised sweet spot, but with real plumbing.** GEPA's own design names these exact objectives: *"Rather than collapsing multiple objectives (correctness, speed, cost, robustness) into a weighted scalar, GEPA maintains a Pareto frontier of non-dominated candidates"* ([optimize-anything](sources/optimize-anything.md)). You will **not** need to extend the core algorithm. Three things are on you:
+
+- **You write the cost metric — GEPA does not measure it.** GEPA's contract is `optimize(artifact, evaluate, side_info)`; cost is whatever your `evaluate` returns. Instrument `$/scan` = (input+output tokens × per-model price) + wall-clock if latency matters. This is the bulk of the work.
+- **Verify objective-Pareto vs. instance-Pareto — the one place a genuine extension may be needed.** The well-known `gepa-ai/gepa` lineage maintains a Pareto frontier **over training instances** (keep candidates that win on *some examples*) as a diversity mechanism — which is **not** the same as a frontier over your three *objectives*. Before building on it, confirm which the API exposes: if `evaluate` accepts a **score vector** and dominance is computed over that vector, you are done; if it only takes a scalar-per-instance, you add your own non-dominated filter over `(P, R, cost)` on top (a ~20-line extension, not a rewrite). **Do not take the blog's "multi-objective" claim as proof the shipped API does objective-Pareto — check the code path.**
+- **Wire ASI for cost too.** For P/R, evidence-bounded feedback is "missed CVE-X at file Y." For cost it is "spent $0.40/scan because it re-reads every file 3×" — otherwise the proposer cannot reason about *why* a candidate is expensive and will only thrash on it.
+
+**model — no, GEPA cannot do this axis.** GEPA optimizes *text artifacts*; a model identifier is a categorical config, not text GEPA mutates. Two options:
+
+- **Sweep it outside GEPA (recommended).** Because the model range is small and discrete, run the skill optimizer once per model, then pool every `(skill, model)` candidate into **one combined `(P, R, cost)` Pareto frontier**. The model axis lives in the orchestration layer ([Evo](sources/evo.md)) — different branches/backends use different models, and Evo's non-Claude backends (modal/e2b/daytona/aws) are what let you run the open-weight models at all.
+- **Smuggle it into the artifact.** Put a `model:` directive *inside* the text skill so a proposal can flip it. GEPA then "optimizes over model" but is blind to the cost/capability structure of the choice — fragile; only worth it if model interacts with the prose in non-obvious ways. With a handful of models, prefer the sweep.
+
+### SkillOpt's role changes: from co-optimizer to enabler of the model axis
+
+[SkillOpt](sources/skillopt.md)'s headline property — strongest cross-model transfer in the wiki (+15.2%) — stops being a nice-to-have generalization probe and becomes **the property that makes the model axis exploitable**: a skill optimized to transfer can be deployed on a *cheaper* open-weight model to hit the cost objective without falling off a quality cliff. Use SkillOpt-style bounded edits to keep skills model-robust, then evaluate each `(skill, model)` combination on the combined frontier.
+
+### The two-Pareto subtlety
+
+Both Evo's `pareto_per_task` and GEPA's instance-Pareto are **Pareto-over-tasks** (keep CWE specialists), *not* **Pareto-over-objectives** (precision vs. recall vs. cost). You need **both** frontiers:
+
+- **per-task** — CWE specialists (already in the plan via `pareto_per_task`)
+- **per-objective** — the `(P, R, $/scan)` surface (you must add this explicitly; it is not the same knob)
+
+Score each candidate as a vector `(macro-P, macro-R, $/scan)`, keep the non-dominated set, and let `model` be a coordinate of each frontier point — the deliverable is a frontier you pick an operating point on per deployment budget, not a single "best skill."
+
+### Methods worth reconsidering under the wider objective
+
+- **[AutoReason](sources/autoreason.md) becomes a cost lever, not a free add-on.** Its per-finding tournament improves precision but *multiplies inference cost per scan* — it moves you along the cost axis. Treat it as a tunable knob inside the cost objective.
+- **[group-evolve](sources/group-evolve.md) and [evoforge](sources/evoforge.md)** — previously skipped as overkill — are genuine multi-objective shapes (group-evolve's performance-*novelty* selection especially). Still heavier than Evo+GEPA, but if model+cost widens the search space well beyond skill-prose-only, they are less of an overreach than the skip table claims. [EvoX](sources/evox.md) (meta-evolution of strategy) stays overkill.
+
+### Net recommendation
+
+Keep Evo as the substrate, but make **GEPA's multi-objective Pareto the core selection mechanism** over `(P, R, cost)`; add an explicit **cost gate**; sweep **model as an outer categorical** with combined-frontier selection; and use **SkillOpt's cross-model transfer** as the property that makes the model axis safe. The single open question before committing: run a quick spike against `gepa-ai/gepa` to confirm whether `evaluate` is vector-valued — that one fact decides whether the objective-Pareto work is "nothing" or "a small filter."
 
 ## Secondary fits — useful as control arms or supplements
 
@@ -153,8 +200,8 @@ Vulnerability detection has a brutal precision/recall tension and a long tail of
 
 Concretely, set up the metric so that for each evaluation it returns:
 
-1. **Scalar**: per-CWE precision/recall + macro-F1 across CWE categories
-2. **Per-failure descriptions**: missed findings (which CVE, which file, which line) and false positives (which file, which line, what was matched, why it was wrong)
+1. **Scalar vector**: per-CWE precision/recall + macro-F1 across CWE categories, **plus `$/scan`** (input+output tokens × per-model price, optionally + wall-clock) — return the objectives as a vector, not a pre-collapsed scalar, so the Pareto frontier can see the tradeoff
+2. **Per-failure descriptions**: missed findings (which CVE, which file, which line), false positives (which file, which line, what was matched, why it was wrong), **and cost attribution** (what drove the token spend — repeated reads, oversized context, redundant tool calls)
 3. **No prescriptive rewrites in the feedback** — the metric names failures, the proposer proposes fixes ([concepts/feedback-signals](concepts/feedback-signals.md) evidence-bounded contract)
 
 This shape is what every system in the *primary fit* list above expects, and it composes with the AgentSpec scope declaration above.
@@ -165,9 +212,10 @@ A concrete plan that uses the primary recommendation:
 
 1. **Split repos**: train / dev (gate) / holdout (final eval) / cross-CWE-holdout (CWE categories never seen during optimization). The cross-CWE-holdout is the generalization probe.
 2. **Write the AgentSpec** as in the example above. Commit it to the repo so every optimizer round reads it.
-3. **Implement the metric** to return evidence-bounded per-failure descriptions, not just scalars.
-4. **Run `/evo:discover`** on the training set with a seed directive. Let it auto-attach the held-out score floor.
-5. **Configure the frontier strategy** to `pareto_per_task` (CWE category as the task axis).
+3. **Implement the metric** to return the `(P, R, $/scan)` objective vector plus evidence-bounded per-failure descriptions, not just scalars. Confirm whether your optimizer's Pareto is over objectives or over instances (see [multi-objective extension](#multi-objective-extension--optimizing-across-precision-recall-cost-model)); add a non-dominated filter over the objective vector if needed.
+4. **Run `/evo:discover`** on the training set with a seed directive. Let it auto-attach the held-out score floor; **add a cost gate** (reject candidates above a `$/scan` ceiling) alongside it.
+5. **Configure the frontier strategy** to `pareto_per_task` (CWE category as the task axis) for specialists, and maintain a separate `(P, R, cost)` objective frontier for operating-point selection — these are two different Paretos.
+   - **Sweep `model`** as an outer categorical: one optimization run per model, then pool every `(skill, model)` candidate into the combined objective frontier.
 6. **Constrain edit budget** per round (SkillOpt-style) — start at ~3 ops per round, treat this as a hyperparameter, vary it.
 7. **Compare against**:
    - An unoptimized hand-written skill (baseline)
