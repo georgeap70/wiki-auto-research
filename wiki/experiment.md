@@ -96,6 +96,94 @@ Split the answer by axis — GEPA treats the numeric objectives and the model ax
 - **Sweep it outside GEPA (recommended).** Because the model range is small and discrete, run the skill optimizer once per model, then pool every `(skill, model)` candidate into **one combined `(P, R, cost)` Pareto frontier**. The model axis lives in the orchestration layer ([Evo](sources/evo.md)) — different branches/backends use different models, and Evo's non-Claude backends (modal/e2b/daytona/aws) are what let you run the open-weight models at all.
 - **Smuggle it into the artifact.** Put a `model:` directive *inside* the text skill so a proposal can flip it. GEPA then "optimizes over model" but is blind to the cost/capability structure of the choice — fragile; only worth it if model interacts with the prose in non-obvious ways. With a handful of models, prefer the sweep.
 
+### Designing the cost-aware scalarization
+
+The scalarization fed to GEPA's `scores` has exactly one job: **drive search toward high precision/recall while treating cost as a real objective — without ever letting "cheap-and-useless" outrank "good-and-expensive."** Everything below follows from that constraint.
+
+#### Fix the instance granularity first
+
+GEPA sums `scores` per evaluation instance, so the unit must be decided before the scalar can be defined:
+
+| Granularity | Quality well-defined? | Cost natural? | Use |
+|---|---|---|---|
+| `(repo, CWE)` pair | Yes | **No** — one scan covers all CWEs; cost can't be cleanly attributed | per-task (`pareto_per_task`) frontier only |
+| **one repo scan** | Yes (macro-F_β over CWEs *within* the repo) | **Yes** — 1 scan = 1 cost | **recommended driver granularity** |
+
+Use **instance = one repo scan**: cost is per-instance with no shared-cost attribution hack, and macro-over-CWE is computed *inside* the instance. The per-CWE breakdown still goes to `objective_scores`, so the per-task frontier keeps working (it reads raw objectives, not the scalar).
+
+#### Quality term — F_β from counts, not from P and R
+
+Per-instance precision/recall are undefined when a repo has no findings or no ground truth. Compute F_β directly from counts to sidestep that:
+
+```
+F_β = (1 + β²)·TP / ( (1 + β²)·TP + β²·FN + FP )
+```
+
+- Well-defined whenever `TP+FP+FN > 0`; equals `0` when `TP=0` with any error (correctly punishes both do-nothing and spray-everything).
+- Convention: a CWE absent from both gold and prediction → exclude it (don't let it inflate the macro); present in gold, nothing reported → contributes `F_β = 0`.
+- `Q_i = mean over CWE categories present in repo i of F_β` (macro, matching the metric-design choice above).
+
+**β is the precision/recall dial and a genuine domain decision:** β > 1 favors recall (a missed CVE hurts more than a false positive), β < 1 favors precision (alert fatigue in triage). Security scanning usually leans β ≈ 2 — but β is a *sweep axis*, not a fixed choice (see below).
+
+#### Cost term — normalize per-model, then price as willingness-to-pay
+
+Within a GEPA run the model is fixed (model is the outer sweep), so normalize cost to a **per-model baseline**:
+
+```
+ĉ_i = cost_i / c_ref(model)      # c_ref = $/scan of the unoptimized baseline skill on that model
+```
+
+Now `ĉ ≈ 1` means "baseline cost," and the **same scalarization weight is comparable across every model in the sweep** — which is what makes the cross-run frontier union legitimate. `cost_i` = Σ over LLM calls of `(in_tok·price_in + out_tok·price_out)` in dollars; for self-hosted open-weight models, `$ = GPU-hours × rate` (keep one currency so frontiers are comparable).
+
+Price it with an exchange rate `V` ("willingness-to-pay"): how many normalized-cost-units you will spend for +1.0 of F. More interpretable than a raw λ.
+
+#### The scalarization
+
+```
+score_i = Q_i − ĉ_i / V          subject to hard gate cost_i ≤ B_max
+```
+
+Additive (constant exchange rate: a marginal dollar is always worth the same F), with the existing hard cost gate killing anything above `B_max`. **Don't clamp to [0,1]** — a negative score (worse than doing nothing) is meaningful for GEPA's minibatch sums, and the gate already bounds the penalty.
+
+**Calibration recipe** (makes `V` non-arbitrary):
+1. `B_max` = max acceptable `$/scan` → normalized `B̂_max = B_max / c_ref`.
+2. Decide how much the *worst allowed* candidate may be penalized (e.g. a candidate at the cost ceiling loses at most 0.3 F). Then `V = B̂_max / 0.3`.
+   - *Example:* allow up to 3× baseline cost, worst-case penalty 0.3 → `V = 3/0.3 = 10`, so `penalty = ĉ/10`. Baseline-cost candidate loses 0.1 F; a 3× one loses 0.3 F.
+
+This guarantees the max cost penalty stays below 0.5, so the "cheap junk wins" optimum is **structurally impossible**:
+
+| Candidate | Q | ĉ | score (V=10) | Correct? |
+|---|---|---|---|---|
+| Do-nothing | 0 | ~0.1 | −0.01 | ✓ near-zero |
+| Spray everything | ~0.3 | 2.5 | 0.05 | ✓ curbed by cost |
+| Good, baseline cost | 0.80 | 1.0 | 0.70 | ✓ wins |
+| Good, expensive | 0.82 | 3.0 | 0.52 | ✓ beaten by cheaper-equal |
+
+Quality dominates; cost only decides between comparably-good candidates.
+
+#### The scalarization is a steerable probe, not the answer
+
+This is the concrete form of the exploration-bias mitigation noted above. A single `(β, V)` makes GEPA explore one operating region; **sweep `(β, V)` across runs** (e.g. β ∈ {1, 2}, V ∈ {5, 10, 20}), each pulling GEPA toward a different precision/recall/cost trade-off, then **union all runs' recorded `objective_scores` frontiers** into the final `(P, R, cost)` Pareto. The scalarization steers; the sweep fills out the frontier.
+
+#### What goes where
+
+- → GEPA **`scores`**: the scalar `score_i` (drives search).
+- → GEPA **`objective_scores`**: raw `{precision_i, recall_i, cost_usd_i}` per instance, **unscalarized** (this is what the objective frontier is read from and unioned).
+- → **`make_reflective_dataset`** (ASI): cost attribution too — *"$0.40/scan, 60% of tokens re-reading files already in context"* — so the proposer can act on cost, not just observe it.
+
+Reference sketch for the adapter:
+
+```python
+def per_instance_score(repo_eval, model, beta=2.0, V=10.0, c_ref=None):
+    fbetas = [f_beta(c.tp, c.fp, c.fn, beta)          # F_β from counts
+              for c in repo_eval.cwes_present]
+    Q = sum(fbetas) / len(fbetas)                      # macro over CWEs
+    c_hat = repo_eval.cost_usd / c_ref[model]          # per-model normalized
+    return Q - c_hat / V                               # gate cost > B_max upstream
+```
+
+`β` (fear misses vs. false positives) and `V` (dollars per point of F) are the two domain knobs — defaults β=2, V≈10 via the calibration recipe — and both are the sweep axes, so neither needs to be committed to a single value up front.
+
 ### SkillOpt's role changes: from co-optimizer to enabler of the model axis
 
 [SkillOpt](sources/skillopt.md)'s headline property — strongest cross-model transfer in the wiki (+15.2%) — stops being a nice-to-have generalization probe and becomes **the property that makes the model axis exploitable**: a skill optimized to transfer can be deployed on a *cheaper* open-weight model to hit the cost objective without falling off a quality cliff. Use SkillOpt-style bounded edits to keep skills model-robust, then evaluate each `(skill, model)` combination on the combined frontier.

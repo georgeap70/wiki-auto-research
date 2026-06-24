@@ -19,6 +19,10 @@ Key conclusions:
 - Demoted scalar-gated methods (auto-harness 80% gate, plain HonedHaiku) to control arms; reconsidered group-evolve/evoforge as genuine multi-objective shapes; AutoReason reframed as a cost lever.
 - ~~Open action: spike `gepa-ai/gepa` to confirm whether `evaluate` is vector-valued.~~ **Resolved same day** (below).
 
+### Follow-up — designed the cost-aware scalarization (added to `experiment.md`)
+
+New subsection "Designing the cost-aware scalarization": instance = one repo scan (cost is per-instance natural, macro-over-CWE inside); quality = F_β from counts (avoids undefined per-instance P/R), β as recall/precision dial; cost normalized per-model to baseline `c_ref`, priced via willingness-to-pay `V`; `score_i = Q_i − ĉ_i/V` under a hard `B_max` gate; calibration recipe sets `V` so worst allowed cost penalty < 0.5 → "cheap junk wins" is structurally impossible. `(β, V)` are sweep axes → union `objective_scores` frontiers across runs. Raw `{P,R,cost}` → `objective_scores`; scalar → `scores`; cost attribution → ASI.
+
 ### Resolution — read the `gepa-ai/gepa` source (`core/adapter.py`, `core/state.py`)
 
 - `EvaluationBatch.scores` is `list[float]` — **one scalar per evaluation instance**. `state.py`'s `_update_pareto_front_for_val_id` builds the frontier **per validation instance** (best on ≥1 instance). So GEPA's *search* is instance-Pareto + scalar acceptance — a diversity mechanism, NOT `(P,R,cost)` objective dominance.
