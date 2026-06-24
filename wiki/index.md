@@ -9,7 +9,7 @@ A catalog of all pages. Read this first when answering queries. Last updated: 20
 | Page | Summary |
 |------|---------|
 | [Overview](overview.md) | High-level synthesis of the field: the core loop, what can be optimized, key findings, open questions |
-| [Experiment](experiment.md) | Applying the wiki to a specific use case: optimizing Claude Code skills for vulnerability detection against ground-truth-labeled repos; primary recommendation = SkillOpt + Evo |
+| [Experiment](experiment.md) | Applying the wiki to a specific use case: optimizing Claude Code skills for vulnerability detection against ground-truth-labeled repos; primary recommendation = SkillOpt + Evo; includes a multi-objective extension across (precision, recall, cost, model) with GEPA as the Pareto primitive |
 
 ---
 

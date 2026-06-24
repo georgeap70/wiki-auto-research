@@ -3,6 +3,32 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-06-23] query | extending the vuln-detection experiment to multi-objective (precision, recall, cost, model) → `wiki/experiment.md`
+
+User's real objective optimizes across (precision, recall, per-scan runtime cost, model), where model is a discrete categorical spanning closed- and open-weight models. Asked which methods fit, and whether GEPA handles it out of the box.
+
+Updated `wiki/experiment.md`:
+- Fixed the use-case table: `Model` is now a categorical optimization axis (not a frozen closed-weight base); added an `Objectives` row noting the multi-objective Pareto framing.
+- Added a new section **"Multi-objective extension — optimizing across (precision, recall, cost, model)"**.
+- Folded cost into the metric-design shape (objective vector `(P, R, $/scan)` + cost attribution) and the suggested experimental design (cost gate, model sweep, two-Pareto distinction).
+
+Key conclusions:
+- **GEPA** ([optimize-anything](sources/optimize-anything.md)) is the right primitive for the three numeric objectives — its design explicitly names cost as a Pareto objective — but NOT out of the box: you write the cost metric, must verify whether the shipped `gepa-ai/gepa` Pareto is over *objectives* vs *instances* (its known lineage is instance-Pareto, a diversity mechanism, not a `(P,R,cost)` frontier), and wire ASI for cost. A non-dominated filter over the objective vector is the likely ~small extension.
+- **model is not GEPA's job** — it optimizes text artifacts, not categorical config. Sweep it as an outer categorical in Evo (whose non-Claude backends also run the open-weight models), then pool `(skill, model)` into one combined frontier.
+- **SkillOpt's role flips** from generalization probe to enabler of the model axis (cross-model transfer = deploy on a cheaper open-weight model without a quality cliff).
+- Demoted scalar-gated methods (auto-harness 80% gate, plain HonedHaiku) to control arms; reconsidered group-evolve/evoforge as genuine multi-objective shapes; AutoReason reframed as a cost lever.
+- ~~Open action: spike `gepa-ai/gepa` to confirm whether `evaluate` is vector-valued.~~ **Resolved same day** (below).
+
+### Follow-up — designed the cost-aware scalarization (added to `experiment.md`)
+
+New subsection "Designing the cost-aware scalarization": instance = one repo scan (cost is per-instance natural, macro-over-CWE inside); quality = F_β from counts (avoids undefined per-instance P/R), β as recall/precision dial; cost normalized per-model to baseline `c_ref`, priced via willingness-to-pay `V`; `score_i = Q_i − ĉ_i/V` under a hard `B_max` gate; calibration recipe sets `V` so worst allowed cost penalty < 0.5 → "cheap junk wins" is structurally impossible. `(β, V)` are sweep axes → union `objective_scores` frontiers across runs. Raw `{P,R,cost}` → `objective_scores`; scalar → `scores`; cost attribution → ASI.
+
+### Resolution — read the `gepa-ai/gepa` source (`core/adapter.py`, `core/state.py`)
+
+- `EvaluationBatch.scores` is `list[float]` — **one scalar per evaluation instance**. `state.py`'s `_update_pareto_front_for_val_id` builds the frontier **per validation instance** (best on ≥1 instance). So GEPA's *search* is instance-Pareto + scalar acceptance — a diversity mechanism, NOT `(P,R,cost)` objective dominance.
+- There **is** an `objective_scores` field (per-example `{objective → score}`) and an `_update_objective_pareto_front` method, but **no selection logic consumes it** — tracked/reported only.
+- **Net:** no need to patch GEPA's frontier. Recipe = drive `scores` with a cost-aware scalarization, log raw `{P,R,cost}` to `objective_scores` (GEPA records the objective frontier for free), read it out at the end. Real limitation is exploration bias from the scalarization → mitigate by varying the cost weight across runs and unioning frontiers (Evo's outer sweep). Folded all of this into `experiment.md` (multi-objective section, metric design, experimental-design step 3, net recommendation).
+
 ## [2026-06-06] query | which methods fit a vuln-detection-via-Claude-Code-skills experiment? → `wiki/experiment.md`
 
 User is running experiments on vulnerability-detection scanning workflows, implemented as Claude Code skills, against repos with ground-truth labels. Asked which wiki methods are most appropriate.
