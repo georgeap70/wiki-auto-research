@@ -3,6 +3,24 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-06-25] query | multi-stage model selection as an outer ordinal search → `wiki/experiment.md`
+
+User has multi-stage skills where each stage uses a different model. Model is categorical (hard for GEPA's state-space search), and the combinatorial space is `M^S`. Key insight from user: capability roughly totally orders models (cost correlates), so the objective can be reframed as "find the weakest per-stage model that still meets a quality floor."
+
+Updated `wiki/experiment.md`:
+- New subsection **"Multi-stage model selection — the outer search becomes a vector"** inside the multi-objective extension, between "SkillOpt's role changes" and "The two-Pareto subtlety".
+- Updated "Net recommendation" — `model_vector` swept via successive weakening with a quality-floor gate (single-stage degenerates to a categorical singleton); SkillOpt-style rejected-edit buffers applied to *both* skill prose and rejected model swaps as the coupling between inner/outer optimizers.
+- Updated experimental design step 5 to call out the outer ordinal search and the verify-the-ordering precondition.
+- Bumped `last_updated` to 2026-06-25.
+
+Key conclusions:
+- The reframe is a **problem-class change**: Pareto-search over `(P, R, cost, model_vector)` → constrained min-cost s.t. `quality ≥ floor`. Lossy by design (gives up upper-quality frontier regions); correct for deployment questions. Recover full surface by sweeping the floor.
+- The capability ordering is a **prior, not a constraint** — three wrinkles to handle: partial-not-total ordering (verify all-weakest vs all-strongest per stage), stage interactions (multi-pass coordinate descent), end-to-end gating (no per-stage isolation).
+- **Algorithm**: successive weakening — sweep stages weak-first by sensitivity, accept swap if quality ≥ floor. ~`S × M` evals per pass, ~2 passes. With S=4, M=4: ~32 evals vs 256 for full enumeration. Optional successive-halving on neighbors for noisy-eval handling.
+- **Two coupled optimizers** alternate: outer = successive weakening on `model_vector`; inner = SkillOpt/GEPA on skill prose. SkillOpt's cross-model transfer is what makes the outer search exploitable; the typed rejected-swap buffer is the inner/outer coupling.
+- **Evo mapping**: tree nodes = `(skill, model_vector)`; two edge types (skill edges = bounded prose edits; model edges = one-step weakening). `pareto_per_task` still handles CWE specialists at the frontier level; model-vector dimension lives in tree topology.
+- AgentSpec extended with `Model search axis` declaring `pipeline_stages`, `model_ladder` per stage, the prior, and `quality_floor` as the load-bearing sweep knob.
+
 ## [2026-06-23] query | extending the vuln-detection experiment to multi-objective (precision, recall, cost, model) → `wiki/experiment.md`
 
 User's real objective optimizes across (precision, recall, per-scan runtime cost, model), where model is a discrete categorical spanning closed- and open-weight models. Asked which methods fit, and whether GEPA handles it out of the box.
