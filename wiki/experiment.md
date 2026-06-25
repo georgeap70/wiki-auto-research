@@ -3,7 +3,7 @@ title: Experiment — Optimizing Vulnerability-Detection Scanning Workflows
 type: analysis
 tags: [experiment, vulnerability-detection, security, claude-code-skills, harness-optimization, application]
 sources: [skillopt, evo-hq, honedhaiku, optimize-anything, rlm_gepa, auto-harness]
-last_updated: 2026-06-23
+last_updated: 2026-06-25
 ---
 
 # Experiment — Optimizing Vulnerability-Detection Scanning Workflows
@@ -188,6 +188,90 @@ def per_instance_score(repo_eval, model, beta=2.0, V=10.0, c_ref=None):
 
 [SkillOpt](sources/skillopt.md)'s headline property — strongest cross-model transfer in the wiki (+15.2%) — stops being a nice-to-have generalization probe and becomes **the property that makes the model axis exploitable**: a skill optimized to transfer can be deployed on a *cheaper* open-weight model to hit the cost objective without falling off a quality cliff. Use SkillOpt-style bounded edits to keep skills model-robust, then evaluate each `(skill, model)` combination on the combined frontier.
 
+### Multi-stage model selection — the outer search becomes a vector
+
+A realistic scanning skill is **multi-stage** (e.g. `triage → extract → judge → summarize`), and each stage can use a different model. The model axis is no longer one categorical — it is a vector `(m_1, …, m_S)`, which combinatorially blows up to `M^S` configurations. The earlier "sweep model outside GEPA" framing treated the model as a singleton; this section extends it to the vector case.
+
+#### The reframe — turn categorical search into ordinal descent
+
+Model selection is mostly driven by capability, and capability correlates with cost. So **per stage**, models can be (approximately) ranked strongest → weakest, with cost decreasing along the same axis. This converts the optimization problem class:
+
+```
+Pareto-search over  (P, R, cost, m_1, …, m_S)              # what you'd write naively
+        ↓
+minimize cost(m_1, …, m_S)                                  # constrained single-objective
+subject to quality(skill, m_1, …, m_S) ≥ floor
+```
+
+The reduction is **lossy by design** — you give up the upper-quality regions of the frontier (which require strong models everywhere and dominate cost) in exchange for tractability. For a deployment question ("what's the cheapest config that meets bar?"), this is correct. To recover the full surface, run the constrained search at several floors; each run is one chain along the cost axis at a fixed quality contour.
+
+#### Three wrinkles before trusting the ordering
+
+The ordering is a **prior**, not a constraint. Three things break the naive version:
+
+1. **The "capability ranking" is partial, not total.** A weaker model is often *better* at a narrow stage — Haiku beats Opus on tight structured output and instruction-following, and triage/filter stages frequently work better with smaller, cheaper models. **Verify the prior**: before optimizing, run all-strongest *and* all-weakest end-to-end. If the all-weakest config beats all-strongest on any individual stage swap, the prior is wrong for that stage — promote it back to a free categorical.
+2. **Stages interact.** Weakening stage `k` produces noisier intermediate output, so stage `k+1` may need to *strengthen* to compensate. Pure single-pass coordinate descent misses these joint assignments. Run at least two passes; a second pass with many late accepts tells you the assignments are coupled.
+3. **Gating must be end-to-end.** You cannot gate a stage in isolation — the metric is downstream. Each candidate swap costs one full pipeline evaluation. Budget accordingly.
+
+For the strong end of each ladder, cost-ranking and capability-ranking agree. For the middle/weak end (open-weight models, mixed providers) they often diverge: a small coder-specialist may spike on code-shaped tasks despite being "weaker overall." Measure both, store both, let the verification step catch divergences.
+
+#### Algorithm — successive weakening with quality-floor gate
+
+```
+state ← (skill, model_vector = all-strongest)
+verify: run all-weakest end-to-end; confirm prior ordering per stage
+loop:
+  for each stage s, sorted by expected sensitivity (filter/triage first, core reasoning last):
+    propose: m'_s = next-weaker(model_vector[s])
+    eval:    end-to-end (P, R, cost) on dev slice
+    accept:  if quality ≥ floor AND no per-CWE gate breaks
+  stop if no swaps accepted in a full pass
+```
+
+Worst case `S × M` end-to-end evals per pass, ~2 passes converges. For `S=4`, `M=4`: ~32 evals vs 256 for full enumeration. The ordering is what makes it tractable; the gate is what makes it safe.
+
+**Two sharpenings:**
+
+- **Successive halving on neighbors.** At each round, generate all one-step-weaker neighbors of the current best (`S` of them), eval on a cheap slice, keep the top half, eval those on the full dev set. Same monotone-descent shape, cleaner noisy-eval handling.
+- **Typed rejected-swap buffer.** Store rejections as structured records — `"stage=judge, opus→sonnet, F1 dropped 8pp on CWE-89"`. This is the coupling between the outer (model-vector) and inner (skill prose) optimizers: the next inner round can make the judge stage more explicit about SQLi patterns so that the same swap succeeds *next* pass. Direct analog of [SkillOpt](sources/skillopt.md)'s rejected-edit buffer, applied to the model axis.
+
+#### Two coupled optimizers
+
+| Layer | Variable | Method | What changes |
+|-------|----------|--------|--------------|
+| Outer | `model_vector` (ordinal-per-stage) | Successive weakening, quality-floor gated | Cost decreases monotonically along accepted edges |
+| Inner | `skill` prose (per `model_vector`) | SkillOpt/GEPA with cost-aware scalarization | Recovers quality when a weakened stage needs more explicit prompting |
+
+The inner loop is what makes each `model_vector` actually viable: a weakened stage often needs more explicit prose to clear the floor, and SkillOpt's cross-model transfer is the property that makes a single skill workable across the vector's possible weakenings. Alternate the layers — fix `model_vector`, optimize prose; fix prose, walk model_vector down — until both stop moving.
+
+#### How it nests in Evo
+
+Each tree node is a `(skill, model_vector)` pair. Two edge types:
+
+- **Skill edges** apply a SkillOpt-style bounded prose edit (model_vector fixed).
+- **Model edges** apply a one-step weakening to a single stage (skill fixed) — these are monotone-cost-descent moves with the quality-floor gate inherited from `discover`.
+
+`pareto_per_task` still does the CWE-specialist job at the frontier-strategy level; the model-vector dimension lives in the tree topology, not the frontier strategy. Evo's multi-backend execution (modal/e2b/daytona/aws/azure) is load-bearing here — the open-weight stages in the ladder are what those backends are for.
+
+#### AgentSpec extension
+
+The model search axis belongs in the [AgentSpec](sources/rlm-gepa.md) declaration:
+
+```
+Model search axis:
+  pipeline_stages: [triage, extract, judge, summarize]
+  model_ladder:    # strongest → weakest by prior; verify before trusting
+    triage:    [opus, sonnet, haiku-3.5, haiku-3, qwen2.5-coder-32b]
+    extract:   [opus, sonnet, haiku-3.5, llama-3.3-70b]
+    judge:     [opus, sonnet, haiku-3.5]
+    summarize: [sonnet, haiku-3.5, haiku-3, llama-3.3-8b]
+  prior: monotone capability ⇒ monotone cost (verify per stage)
+  quality_floor: F_β(2) ≥ 0.65 macro across CWEs on dev
+  out_of_scope: changing pipeline stage count or stage ordering
+```
+
+`quality_floor` is the single load-bearing knob — it determines how cheap you can get. Sweep `floor ∈ {0.6, 0.65, 0.7, 0.75}` and report the minimum-cost config at each level; that *is* the cost/quality frontier, walked one floor at a time instead of mapped in one shot.
+
 ### The two-Pareto subtlety
 
 Both Evo's `pareto_per_task` and GEPA's instance-Pareto are **Pareto-over-tasks** (keep CWE specialists), *not* **Pareto-over-objectives** (precision vs. recall vs. cost). You need **both** frontiers:
@@ -204,7 +288,7 @@ Score each candidate as a vector `(macro-P, macro-R, $/scan)`, keep the non-domi
 
 ### Net recommendation
 
-Keep Evo as the substrate. Use **GEPA as the per-model skill optimizer**, driving its search with a **cost-aware scalarization** in `scores` while logging raw `{precision, recall, cost}` to `objective_scores` so GEPA records the objective frontier (confirmed available — see above). Add an explicit **cost gate**; sweep **model as an outer categorical**; **union the recorded objective frontiers** across models and across scalarization weights into one `(P, R, cost)` frontier, and pick the operating point there. Use **SkillOpt's cross-model transfer** as the property that makes the model axis safe.
+Keep Evo as the substrate. Use **GEPA as the per-`model_vector` skill optimizer**, driving its search with a **cost-aware scalarization** in `scores` while logging raw `{precision, recall, cost}` to `objective_scores` so GEPA records the objective frontier (confirmed available — see above). Add an explicit **cost gate**; for multi-stage skills, sweep **`model_vector` as an outer ordinal search via successive weakening with a quality-floor gate** (single-stage case degenerates to a categorical singleton); **union the recorded objective frontiers** across `model_vector` configurations and across scalarization weights into one `(P, R, cost)` frontier, and pick the operating point there. Use **SkillOpt's cross-model transfer** as the property that makes the model axis safe — and SkillOpt-style rejected-edit buffers, applied to *both* skill prose and rejected model swaps, as the coupling between the inner and outer optimizers.
 
 The earlier open question is now **resolved**: GEPA's shipped `scores` is `list[float]` (per-instance scalar), so it does not *search* an objective Pareto — but it *tracks* one via `objective_scores`, so no frontier-code patch is needed. The remaining work is designing the scalarization and unioning frontiers across runs, not extending GEPA's core.
 
@@ -309,7 +393,7 @@ A concrete plan that uses the primary recommendation:
 3. **Implement the metric** to return *both* a per-instance scalarization (cost-aware F-β, fed to GEPA's `scores` to drive search) *and* the raw `(precision, recall, $/scan)` per instance (fed to `objective_scores` so GEPA records the objective frontier), plus evidence-bounded per-failure descriptions. No frontier-code patch is needed — GEPA tracks the objective frontier from `objective_scores` (see [multi-objective extension](#multi-objective-extension--optimizing-across-precision-recall-cost-model)); at the end, read it out (or filter `prog_candidate_objective_scores`) and union across runs.
 4. **Run `/evo:discover`** on the training set with a seed directive. Let it auto-attach the held-out score floor; **add a cost gate** (reject candidates above a `$/scan` ceiling) alongside it.
 5. **Configure the frontier strategy** to `pareto_per_task` (CWE category as the task axis) for specialists, and maintain a separate `(P, R, cost)` objective frontier for operating-point selection — these are two different Paretos.
-   - **Sweep `model`** as an outer categorical: one optimization run per model, then pool every `(skill, model)` candidate into the combined objective frontier.
+   - **Sweep `model_vector` as an outer ordinal search.** For single-stage skills this is one optimization run per model; for multi-stage skills, run **successive weakening** with the quality-floor gate (see [multi-stage model selection](#multi-stage-model-selection--the-outer-search-becomes-a-vector)) — verify the per-stage ordering by running all-strongest and all-weakest first, then walk down stage-by-stage in two passes. Pool every `(skill, model_vector)` candidate into the combined objective frontier.
 6. **Constrain edit budget** per round (SkillOpt-style) — start at ~3 ops per round, treat this as a hyperparameter, vary it.
 7. **Compare against**:
    - An unoptimized hand-written skill (baseline)
