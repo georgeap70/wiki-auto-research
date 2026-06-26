@@ -91,10 +91,7 @@ Split the answer by axis — GEPA treats the numeric objectives and the model ax
   - **The real limitation is exploration bias, not missing machinery.** Because search pressure comes from the scalarized score, GEPA may under-explore frontier regions your scalarization disfavors (weight recall heavily and it may never select a low-cost/high-precision candidate for mutation, even though that candidate belongs on the objective frontier). **Mitigation:** vary the scalarization across runs (sweep the cost weight / β) and **union the objective frontiers** — which is exactly what Evo's outer per-model sweep + multiple runs gives you. This is the load-bearing reason to keep Evo on top rather than running bare GEPA.
 - **Wire ASI for cost too.** For P/R, evidence-bounded feedback is "missed CVE-X at file Y." For cost it is "spent $0.40/scan because it re-reads every file 3×" — otherwise the proposer cannot reason about *why* a candidate is expensive and will only thrash on it.
 
-**model — no, GEPA cannot do this axis.** GEPA optimizes *text artifacts*; a model identifier is a categorical config, not text GEPA mutates. Two options:
-
-- **Sweep it outside GEPA (recommended).** Because the model range is small and discrete, run the skill optimizer once per model, then pool every `(skill, model)` candidate into **one combined `(P, R, cost)` Pareto frontier**. The model axis lives in the orchestration layer ([Evo](sources/evo.md)) — different branches/backends use different models, and Evo's non-Claude backends (modal/e2b/daytona/aws) are what let you run the open-weight models at all.
-- **Smuggle it into the artifact.** Put a `model:` directive *inside* the text skill so a proposal can flip it. GEPA then "optimizes over model" but is blind to the cost/capability structure of the choice — fragile; only worth it if model interacts with the prose in non-obvious ways. With a handful of models, prefer the sweep.
+**model — superseded.** This subsection originally concluded GEPA "cannot do this axis" and recommended an outer per-model sweep. That verdict was wrong: GEPA's candidate is `dict[str, str]` (multi-component), so model assignments can be optimized *inside* a single GEPA run as components, and the "blind to cost/capability structure" objection is defeated by feeding that structure through ASI. The committed design is the **single-loop, no-outer-sweep** approach — see **[Final solution — single-loop GEPA over [prompt, model]](#final-solution--single-loop-gepa-over-prompt-model)** below, which replaces both the outer-sweep recommendation here and the per-model `c_ref` cost normalization in the scalarization subsection (with model as an inner component there is no fixed per-run model, so cost is priced in global dollars).
 
 ### Designing the cost-aware scalarization
 
@@ -188,90 +185,6 @@ def per_instance_score(repo_eval, model, beta=2.0, V=10.0, c_ref=None):
 
 [SkillOpt](sources/skillopt.md)'s headline property — strongest cross-model transfer in the wiki (+15.2%) — stops being a nice-to-have generalization probe and becomes **the property that makes the model axis exploitable**: a skill optimized to transfer can be deployed on a *cheaper* open-weight model to hit the cost objective without falling off a quality cliff. Use SkillOpt-style bounded edits to keep skills model-robust, then evaluate each `(skill, model)` combination on the combined frontier.
 
-### Multi-stage model selection — the outer search becomes a vector
-
-A realistic scanning skill is **multi-stage** (e.g. `triage → extract → judge → summarize`), and each stage can use a different model. The model axis is no longer one categorical — it is a vector `(m_1, …, m_S)`, which combinatorially blows up to `M^S` configurations. The earlier "sweep model outside GEPA" framing treated the model as a singleton; this section extends it to the vector case.
-
-#### The reframe — turn categorical search into ordinal descent
-
-Model selection is mostly driven by capability, and capability correlates with cost. So **per stage**, models can be (approximately) ranked strongest → weakest, with cost decreasing along the same axis. This converts the optimization problem class:
-
-```
-Pareto-search over  (P, R, cost, m_1, …, m_S)              # what you'd write naively
-        ↓
-minimize cost(m_1, …, m_S)                                  # constrained single-objective
-subject to quality(skill, m_1, …, m_S) ≥ floor
-```
-
-The reduction is **lossy by design** — you give up the upper-quality regions of the frontier (which require strong models everywhere and dominate cost) in exchange for tractability. For a deployment question ("what's the cheapest config that meets bar?"), this is correct. To recover the full surface, run the constrained search at several floors; each run is one chain along the cost axis at a fixed quality contour.
-
-#### Three wrinkles before trusting the ordering
-
-The ordering is a **prior**, not a constraint. Three things break the naive version:
-
-1. **The "capability ranking" is partial, not total.** A weaker model is often *better* at a narrow stage — Haiku beats Opus on tight structured output and instruction-following, and triage/filter stages frequently work better with smaller, cheaper models. **Verify the prior**: before optimizing, run all-strongest *and* all-weakest end-to-end. If the all-weakest config beats all-strongest on any individual stage swap, the prior is wrong for that stage — promote it back to a free categorical.
-2. **Stages interact.** Weakening stage `k` produces noisier intermediate output, so stage `k+1` may need to *strengthen* to compensate. Pure single-pass coordinate descent misses these joint assignments. Run at least two passes; a second pass with many late accepts tells you the assignments are coupled.
-3. **Gating must be end-to-end.** You cannot gate a stage in isolation — the metric is downstream. Each candidate swap costs one full pipeline evaluation. Budget accordingly.
-
-For the strong end of each ladder, cost-ranking and capability-ranking agree. For the middle/weak end (open-weight models, mixed providers) they often diverge: a small coder-specialist may spike on code-shaped tasks despite being "weaker overall." Measure both, store both, let the verification step catch divergences.
-
-#### Algorithm — successive weakening with quality-floor gate
-
-```
-state ← (skill, model_vector = all-strongest)
-verify: run all-weakest end-to-end; confirm prior ordering per stage
-loop:
-  for each stage s, sorted by expected sensitivity (filter/triage first, core reasoning last):
-    propose: m'_s = next-weaker(model_vector[s])
-    eval:    end-to-end (P, R, cost) on dev slice
-    accept:  if quality ≥ floor AND no per-CWE gate breaks
-  stop if no swaps accepted in a full pass
-```
-
-Worst case `S × M` end-to-end evals per pass, ~2 passes converges. For `S=4`, `M=4`: ~32 evals vs 256 for full enumeration. The ordering is what makes it tractable; the gate is what makes it safe.
-
-**Two sharpenings:**
-
-- **Successive halving on neighbors.** At each round, generate all one-step-weaker neighbors of the current best (`S` of them), eval on a cheap slice, keep the top half, eval those on the full dev set. Same monotone-descent shape, cleaner noisy-eval handling.
-- **Typed rejected-swap buffer.** Store rejections as structured records — `"stage=judge, opus→sonnet, F1 dropped 8pp on CWE-89"`. This is the coupling between the outer (model-vector) and inner (skill prose) optimizers: the next inner round can make the judge stage more explicit about SQLi patterns so that the same swap succeeds *next* pass. Direct analog of [SkillOpt](sources/skillopt.md)'s rejected-edit buffer, applied to the model axis.
-
-#### Two coupled optimizers
-
-| Layer | Variable | Method | What changes |
-|-------|----------|--------|--------------|
-| Outer | `model_vector` (ordinal-per-stage) | Successive weakening, quality-floor gated | Cost decreases monotonically along accepted edges |
-| Inner | `skill` prose (per `model_vector`) | SkillOpt/GEPA with cost-aware scalarization | Recovers quality when a weakened stage needs more explicit prompting |
-
-The inner loop is what makes each `model_vector` actually viable: a weakened stage often needs more explicit prose to clear the floor, and SkillOpt's cross-model transfer is the property that makes a single skill workable across the vector's possible weakenings. Alternate the layers — fix `model_vector`, optimize prose; fix prose, walk model_vector down — until both stop moving.
-
-#### How it nests in Evo
-
-Each tree node is a `(skill, model_vector)` pair. Two edge types:
-
-- **Skill edges** apply a SkillOpt-style bounded prose edit (model_vector fixed).
-- **Model edges** apply a one-step weakening to a single stage (skill fixed) — these are monotone-cost-descent moves with the quality-floor gate inherited from `discover`.
-
-`pareto_per_task` still does the CWE-specialist job at the frontier-strategy level; the model-vector dimension lives in the tree topology, not the frontier strategy. Evo's multi-backend execution (modal/e2b/daytona/aws/azure) is load-bearing here — the open-weight stages in the ladder are what those backends are for.
-
-#### AgentSpec extension
-
-The model search axis belongs in the [AgentSpec](sources/rlm-gepa.md) declaration:
-
-```
-Model search axis:
-  pipeline_stages: [triage, extract, judge, summarize]
-  model_ladder:    # strongest → weakest by prior; verify before trusting
-    triage:    [opus, sonnet, haiku-3.5, haiku-3, qwen2.5-coder-32b]
-    extract:   [opus, sonnet, haiku-3.5, llama-3.3-70b]
-    judge:     [opus, sonnet, haiku-3.5]
-    summarize: [sonnet, haiku-3.5, haiku-3, llama-3.3-8b]
-  prior: monotone capability ⇒ monotone cost (verify per stage)
-  quality_floor: F_β(2) ≥ 0.65 macro across CWEs on dev
-  out_of_scope: changing pipeline stage count or stage ordering
-```
-
-`quality_floor` is the single load-bearing knob — it determines how cheap you can get. Sweep `floor ∈ {0.6, 0.65, 0.7, 0.75}` and report the minimum-cost config at each level; that *is* the cost/quality frontier, walked one floor at a time instead of mapped in one shot.
-
 ### The two-Pareto subtlety
 
 Both Evo's `pareto_per_task` and GEPA's instance-Pareto are **Pareto-over-tasks** (keep CWE specialists), *not* **Pareto-over-objectives** (precision vs. recall vs. cost). You need **both** frontiers:
@@ -288,7 +201,7 @@ Score each candidate as a vector `(macro-P, macro-R, $/scan)`, keep the non-domi
 
 ### Net recommendation
 
-Keep Evo as the substrate. Use **GEPA as the per-`model_vector` skill optimizer**, driving its search with a **cost-aware scalarization** in `scores` while logging raw `{precision, recall, cost}` to `objective_scores` so GEPA records the objective frontier (confirmed available — see above). Add an explicit **cost gate**; for multi-stage skills, sweep **`model_vector` as an outer ordinal search via successive weakening with a quality-floor gate** (single-stage case degenerates to a categorical singleton); **union the recorded objective frontiers** across `model_vector` configurations and across scalarization weights into one `(P, R, cost)` frontier, and pick the operating point there. Use **SkillOpt's cross-model transfer** as the property that makes the model axis safe — and SkillOpt-style rejected-edit buffers, applied to *both* skill prose and rejected model swaps, as the coupling between the inner and outer optimizers.
+Keep Evo as the substrate. Run **one GEPA loop with no outer model sweep** (see [Final solution](#final-solution--single-loop-gepa-over-prompt-model) for the full design): each pipeline stage is a **compound `[prompt + model]` component**, so GEPA jointly optimizes prose and per-stage model assignment in a single search, driven by a **cost-aware scalarization** in `scores` (global dollars, since model is now inner) while logging raw `{precision, recall, cost}` to `objective_scores` so GEPA records the objective frontier (confirmed available — see above). Add an explicit **cost gate**; read the objective frontier out at the end — each frontier point carries its own per-stage model mix. The only optional outer loop is over scalarization weights `(β, V)`, unioned into one `(P, R, cost)` frontier. Use **SkillOpt's cross-model transfer** as the property that keeps a stage's prose viable when the optimizer reassigns its model, and SkillOpt-style rejected-edit buffers (over the compound components) as the negative-signal store.
 
 The earlier open question is now **resolved**: GEPA's shipped `scores` is `list[float]` (per-instance scalar), so it does not *search* an objective Pareto — but it *tracks* one via `objective_scores`, so no frontier-code patch is needed. The remaining work is designing the scalarization and unioning frontiers across runs, not extending GEPA's core.
 
@@ -393,7 +306,7 @@ A concrete plan that uses the primary recommendation:
 3. **Implement the metric** to return *both* a per-instance scalarization (cost-aware F-β, fed to GEPA's `scores` to drive search) *and* the raw `(precision, recall, $/scan)` per instance (fed to `objective_scores` so GEPA records the objective frontier), plus evidence-bounded per-failure descriptions. No frontier-code patch is needed — GEPA tracks the objective frontier from `objective_scores` (see [multi-objective extension](#multi-objective-extension--optimizing-across-precision-recall-cost-model)); at the end, read it out (or filter `prog_candidate_objective_scores`) and union across runs.
 4. **Run `/evo:discover`** on the training set with a seed directive. Let it auto-attach the held-out score floor; **add a cost gate** (reject candidates above a `$/scan` ceiling) alongside it.
 5. **Configure the frontier strategy** to `pareto_per_task` (CWE category as the task axis) for specialists, and maintain a separate `(P, R, cost)` objective frontier for operating-point selection — these are two different Paretos.
-   - **Sweep `model_vector` as an outer ordinal search.** For single-stage skills this is one optimization run per model; for multi-stage skills, run **successive weakening** with the quality-floor gate (see [multi-stage model selection](#multi-stage-model-selection--the-outer-search-becomes-a-vector)) — verify the per-stage ordering by running all-strongest and all-weakest first, then walk down stage-by-stage in two passes. Pool every `(skill, model_vector)` candidate into the combined objective frontier.
+   - **Make each stage a compound `[prompt + model]` component** so GEPA optimizes the per-stage model assignment *inside* the single loop — no outer model sweep (see [Final solution](#final-solution--single-loop-gepa-over-prompt-model)). Enforce model-set membership in `evaluate` (clamp + penalize out-of-set ids), and feed per-stage model context (current model, realized cost, in-set cheaper/dearer alternatives) through ASI so the proposer can flip model and adjust prose in one edit. Each objective-frontier point then carries its own per-stage model mix.
 6. **Constrain edit budget** per round (SkillOpt-style) — start at ~3 ops per round, treat this as a hyperparameter, vary it.
 7. **Compare against**:
    - An unoptimized hand-written skill (baseline)
@@ -404,6 +317,117 @@ A concrete plan that uses the primary recommendation:
    - Score the optimized skill under a different Claude model (transfer probe — SkillOpt-style)
    - Score on the cross-CWE-holdout split
    - Score on a freshly clipped repo from outside the experimental corpus
+
+## Final solution — single-loop GEPA over [prompt, model]
+
+This is the consolidated, committed design. **No outer model sweep.** One GEPA run jointly optimizes the per-stage prompts *and* their model assignments against a `(precision, recall, cost)` objective, driven by a cost-aware scalar and steered by ASI that carries both detection failures and cost/performance attribution. (This supersedes the earlier outer-sweep framing under [Does GEPA handle this out of the box?](#does-gepa-handle-this-out-of-the-box) and the per-model cost normalization in [Designing the cost-aware scalarization](#designing-the-cost-aware-scalarization).)
+
+### 1. Candidate layout — one compound component per stage
+
+GEPA's candidate is `dict[str, str]` ("a mapping from component names to component text" — verified against `gepa-ai/gepa`: `api.py`, `core/adapter.py`). Make each pipeline stage a single **compound** component whose text holds both the prompt and a model directive:
+
+```
+seed_candidate = {
+  "triage":   "<prompt prose ...>\n\n[model: claude-opus-4-8]",
+  "locate":   "<prompt prose ...>\n\n[model: claude-haiku-4-5]",
+  "classify": "<prompt prose ...>\n\n[model: claude-haiku-4-5]",
+  "confirm":  "<prompt prose ...>\n\n[model: claude-opus-4-8]",
+}
+```
+
+Why prompt+model in *one* component, not two: GEPA's `RoundRobinReflectionComponentSelector` edits **one component per round** (verified — the selectors are deterministic round-robin or all-at-once, not LLM-chosen). Separate `stage.prompt` / `stage.model` slots would let the optimizer flip a stage's model on one round and not re-adapt its prompt until a later round — and the candidate gets rejected in between, under the now-mismatched prompt (the prompt×model entanglement problem). Folding both into one component means a single mutation **co-edits prose and model together**, while keeping round-robin's focused, per-stage reflection. The adapter parses the `[model: ...]` directive out at evaluation time to wire the pipeline.
+
+This is the per-stage heterogeneity the whole design exists for: the optimizer can land on **opus-for-triage / haiku-for-extraction**, which an outer single-model sweep structurally cannot express.
+
+### 2. Allowed model set is bounded by the execution layer
+
+A model directive may only name a model the runner can actually execute: closed-weight Claude models run natively; open-weight models run on Evo's non-Claude backends (modal/e2b/daytona/aws). So `ALLOWED = {claude-*} ∪ {open-weight models the backends serve}`. Enforce membership in `evaluate`: parse the directive, and if it names a model outside the set, clamp to the stage's baseline model **and** apply a hard penalty — hallucinated ids never crash a run and never look attractive. Put `ALLOWED` + the per-model price table into the reflective dataset so the proposer stays in-set by construction.
+
+### 3. ASI carries cost/performance, not just detection failures
+
+For each component being updated, `make_reflective_dataset(candidate, eval_batch, components_to_update)` returns three kinds of evidence-bounded signal:
+
+- **Detection failures attributable to this stage** — "missed CVE-2023-X at file Y:N", "false positive: matched `eval(` in a test fixture at Z" (the existing evidence-bounded contract — [concepts/feedback-signals](concepts/feedback-signals.md)).
+- **Cost attribution** — "$0.41/scan; 60% of tokens re-reading files already in context; 3 redundant tool calls."
+- **Model context for this stage** — current model and its realized cost/latency this run, the miss/FP patterns tied to it, and the cheaper/dearer in-set alternatives with their prices.
+
+The third item is what makes joint `[prompt, model]` search work: the proposer can reason *"this stage is simple extraction and the haiku run had no misses here — downgrade the model and tighten the prompt"* in **one** edit, instead of treating model as an opaque bandit arm. This is the concrete answer to the "GEPA is blind to the model's cost/capability structure" objection: you hand it that structure.
+
+### 4. Metric — scalar to drive search, raw vector to record the frontier
+
+Per instance (= one repo scan), the adapter returns:
+
+- → GEPA **`scores`** (`list[float]`): the cost-aware scalar `score_i` that drives search.
+- → GEPA **`objective_scores`**: the raw `{precision_i, recall_i, cost_usd_i}` vector, **unscalarized** — GEPA records this as the objective frontier without consuming it for selection (verified: `objective_scores` is stored/aggregated only, never read by frontier-membership logic). Each recorded frontier point carries its candidate's full **per-stage model assignment**.
+
+### 5. Scalarization and calibration — global dollars (no per-model normalization)
+
+Because model is now an **inner** component (mutated within the single run), there is no fixed per-run model, so the earlier per-model `c_ref` normalization no longer applies. Price cost in one global currency — dollars — directly:
+
+```
+Q_i     = mean over CWEs present in repo i of  F_β,   F_β = (1+β²)·TP / ((1+β²)·TP + β²·FN + FP)
+score_i = Q_i − cost_i / V              subject to hard gate  cost_i ≤ B_max
+```
+
+- `cost_i` = Σ over all LLM calls in the scan of `(in_tok·price_in + out_tok·price_out)`, summed across **whatever per-stage models the candidate chose**; self-hosted open-weight cost = GPU-hours × rate, same currency so frontiers stay comparable.
+- `V` = willingness-to-pay in **$ per F-point**.
+- `β` = recall/precision dial (security ≈ 2; a missed CVE hurts more than a false positive).
+
+**Calibration** (keeps "cheap-and-useless wins" structurally impossible):
+1. `B_max` = max acceptable `$/scan` (the hard gate).
+2. Pick the worst penalty a ceiling-cost candidate may take (e.g. 0.3 F). Then `V = B_max / 0.3`.
+   - *Example:* baseline opus scan ≈ $0.20, allow up to `B_max = $0.60`, worst-case penalty 0.3 → `V = 0.60 / 0.3 = $2.0` per F-point → `penalty = cost / 2.0`. A $0.20 scan loses 0.10 F; a $0.60 scan loses 0.30 F.
+
+Degenerate-optima check (note the heterogeneous-model candidate **winning** — the design goal):
+
+| Candidate | Q | cost ($) | score (V=2.0) | Correct? |
+|---|---|---|---|---|
+| Do-nothing (cheapest models, no work) | 0 | 0.02 | −0.01 | ✓ near-zero |
+| Spray everything | 0.30 | 0.50 | 0.05 | ✓ curbed by cost |
+| **Good, cheap-model mix (haiku on easy stages)** | **0.78** | **0.15** | **0.705** | **✓ wins** |
+| Good, all-opus | 0.82 | 0.55 | 0.545 | ✓ beaten by cheaper-equal |
+
+Quality dominates; cost only decides between comparably-good candidates — and the per-stage heterogeneous candidate is the winner, which is the entire point of the inner-model design.
+
+### 6. Loop, gates, and readout
+
+- **Selector:** `RoundRobinReflectionComponentSelector` over the compound stage components.
+- **Gates:** hard cost gate `cost_i ≤ B_max`; held-out-repo score-floor gate (Evo auto-attaches at discovery — [concepts/regression-gating](concepts/regression-gating.md)). Gates hard-veto over score.
+- **Two Paretos, unchanged:** `pareto_per_task` for CWE specialists (reads raw objectives), plus the `(P, R, $/scan)` objective frontier read from `objective_scores` at the end. Each objective-frontier point now also names its **per-stage model mix** — the deliverable is "pick an operating point *and* its model assignment per deployment budget."
+- **The only remaining outer loop is over scalarization weights, not model:** a single `(β, V)` steers GEPA to one region; an optional small `(β, V)` sweep across a few runs + union of recorded objective frontiers fills the frontier out (the exploration-bias mitigation).
+
+### 7. Reference adapter sketch
+
+```python
+ALLOWED = {"claude-opus-4-8", "claude-haiku-4-5", "qwen2.5-coder-32b", ...}
+PRICE   = {m: (price_in, price_out) for m in ALLOWED}   # $/token; open-weight via GPU-hours
+BETA, V, B_MAX = 2.0, 2.0, 0.60
+
+def parse_stage(text):
+    prose, model = split_model_directive(text)           # pulls "[model: ...]" out of the component
+    return prose, model
+
+def evaluate(self, batch, candidate, capture_traces=False):
+    stages = {name: parse_stage(t) for name, t in candidate.items()}
+    penalty = sum(MODEL_VIOLATION for _, m in stages.values() if m not in ALLOWED)  # validity
+    scores, objs, traces = [], [], []
+    for repo in batch:
+        ev = run_pipeline(repo, stages)                  # realized counts, $cost, per-stage attribution
+        if ev.cost_usd > B_MAX:                          # hard cost gate
+            scores.append(GATE_FAIL); objs.append(ev.objective_vector()); continue
+        Q = mean(f_beta(c.tp, c.fp, c.fn, BETA) for c in ev.cwes_present)
+        scores.append(Q - ev.cost_usd / V - penalty)
+        objs.append({"precision": ev.P, "recall": ev.R, "cost_usd": ev.cost_usd})
+        if capture_traces: traces.append(ev.trace)
+    return EvaluationBatch(scores=scores, objective_scores=objs, trajectories=traces or None)
+
+def make_reflective_dataset(self, candidate, eval_batch, components_to_update):
+    # per stage in components_to_update, emit: stage-attributable misses/FPs, cost attribution,
+    # current model + price, and in-set cheaper/dearer alternatives so the proposer can flip model + prose together
+    ...
+```
+
+`β` and `V` are the two domain knobs (defaults β=2, V≈2.0 via the calibration recipe); **the per-stage model assignment is part of the optimized artifact, not a hyperparameter you set.**
 
 ## Connections
 

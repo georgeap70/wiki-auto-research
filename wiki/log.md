@@ -3,6 +3,25 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-06-25] decision | committed final solution = single-loop GEPA over [prompt, model]; outer-ordinal approach set aside → `wiki/experiment.md`
+
+User chose the **inner, no-outer-loop** architecture and asked to discard the outer-ordinal additions from the prior entry. Added **"Final solution — single-loop GEPA over [prompt, model]"** and reconciled the doc so it no longer argues both sides.
+
+Verified against `gepa-ai/gepa` source (`api.py`, `core/adapter.py`, `strategies/component_selector.py`): candidate is `dict[str, str]` (multi-component native), component selection is deterministic round-robin or all-at-once (not LLM-chosen). So model assignments can be optimized *inside* one GEPA run.
+
+Committed design:
+- **Compound component per stage** (`prompt + [model: …]` in one text blob) → a single round-robin mutation co-edits prose and model, avoiding prompt×model entanglement; enables per-stage model heterogeneity (opus-for-triage / haiku-for-extraction).
+- **Extended ASI**: detection failures + cost attribution + per-stage model context (current model, realized cost, in-set cheaper/dearer alternatives) — defeats the "blind to model cost/capability" objection.
+- **Global-dollar scalarization** (no per-model `c_ref`, since model is inner): `score_i = Q_i − cost_i/V` under `cost_i ≤ B_max`; calibration `V = B_max/0.3` (example V=$2.0/F-point).
+- Validity enforcement (clamp+penalize out-of-set models); allowed set bounded by Evo's execution backends; objective-frontier readout carries per-stage model mix; only remaining outer loop is the optional `(β,V)` weight sweep.
+
+Reconciliation edits (so the document is internally consistent):
+- Marked the "model — GEPA cannot do this axis" subsection **superseded** (pointer to the final solution).
+- **Removed** the outer-ordinal "Multi-stage model selection — the outer search becomes a vector" section (successive-weakening / quality-floor / `model_vector` / two-coupled-optimizers / AgentSpec model-ladder) — set aside per user decision.
+- Rewrote "Net recommendation" and experimental-design step 5 from outer-ordinal `model_vector` sweep to the single-loop compound-component framing.
+
+Note: the outer-ordinal analysis remains valid as an *alternative* (sample-efficient, exploits a capability↔cost ordering prior, deployment-oriented constrained min-cost) — it was removed here only because the user committed to the inner architecture, not because it was wrong. The prior log entry below records it.
+
 ## [2026-06-25] query | multi-stage model selection as an outer ordinal search → `wiki/experiment.md`
 
 User has multi-stage skills where each stage uses a different model. Model is categorical (hard for GEPA's state-space search), and the combinatorial space is `M^S`. Key insight from user: capability roughly totally orders models (cost correlates), so the objective can be reframed as "find the weakest per-stage model that still meets a quality floor."
