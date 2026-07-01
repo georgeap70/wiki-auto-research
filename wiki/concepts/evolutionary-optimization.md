@@ -2,8 +2,8 @@
 title: Evolutionary Optimization for Agentic Systems
 type: concept
 tags: [evolution, genetic, pareto, population, meta-evolution, EvoX, GEPA, multi-agent]
-sources: [evox, optimize-anything, asi-evolve, coral, deep-research, group-evolve, evoforge, honedhaiku, evo-hq]
-last_updated: 2026-06-06
+sources: [evox, optimize-anything, asi-evolve, coral, deep-research, group-evolve, evoforge, honedhaiku, evo-hq, alphaevolve, shinkaevolve]
+last_updated: 2026-07-01
 ---
 
 # Evolutionary Optimization
@@ -63,7 +63,7 @@ This is **Stage 2 Agent Autonomy** in CORAL's taxonomy — contrasted with Stage
 
 | Stage | Control | Examples |
 |-------|---------|---------|
-| Stage 1 — Structured Evolution | External algorithms control search | FunSearch, AlphaEvolve |
+| Stage 1 — Structured Evolution | External algorithms control search | FunSearch, [AlphaEvolve](../sources/alphaevolve.md), [ShinkaEvolve](../sources/shinkaevolve.md) |
 | Stage 2 — Agent Autonomy | Agents control their own strategies | **CORAL** |
 | Stage 3 — Open Frontiers | Multi-agent organizations, human-agent co-evolution | Research direction |
 
@@ -149,6 +149,40 @@ Key differences from flat population evolution:
 - **Discarded-hypothesis storage** — negative results are kept in shared state and read by future subagents; conceptually analogous to [sources/skillopt](../sources/skillopt.md)'s rejected-edit buffer at the granularity of experimental directions.
 - **Multi-backend execution** — worktree/pool/ssh/modal/e2b/daytona/aws/azure are packaged into the orchestrator; the same loop runs locally during development and on cloud sandboxes for an overnight run.
 
+## AlphaEvolve (Whole-Codebase Evolution at Google Scale) — [sources/alphaevolve](../sources/alphaevolve.md)
+
+AlphaEvolve is the FunSearch successor from Google DeepMind: an evolutionary coding agent that evolves **entire codebases** (not just single functions) under an ensemble of Gemini models with automated evaluators. It is the most consequential production deployment of the LLM-as-evolutionary-operator paradigm in this wiki.
+
+Structural features:
+
+| Element | Choice |
+|---------|--------|
+| Unit of mutation | Whole codebase / multi-file program |
+| Ensemble | **Gemini Flash** (breadth / exploration) + **Gemini Pro** (depth / exploitation) |
+| Feedback | One or more automated evaluators returning quantitative correctness + quality |
+| Selection | Winners feed next generation's prompt-sampler context |
+| Autonomy | CORAL Stage 1 — external algorithm controls search |
+
+The **Flash-for-breadth / Pro-for-depth** split is the notable operator-level design choice: fast/cheap models generate volume, capable/slow models refine. This is the evolutionary-operator analog of the cost/capability trade-off that appears repeatedly in this wiki (see [wiki/experiment.md](../experiment.md) and [sources/shinkaevolve](../sources/shinkaevolve.md)'s cost-aware bandit).
+
+Production wins: Borg scheduler heuristic recovering **0.7% of Google's global compute**; Gemini training kernel **+23%** → **1% overall training-time reduction**; FlashAttention **+32.5%**; TPU circuit simplifications. Algorithmic wins: **4×4 complex matmul in 48 scalar multiplications** (first improvement over Strassen in 56 years); new lower bound for kissing number in 11D; SOTA rediscovery or improvement on ~95% of 50+ open math problems tested.
+
+## ShinkaEvolve (Sample-Efficient Open AlphaEvolve) — [sources/shinkaevolve](../sources/shinkaevolve.md)
+
+ShinkaEvolve (Sakana AI) is the open-source, sample-efficient answer to AlphaEvolve. It shares the "population + LLM-ensemble mutation + evaluators" skeleton but adds three explicit sample-efficiency mechanisms:
+
+| Innovation | What it does | Related work here |
+|------------|--------------|-------------------|
+| **Adaptive parent sampling** | `weighted` / `power_law` / `beam_search` with archive-exploitation ratio | EvoX strategy switching; ASI-Evolve UCB1 |
+| **Code-novelty rejection sampling** | Syntactic-similarity check rejects near-duplicates **before evaluation** — saves the scoring call | ASI-Evolve Novelty Check (motivation-level); GEA performance-novelty (rank-level) |
+| **Cost-aware UCB bandit** | Chooses among Gemini 3-Flash / 3.1-Pro / GPT-5-mini / GPT-5 by UCB where the confidence radius is inflated by per-call $ cost | Direct engineering answer to the model-selection question in [experiment.md](../experiment.md) |
+
+Population structure: **islands with periodic migration**, an archive using either fitness- or crowding-based replacement, and three patch types (`diff` / `full` / `cross`) sampled probabilistically.
+
+Signature result: **new SOTA circle packing in only 150 samples** — headline for the "sample-efficient" claim. Other tasks: AIME reasoning, ALE-Bench competitive programming, and discovering novel mixture-of-experts loss functions.
+
+The cost-aware bandit is the most portable idea for other systems in this wiki: any evolutionary loop with an LLM-mutation-operator stage can drop this in when using a multi-tier ensemble.
+
 ## GEPA for Coding Prompts — [sources/honedhaiku](../sources/honedhaiku.md)
 
 [sources/deep-research](../sources/deep-research.md) showed GEPA generalizes from code to prompt search. HonedHaiku applies the same primitive to **bug-fixing system prompts**:
@@ -170,6 +204,8 @@ Key finding — the **Goldilocks band**: GEPA only moves performance in the ~50�
 | **Evolutionary unit** | **Individual → group as selection unit** | **GEA ([sources/group-evolve](../sources/group-evolve.md))** |
 | Harness population | Multiple harnesses evolve in parallel | EvoForge ([sources/evoforge](../sources/evoforge.md)) |
 | Experiment tree + frontier | Tree-shaped lineage with configurable selection per round | Evo ([sources/evo](../sources/evo.md)) |
+| Whole codebase | Multi-file program as the mutation unit | AlphaEvolve ([sources/alphaevolve](../sources/alphaevolve.md)) |
+| Ensemble + cost-aware bandit | Which LLM operator to invoke, weighted by expected gain / $ | ShinkaEvolve ([sources/shinkaevolve](../sources/shinkaevolve.md)) |
 | Objectives | What fitness means | Open question |
 
 ## Connections

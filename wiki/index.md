@@ -1,6 +1,6 @@
 # Self-Improving Agentic Systems — Wiki Index
 
-A catalog of all pages. Read this first when answering queries. Last updated: 2026-06-06 (+ evo).
+A catalog of all pages. Read this first when answering queries. Last updated: 2026-07-01 (+ alphaevolve, shinkaevolve).
 
 ---
 
@@ -44,6 +44,8 @@ One page per raw source. See `sources/` directory for raw URLs.
 | [SkillOpt](sources/skillopt.md) | `sources/skillOpt` | [project](https://microsoft.github.io/SkillOpt/) | Microsoft Research: skill document as "trainable state" of a frozen LLM; rollout → reflection → bounded edits (textual learning rate) → validation; best-or-tied-best on 52/52 settings (7 models × 6 benchmarks); strongest cross-model (+15.2%) and cross-harness (+31.8%) transfer in the wiki (arXiv 2605.23904) |
 | [RLM-GEPA](sources/rlm-gepa.md) | `sources/rlm_gepa` | [github](https://github.com/Trampoline-AI/predict-rlm) | Trampoline AI: GEPA-based optimizer for Recursive LM skill instructions; `AgentSpec` declares what's in-scope so the optimizer doesn't have to infer project context; evidence-bounded feedback contract (name failures, don't prescribe rewrites); production-grade infra built on MIT CSAIL RLM line of work |
 | [Evo](sources/evo.md) | `sources/evo-hq` | [github](https://github.com/evo-hq/evo) | evo-hq (Alok Kumar Bishoyi): autoresearch orchestrator; `discover` instruments the benchmark, parallel subagents in isolated worktrees hill-climb under tree-search frontier strategies (`argmax`/`top_k`/`epsilon_greedy`/`softmax`/`pareto_per_task`); RLM-inspired cross-cutting scans between rounds; gates inherit down the experiment tree; held-out-slice score floor auto-attached on discover; 8 execution backends |
+| [AlphaEvolve](sources/alphaevolve.md) | `sources/alphaevolve` | closed | Google DeepMind: evolutionary coding agent over whole codebases with a Gemini Flash+Pro ensemble and automated evaluators; production wins (Borg +0.7% compute, Gemini training kernel +23%, FlashAttention +32.5%) and 4×4 complex matmul in 48 mults — first improvement over Strassen in 56 years (arXiv 2506.13131) |
+| [ShinkaEvolve](sources/shinkaevolve.md) | `sources/shinkaevolve` | [github](https://github.com/SakanaAI/ShinkaEvolve) | Sakana AI: open-source, sample-efficient AlphaEvolve sibling; three innovations — adaptive parent sampling, code-novelty rejection sampling, cost-aware UCB bandit over LLM ensemble; 150-sample circle-packing SOTA; islands + archive + diff/full/cross patches; SLURM support (arXiv 2509.19349) |
 
 ---
 
@@ -102,3 +104,5 @@ One page per raw source. See `sources/` directory for raw URLs.
 | `skillOpt` | [sources/skillopt.md](sources/skillopt.md) |
 | `rlm_gepa` | [sources/rlm-gepa.md](sources/rlm-gepa.md) |
 | `evo-hq` | [sources/evo.md](sources/evo.md) |
+| `alphaevolve` | [sources/alphaevolve.md](sources/alphaevolve.md) |
+| `shinkaevolve` | [sources/shinkaevolve.md](sources/shinkaevolve.md) |
