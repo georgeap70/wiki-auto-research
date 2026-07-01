@@ -3,6 +3,35 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-07-01] ingest | AlphaEvolve + ShinkaEvolve → `wiki/sources/alphaevolve.md`, `wiki/sources/shinkaevolve.md`
+
+Two closely-related evolutionary-code-optimization sources ingested together as a pair.
+
+**AlphaEvolve** (Google DeepMind, arXiv 2506.13131, Jun 2025):
+- Evolutionary coding agent over **whole codebases** (not FunSearch-style single functions), Gemini Flash+Pro ensemble (breadth/depth split), one-or-more automated evaluators.
+- Production wins inside Google: Borg scheduler heuristic recovering **0.7%** of global compute (in prod >1yr); Gemini training kernel **+23%** → **1%** overall training-time reduction; FlashAttention **+32.5%**; TPU Verilog simplification.
+- Algorithmic: **4×4 complex matmul in 48 scalar multiplications** — first improvement over Strassen's 1969 algorithm in 56 years. Kissing number in 11D: new lower bound. On 50+ open math problems: rediscover SOTA 75%, improve SOTA 20%.
+- Closed source. CORAL Stage-1 in the autonomy taxonomy.
+
+**ShinkaEvolve** (Sakana AI, Robert Tjarko Lange et al., arXiv 2509.19349, Sep 2025):
+- Open-source, sample-efficient counterpart. github.com/SakanaAI/ShinkaEvolve.
+- Three named innovations:
+  - Adaptive parent sampling (`weighted` / `power_law` / `beam_search` + archive-exploitation ratio)
+  - **Code-novelty rejection sampling** — reject near-duplicate patches *before evaluation*, saving the scoring call
+  - **Cost-aware UCB bandit** over LLM ensemble (Gemini 3-Flash/3.1-Pro, GPT-5-mini/GPT-5) — confidence radius inflated by per-call $ cost
+- Islands + archive (fitness or crowding), three patch types (`diff` / `full` / `cross`), SLURM support.
+- Signature result: **new SOTA circle packing in 150 samples**. Also AIME, ALE-Bench, MoE loss discovery.
+
+Wiki updates:
+- Two new source pages under `wiki/sources/` with cross-links to each other, AlphaEvolve↔ShinkaEvolve comparison tables.
+- `wiki/index.md`: two rows in the Source Summaries table, two rows in the Source File Map, bumped last_updated.
+- `wiki/concepts/evolutionary-optimization.md`: added two new sections (AlphaEvolve = whole-codebase evolution; ShinkaEvolve = sample-efficient open sibling); extended the "hierarchy of evolution" table with two rows (whole codebase; ensemble + cost-aware bandit); replaced the "FunSearch, AlphaEvolve" mention in the CORAL autonomy table with wiki links to the new pages; frontmatter sources/last_updated bumped.
+
+Key positional claims:
+- AlphaEvolve is the current high-water mark for the "LLM-as-mutation-operator" paradigm in terms of stakes (production deployment, hardware, algorithmic records).
+- ShinkaEvolve is the **most reusable open substrate** in this family today — the closest thing to "AlphaEvolve you can actually run."
+- ShinkaEvolve's cost-aware UCB bandit over an ensemble is a portable idea that resonates with the `wiki/experiment.md` "single-loop GEPA over [prompt, model]" framing — but at the *evolutionary-operator* layer rather than the *deployed-skill* layer. Worth remembering when the operator ensemble in an outer loop grows.
+
 ## [2026-06-25] decision | committed final solution = single-loop GEPA over [prompt, model]; outer-ordinal approach set aside → `wiki/experiment.md`
 
 User chose the **inner, no-outer-loop** architecture and asked to discard the outer-ordinal additions from the prior entry. Added **"Final solution — single-loop GEPA over [prompt, model]"** and reconciled the doc so it no longer argues both sides.
