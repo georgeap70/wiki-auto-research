@@ -3,6 +3,22 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-07-03] query | validation of experiment.md final solution against current GEPA source + consolidated implementation plan
+
+Re-verified all load-bearing claims in `wiki/experiment.md` against the live `gepa-ai/gepa` checkout (commit `92dadff`, v0.1.1) and the existing SAST application (`ai-sast-benchmark-A1b3/autoresearch/gepa/`). Appended a **"Validation against source (2026-07-03)"** section to `wiki/experiment.md`.
+
+Headline corrections (GEPA evolved past the 2026-06-23 verification):
+- `objective_scores` is no longer record-only: `frontier_type ∈ {instance, objective, hybrid, cartesian}` is consumed by `ParetoCandidateSelector`, and `optimize_anything` **defaults to `"hybrid"`** — per-objective champions natively survive as parents. The (β,V)-sweep-as-only-mitigation argument is weakened (still useful for frontier fill).
+- Objectives are higher-is-better in frontier updates → cost must be fed as `neg_cost_usd`, not raw cost.
+- `side_info["scores"]` → `objective_scores` automatically in `optimize_anything`; `AcceptanceCriterion` (pluggable) sees objective scores → hard cost gate needs no core patch; `on_candidate_rejected` callback → clean seam for the SkillOpt rejected-edit buffer.
+- Reality check: the scanner is **single-stage** (one SKILL.md, one Claude session) — the 4-stage per-stage-model layout has no runner yet. Near-term candidate = one compound `{"sast_skill": prose + "[model: <id>]"}` with `run.py --model` (already supported; `meta.json` already carries `cost_usd`).
+
+Deliverable: consolidated 8-task implementation plan (no GEPA core changes) at `ai-sast-benchmark-A1b3/docs/superpowers/plans/2026-07-03-multi-objective-gepa.md` — scoring (F_β + calibrated cost scalar + hard gate), `[model:]` directive parse/clamp, non-dominated (P,R,$) frontier readout CLI with cross-run union, reflection-prompt model/cost/bounded-edit context, cost-gate acceptance criterion, optimizer rewiring, rejected-edit buffer, smoke run + docs.
+
+Follow-up check 2 (same day): per-stage models. Expected runner surgery dissolves — Claude Code subagents (`.claude/agents/*.md`, `model:` frontmatter = alias/full-id/inherit, loaded headless from cwd) carry per-stage heterogeneity natively; `run.py` already runs with cwd=workspace, allows the Agent tool, and persists per-model `modelUsage` to meta.json (free per-stage cost attribution for distinct models). Zero mandatory runner changes; real work = staged seed harness (must match monolithic baseline first) + multi-component candidate (`stage_<name>`, adapter-owned frontmatter) + per-stage ASI via `<component>_specific_info`. One empirical check open: subagent tokens in `modelUsage`. Added as Phase 2 (tasks 2a–2d) to the plan; experiment.md validation section updated.
+
+Follow-up check (same day): bounded edits + negative-feedback memory vs GEPA's full-rewrite default. Findings appended to `wiki/experiment.md` validation section: full rewrite is structural in the default proposer (`output_extractor` swallows one fenced block as the whole component); true SkillOpt-style bounded ops need `custom_candidate_proposer` (clean seam, no core change; caveats: bypasses objective/background template, own-LM calls invisible to `max_reflection_cost`); core stores no rejected-candidate memory but the `on_proposal_start/end` + `on_candidate_rejected` callback triple reconstructs failed edits. Deferred design note (future Task 9) added to the plan.
+
 ## [2026-07-01] ingest | AlphaEvolve + ShinkaEvolve → `wiki/sources/alphaevolve.md`, `wiki/sources/shinkaevolve.md`
 
 Two closely-related evolutionary-code-optimization sources ingested together as a pair.

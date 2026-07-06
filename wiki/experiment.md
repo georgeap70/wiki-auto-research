@@ -3,7 +3,7 @@ title: Experiment — Optimizing Vulnerability-Detection Scanning Workflows
 type: analysis
 tags: [experiment, vulnerability-detection, security, claude-code-skills, harness-optimization, application]
 sources: [skillopt, evo-hq, honedhaiku, optimize-anything, rlm_gepa, auto-harness]
-last_updated: 2026-06-25
+last_updated: 2026-07-03
 ---
 
 # Experiment — Optimizing Vulnerability-Detection Scanning Workflows
@@ -428,6 +428,37 @@ def make_reflective_dataset(self, candidate, eval_batch, components_to_update):
 ```
 
 `β` and `V` are the two domain knobs (defaults β=2, V≈2.0 via the calibration recipe); **the per-stage model assignment is part of the optimized artifact, not a hyperparameter you set.**
+
+## Validation against source (2026-07-03)
+
+Re-verified the load-bearing claims above against the current `gepa-ai/gepa` checkout (commit `92dadff`, v0.1.1) and the existing application (`ai-sast-benchmark-A1b3/autoresearch/gepa/`). Consolidated implementation plan: `ai-sast-benchmark-A1b3/docs/superpowers/plans/2026-07-03-multi-objective-gepa.md`.
+
+**Confirmed:** candidate is `dict[str, str]` (`core/adapter.py:12`); `EvaluationBatch.scores` is per-instance `list[float]` summed for minibatch acceptance; `RoundRobinReflectionComponentSelector` mutates exactly one component per iteration (so the compound `[prompt + model]` component argument holds); instance-Pareto frontier per validation id; the `optimize_anything` evaluator contract `(score, side_info)` matches the existing SAST optimizer unchanged.
+
+**Superseded — GEPA moved past the 2026-06-23 verification.** The claim that `objective_scores` is "stored/aggregated only, never read by frontier-membership logic" is now **wrong**:
+
+- `GEPAState` has a `frontier_type ∈ {instance, objective, hybrid, cartesian}` parameter, and `ParetoCandidateSelector` samples parents from `state.get_pareto_front_mapping()`, which **does** consume the objective frontier under `objective`/`hybrid`/`cartesian`. In `optimize_anything`, `EngineConfig.frontier_type` **defaults to `"hybrid"`** (instance + objective champions).
+- Consequence: the exploration-bias mitigation is weaker than claimed to be necessary — per-objective champions (best-precision, best-recall, best-neg-cost holders) stay alive as parents natively. The `(β, V)` sweep + frontier union remains useful for *filling out* the frontier but is no longer the only mechanism keeping cost-favored candidates explorable.
+- Caveat that survives: the stored objective frontier keeps **per-axis champions only**, not the full non-dominated set over the joint `(P, R, cost)` vector — the final readout still needs your own dominance filter over `prog_candidate_objective_scores` (the plan adds `frontier.py` for this).
+
+**New facts the earlier analysis missed:**
+
+- **Higher-is-better applies to objectives too.** Frontier updates keep maxima, so cost must be fed as `neg_cost_usd`, never raw `cost_usd` — feeding raw cost would make the frontier reward *expensive* candidates.
+- **`side_info["scores"]` is the delivery mechanism.** In `optimize_anything`, a `"scores"` dict in the evaluator's side_info is extracted into `objective_scores` automatically (and `"<component>_specific_info"` scores become namespaced `component::metric` objectives) — no custom `GEPAAdapter` needed.
+- **`AcceptanceCriterion` is pluggable and receives per-instance `objective_scores`** — the hard cost gate can veto over score without patching core (plan: `CostGateAcceptance`).
+- **`on_candidate_rejected` / `on_proposal_start` / `on_proposal_end` callbacks exist**, giving a clean seam for the SkillOpt-style rejected-edit buffer (plan: `RejectedEditBuffer`, fed back through side_info).
+- **The scan runner already does the cost plumbing**: `claude-codex-sast/run.py` accepts `--model` and writes `cost_usd` / `model_usage` into `meta.json` from a maintained `MODEL_PRICING` table — "you write the cost metric" reduces to reading a file.
+
+**Bounded edits and negative-feedback memory (checked 2026-07-03) — both achievable without core changes, via different seams:**
+
+- **Full rewrites are structural in the default path.** `InstructionProposalSignature.output_extractor` (`strategies/instruction_proposal.py`) takes the LM's fenced block as the *complete replacement text* for the component — the default proposer is one-shot full regeneration by construction. `reflection_prompt_template` can *ask* for restraint (soft discipline, already in the plan) but cannot change the extraction contract; a "return only 3 edit ops" instruction would just produce a broken component.
+- **The hard seam is `custom_candidate_proposer`** (`ReflectionConfig`, checked in `reflective_mutation.propose_new_texts` before the default path): signature `(candidate, reflective_dataset, components_to_update) -> dict[str, str]`, full control. A SkillOpt-style bounded proposer lives entirely here: prompt your own LM for structured anchored ops (`ADD/REPLACE/DELETE`, max N per round — the "textual learning rate" as an app-layer hyperparameter), apply them programmatically, re-ask or return the parent text on budget/parse violation (an identical candidate is safely rejected by strict-improvement acceptance). Caveats: it bypasses GEPA's objective/background template (the proposer must embed that context itself), and its LM calls are invisible to the `max_reflection_cost` stopper unless it reuses the same tracked LM.
+- **Core keeps no memory of rejected candidates** — `GEPAState` stores accepted programs only; rejections surface solely through callbacks (`on_proposal_start` carries the parent text, `on_proposal_end` the proposed text, `on_candidate_rejected` the verdict — pairing all three reconstructs the failed edit). Two app-layer closures: (a) callback buffer → injected via `side_info["recent_rejected_edits"]` (in the plan, Task 7); (b) with a custom proposer, inject the buffer directly into the proposal prompt — cleaner, since the negative signal reaches the proposer without transiting the evaluator.
+- The two features **compose naturally in one custom proposer** (bounded ops + rejected-ops memory = the full SkillOpt mechanism, including "don't re-try ops similar to rejected ones"). Deferred design note appended to the implementation plan.
+
+**Reality check on the Final Solution's pipeline framing:** the deployed scanner is a **single-stage** Claude Code session driven by one `SKILL.md` — the four-stage `triage/locate/classify/confirm` candidate layout has no staged harness to execute it yet. The committed near-term shape is therefore **one** compound component `{"sast_skill": "<SKILL.md prose>\n\n[model: <id>]"}` (model applies to the whole scan via `--model`). Allowed model set today is Claude-CLI-runnable models (`opus-4-6`, `sonnet-4-6`, `haiku-4-5`); open-weight models need a non-Claude execution path before they can enter the set.
+
+**Per-stage models — path resolved (2026-07-03, follow-up check):** the anticipated runner surgery mostly **dissolves**. Claude Code natively carries per-stage model heterogeneity via project subagents: `.claude/agents/<stage>.md` files support a `model:` frontmatter field (aliases `haiku`/`sonnet`/`opus`, full ids, or `inherit`), headless `claude -p` loads them from cwd like interactive mode, and the runner already (a) executes with `cwd = harness workspace`, (b) allows the `Agent` tool, and (c) persists the result event's per-model-id `modelUsage` token breakdown into `meta.json` — so per-stage cost attribution is free whenever stages use distinct models. **Zero mandatory runner changes.** The real Phase-2 work is: authoring a staged seed harness (orchestrator SKILL.md + stage agent files) that must first match the monolithic baseline within noise; extending the candidate to multi-component (`stage_<name>` components, each compound prose + `[model:]`, rendered into adapter-owned frontmatter so `name`/`description`/`tools` stay out of the optimizer's reach per the AgentSpec); and per-stage ASI via `optimize_anything`'s native `<component>_specific_info` merge. Round-robin then delivers exactly the per-stage co-edit of prose+model that this Final Solution specifies. One empirical check remains (undocumented): that subagent tokens appear in `modelUsage` — one instrumented scan settles it. Full task breakdown: plan Phase 2 in `ai-sast-benchmark-A1b3/docs/superpowers/plans/2026-07-03-multi-objective-gepa.md`.
 
 ## Connections
 
