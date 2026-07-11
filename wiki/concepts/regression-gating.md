@@ -1,9 +1,9 @@
 ---
 title: Regression Gating
 type: concept
-tags: [safety, regression, gating, threshold, pareto, lineage, rollback]
-sources: [auto-harness, optimize-anything, evox, meta-harness, autogenesis, autoreason, skillOpt, evo-hq]
-last_updated: 2026-06-06
+tags: [safety, regression, gating, threshold, pareto, lineage, rollback, causal-replay]
+sources: [auto-harness, optimize-anything, evox, meta-harness, autogenesis, autoreason, skillOpt, evo-hq, self-harness, hf-harness]
+last_updated: 2026-07-10
 ---
 
 # Regression Gating
@@ -109,6 +109,20 @@ Conceptually adjacent to:
 - Trust-region methods in numerical optimization
 - The "step size" parameter in policy-gradient RL
 - The patience limit in [sources/deep-research](../sources/deep-research.md)'s GEPA setup, but applied to edit magnitude rather than iteration count
+
+### Non-Detrimental Validation (Held-In + Held-Out)
+
+Used by [sources/self-harness](../sources/self-harness.md): a proposed harness edit is accepted only if it is **non-detrimental** — regression-tested on both a held-in split (the tasks whose failures motivated it) and a held-out split. An edit that fixes new failures but breaks prior successes is rejected. This is threshold/held-out gating specialized to the single-model self-edit loop: the same model that runs the tasks proposes the edits, so the gate is the only thing preventing it from overfitting to its own recently-mined failures.
+
+### Copy-and-Adapt + Causal-Replay (Single-Frontier Compounding)
+
+Used by [sources/evolve-the-harness](../sources/evolve-the-harness.md), a Meta-Harness application on Harvey's LAB. Three interlocking guards on a single compounding frontier:
+
+1. **Copy-and-adapt inheritance** — each candidate begins as an exact copy of the current best harness before its one new mechanism is added, so accepted mechanisms are never silently dropped between iterations. Wins compound along one lineage (contrast with population approaches).
+2. **≥1-point promotion threshold** — a candidate is promoted only if its blended score beats the incumbent by at least one point, set just above the noise floor of 3-trial averaging. This is a *noise-aware* accept rule rather than a fixed pass-rate threshold.
+3. **Causal-replay / pooled validation** — a mechanism must prove itself either by re-scoring deterministic fixes on old transcripts (causal replay) or by pooled comparison across ≥5 fix tasks and ≥5 regression tasks. Single-trial swings are rejected as noise. Plus a `_touched_test()` guard that prevents the loop from reading the held-out split.
+
+Causal replay is a distinctive primitive: because many accepted mechanisms are *deterministic code* (file-landing gates, tool-call JSON repair), their effect can be re-scored on already-recorded transcripts without new rollouts — cheap, exact regression evidence unavailable to prompt-only edits.
 
 ## Design Considerations
 

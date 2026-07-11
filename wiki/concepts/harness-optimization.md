@@ -1,9 +1,9 @@
 ---
 title: Harness Optimization
 type: concept
-tags: [harness, system-prompt, scaffolding, code-synthesis, constraint-enforcement]
-sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt, rlm_gepa, evo-hq]
-last_updated: 2026-06-06
+tags: [harness, system-prompt, scaffolding, code-synthesis, constraint-enforcement, model-specific, transfer]
+sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt, rlm_gepa, evo-hq, self-harness, hf-harness, weng-blog]
+last_updated: 2026-07-10
 ---
 
 # Harness Optimization
@@ -98,6 +98,28 @@ last_updated: 2026-06-06
 - Key feature: **AgentSpec** as a typed, declared description of optimization context (use cases, runtime affordances, scoring methodology, counterfactual axes) — solves the "what should the optimizer know that it can't infer" problem; evidence-bounded feedback contract (name failures, don't prescribe rewrites)
 - Result: no published benchmarks — positioned as production-grade infrastructure
 
+### Self-Harness (arXiv 2606.09498) — [sources/self-harness](../sources/self-harness.md)
+- Optimizes: the operating harness around a fixed model
+- Method: single-model three-stage loop — weakness mining (cluster model-specific failures) → minimal harness proposal → non-detrimental validation on held-in/held-out
+- Key feature: **model-specific edits** — the optimal harness change depends on the base model's own failure distribution; no external optimizer agent (the task-running model edits its own harness)
+- Result: Terminal-Bench-2.0 pass rate — MiniMax M2.5 40.5→61.9%, Qwen3.5-35B-A3B 23.8→38.1%, GLM-5 42.9→57.1%
+
+### Evolve the Harness / Harvey LAB (Joel Niklaus) — [sources/evolve-the-harness](../sources/evolve-the-harness.md)
+- Optimizes: a Python harness around a frozen DeepSeek-V4-Pro, via a Meta-Harness single-frontier loop (Claude Opus 4.8 proposer)
+- Method: one mechanism added per iteration; copy-and-adapt inheritance; blended score `pooled + 0.5·all_pass − 0.005·tokens/M`; ≥1-point promotion; causal-replay / pooled (≥5 fix + ≥5 regression) validation
+- Key feature: **deterministic code beats prompts** (5 of top 6 harnesses are code) and **code transfers across model families while prompt playbooks don't** (V4 Flash +14.4 same-family; Nemotron-3 Ultra +0.4 cross-family)
+- Result: Harvey LAB pooled 63.1→83.3% dev (+20.2), 63.4→80.1% test (generalizes); lands between Sonnet 4.6 and Opus 4.6
+
+## Model-Specificity and Transfer of Harnesses
+
+An open tension the 2026 sources surface: is there *one* good harness, or one per model?
+
+- [Self-Harness](../sources/self-harness.md) argues harness edits should be **model-specific** — different models fail differently, so the optimum differs.
+- [Evolve the Harness](../sources/evolve-the-harness.md) refines this: **deterministic-code** mechanisms (file-landing gates, tool-call JSON repair, loop breaks) transfer across model *families*; **prompt playbooks** are model-specific and can even degrade other models.
+- Contrast with [SkillOpt](../sources/skillopt.md), whose *prose* skill document shows strong cross-model transfer (+15.2%). The reconciliation: bounded, structured artifacts (whether code mechanisms or SkillOpt's constrained edits) transfer; free-form prompt tuning overfits to a model.
+
+[Lilian Weng's survey](../sources/weng-harness-blog.md) situates all of this as the near-term path to recursive self-improvement — optimize the scaffold up the ladder (instruction → context → workflow → harness code → optimizer code) before touching weights.
+
 ## Comparison
 
 | System | Feedback type | Scope | Human involvement |
@@ -113,6 +135,8 @@ last_updated: 2026-06-06
 | SkillOpt | Rollout scores + rejected-edit buffer | Structured skill document | Define benchmarks once |
 | RLM-GEPA | RunTrace + score + failure-description feedback | Skill instructions over a fixed RLM/DSPy structure | Author RLM, dataset, metric, and AgentSpec |
 | Evo | Score + gate pass/fail + cross-cutting scan findings (gate intersections, shared root causes) + shared discarded-hypothesis bucket | Any repo metric, via auto-discovered benchmark | Run `/evo:discover` once; configure frontier strategy; optionally pause between rounds |
+| Self-Harness | Model-specific clustered failures + non-detrimental validation | Operating harness (per-model) | None after init (single-model self-edit) |
+| Evolve the Harness (LAB) | Blended dense+all-pass+cost score; causal-replay / pooled validation | Python harness around a frozen model | Define benchmark/splits; run the loop |
 
 ## Connections
 

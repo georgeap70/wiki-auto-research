@@ -3,6 +3,37 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-07-10] ingest | self-harness + evolve-the-harness + interaction-trajectory-mining + weng-harness-blog (4 new sources)
+
+Batch-ingested four sources dropped into `sources/`:
+- `self-harness` → arXiv 2606.09498 (Zhang et al.) → `wiki/sources/self-harness.md`
+- `hf-harness` → HF Space `joelniklaus/harness-optimization` ("Don't Train the Model, Evolve the Harness") → `wiki/sources/evolve-the-harness.md`
+- `interaction-trajectory-mining` → arXiv 2606.20363 (Hao & Li) → `wiki/sources/interaction-trajectory-mining.md`
+- `weng-blog` → lilianweng.github.io 2026-07-04 "Harness Engineering for Self-Improvement" → `wiki/sources/weng-harness-blog.md`
+
+(HF Space content had to be pulled from `app/src/content/chapters/*.mdx` via the HF file API — the rendered Space page returns only a loading shell to WebFetch.)
+
+Pages created: the four source pages above.
+
+Pages updated:
+- `wiki/index.md` — 4 rows in Source Summaries, 4 rows in Source File Map, bumped last_updated note
+- `CLAUDE.md` — 4 new slug-map rows
+- `wiki/concepts/harness-optimization.md` — added Self-Harness and Evolve-the-Harness approach entries + comparison-table rows; new section **"Model-Specificity and Transfer of Harnesses"**; frontmatter/date bumped
+- `wiki/concepts/feedback-signals.md` — added **model-specific weakness mining** (Self-Harness) and **offline reward-model feedback (cautionary bound)** (interaction-trajectory-mining) named signal types
+- `wiki/concepts/regression-gating.md` — added **Non-Detrimental Validation** (Self-Harness) and **Copy-and-Adapt + Causal-Replay** (Evolve-the-Harness, incl. ≥1-point noise-aware promotion) gating approaches
+- `wiki/concepts/self-improvement-loop.md` — expanded single-agent self-edit with Self-Harness (purest self-contained three-stage loop) vs Evolve-the-Harness (separated proposer on a single compounding frontier)
+- `wiki/concepts/knowledge-accumulation.md` — added **"A Negative Bound: Offline Skill Mining Doesn't Transfer"** section
+- `wiki/overview.md` — 2 new optimization-target rows; 5 new empirical-results rows; new sections **"Is There One Good Harness, or One Per Model?"** and **"Negative Results and the Limits of Automation"**; 4 new open questions
+
+Key analytical claims filed:
+- **Model-specific vs transferable harnesses**: Self-Harness argues harness edits are model-specific; Evolve-the-Harness refines it — *deterministic code* transfers across model families (V4 Flash +14.4) while *prompt playbooks* are model-specific and can degrade others (Nemotron-3 Ultra +0.4). Reconciled with SkillOpt's high prose transfer via a unifying rule: **bounded/structured artifacts transfer; free-form prompt tuning overfits.** The transferable, high-leverage harness layer is *deterministic operational code*.
+- **Mismanaged-geniuses**: the largest LAB gains (+20.2 pooled on a frozen DeepSeek-V4-Pro) came from operational plumbing (file landing, tool-call JSON repair, loop breaks), not reasoning — evidence that deployed-agent underperformance is often an infrastructure problem.
+- **First negative-result source**: interaction-trajectory-mining shows offline skill-mining produces legible clusters but fails to transfer (underperforms a frequency prior); the offline reward model is the bottleneck. Strong failure-side support for the live-rich-feedback thesis.
+- **Self-Harness = purest self-contained loop**: the task-running model also edits its own harness — stricter autonomy than the optimizer/target-separation pattern (HALO/SkillOpt/RLM-GEPA/Evolve-the-Harness all keep proposer and target distinct).
+- **Weng survey = external validation** of the wiki's core framing (harness optimization as the near-term RSI path) and a shared vocabulary (the instruction→optimizer-code ladder; seven challenges). Flags a backlog of not-yet-ingested systems: **ACE, MCE, ADAS, AFlow, STOP, Darwin-Gödel Machine, Hyperagents.**
+
+Note: Self-Harness org left unattributed in the index (arXiv abstract page listed authors but not affiliation; several authors — Lei Bai, Shuyue Hu — are associated with Shanghai AI Laboratory, but not confirmed, so recorded as "Zhang et al.").
+
 ## [2026-07-03] query | validation of experiment.md final solution against current GEPA source + consolidated implementation plan
 
 Re-verified all load-bearing claims in `wiki/experiment.md` against the live `gepa-ai/gepa` checkout (commit `92dadff`, v0.1.1) and the existing SAST application (`ai-sast-benchmark-A1b3/autoresearch/gepa/`). Appended a **"Validation against source (2026-07-03)"** section to `wiki/experiment.md`.

@@ -1,9 +1,9 @@
 ---
 title: Knowledge Accumulation in Self-Improving Systems
 type: concept
-tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage]
-sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa]
-last_updated: 2026-05-30
+tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage, skill-mining, negative-result]
+sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa, interaction-trajectory-mining]
+last_updated: 2026-07-10
 ---
 
 # Knowledge Accumulation
@@ -123,6 +123,15 @@ Both treat the prose layer as the unit of accumulation and the structured substr
 [sources/autogenesis](../sources/autogenesis.md) proposes lineage as a **protocol primitive** rather than an optimizer feature. Every modification to any resource (prompt, tool, memory, agent, environment) is versioned, attributed, and tagged with decision rationale. The accumulated store is the complete history of the agent's self-modifications, queryable and rollback-able at the protocol level.
 
 This is closest to [sources/coral](../sources/coral.md)'s Attempts store (per-commit lineage) but generalizes across all agent internals, not just evaluated code commits. Where CORAL's lineage exists to enable multi-agent coordination via shared git, AGP's lineage exists to make self-modification *inspectable and reversible*.
+
+## A Negative Bound: Offline Skill Mining Doesn't Transfer
+
+Most systems above either hand-author skills or co-evolve them against *live* feedback. [sources/interaction-trajectory-mining](../sources/interaction-trajectory-mining.md) asks the harder question: can a skill store (`SKILL.md`) be mined **automatically and offline** from logged interaction trajectories (segment → cluster → train a policy with GRPO)? Its answer is a useful cautionary bound:
+
+- **Representation is not the bottleneck** — the mined clusters are legible (5 of 8 reach ≥0.95 purity against reference workflow labels).
+- **Transfer is** — the mined skills barely move downstream accuracy (18.5%→20.5%) and *underperform a simple frequency prior*; the weak links are the boundary detector, the segment representation, and especially the **offline reward model**.
+
+The lesson for knowledge accumulation: the *artifact* form (a prose/skill document) is not what makes accumulation work — the *feedback that curates it* is. Systems that succeed ([sources/skillopt](../sources/skillopt.md), [sources/coral](../sources/coral.md), [sources/skill-rl-skill0](../sources/skill-rl-skill0.md)) curate their stores against live, dense signals; offline mining from static logs is too lossy. See [concepts/feedback-signals](feedback-signals.md).
 
 ## Shared Memory in Multi-Agent Systems
 

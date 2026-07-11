@@ -1,6 +1,6 @@
 # Self-Improving Agentic Systems — Wiki Index
 
-A catalog of all pages. Read this first when answering queries. Last updated: 2026-07-01 (+ alphaevolve, shinkaevolve).
+A catalog of all pages. Read this first when answering queries. Last updated: 2026-07-10 (+ self-harness, evolve-the-harness, interaction-trajectory-mining, weng-harness-blog).
 
 ---
 
@@ -46,6 +46,10 @@ One page per raw source. See `sources/` directory for raw URLs.
 | [Evo](sources/evo.md) | `sources/evo-hq` | [github](https://github.com/evo-hq/evo) | evo-hq (Alok Kumar Bishoyi): autoresearch orchestrator; `discover` instruments the benchmark, parallel subagents in isolated worktrees hill-climb under tree-search frontier strategies (`argmax`/`top_k`/`epsilon_greedy`/`softmax`/`pareto_per_task`); RLM-inspired cross-cutting scans between rounds; gates inherit down the experiment tree; held-out-slice score floor auto-attached on discover; 8 execution backends |
 | [AlphaEvolve](sources/alphaevolve.md) | `sources/alphaevolve` | closed | Google DeepMind: evolutionary coding agent over whole codebases with a Gemini Flash+Pro ensemble and automated evaluators; production wins (Borg +0.7% compute, Gemini training kernel +23%, FlashAttention +32.5%) and 4×4 complex matmul in 48 mults — first improvement over Strassen in 56 years (arXiv 2506.13131) |
 | [ShinkaEvolve](sources/shinkaevolve.md) | `sources/shinkaevolve` | [github](https://github.com/SakanaAI/ShinkaEvolve) | Sakana AI: open-source, sample-efficient AlphaEvolve sibling; three innovations — adaptive parent sampling, code-novelty rejection sampling, cost-aware UCB bandit over LLM ensemble; 150-sample circle-packing SOTA; islands + archive + diff/full/cross patches; SLURM support (arXiv 2509.19349) |
+| [Self-Harness](sources/self-harness.md) | `sources/self-harness` | none | Zhang et al.: single-model self-edit loop — weakness mining → minimal harness proposal → non-detrimental validation; **model-specific** harness edits, no external optimizer; Terminal-Bench-2.0 +14–21pp across MiniMax M2.5 / Qwen3.5 / GLM-5 (arXiv 2606.09498) |
+| [Evolve the Harness (LAB)](sources/evolve-the-harness.md) | `sources/hf-harness` | [HF Space](https://huggingface.co/spaces/joelniklaus/harness-optimization) | Joel Niklaus: Meta-Harness loop on Harvey's Legal Agent Benchmark; frozen DeepSeek-V4-Pro + Claude Opus 4.8 proposer; **deterministic code beats prompts** and transfers across model families; pooled 63.1→83.3% dev (+20.2), 63.4→80.1% test |
+| [Interaction Trajectory Mining](sources/interaction-trajectory-mining.md) | `sources/interaction-trajectory-mining` | none | Hao & Li: **negative-result** study — auto-mining `SKILL.md` from GUI trajectories (segment→cluster→GRPO); clusters legible but transfer fails (underperforms frequency prior); offline reward model is the bottleneck (arXiv 2606.20363) |
+| [Weng: Harness Engineering](sources/weng-harness-blog.md) | `sources/weng-blog` | none | Lilian Weng survey: harness optimization as the near-term path to recursive self-improvement; instruction→context→workflow→harness-code→optimizer-code ladder; seven challenges (weak evaluators, reward hacking, diversity collapse…); external map of this wiki's territory |
 
 ---
 
@@ -106,3 +110,7 @@ One page per raw source. See `sources/` directory for raw URLs.
 | `evo-hq` | [sources/evo.md](sources/evo.md) |
 | `alphaevolve` | [sources/alphaevolve.md](sources/alphaevolve.md) |
 | `shinkaevolve` | [sources/shinkaevolve.md](sources/shinkaevolve.md) |
+| `self-harness` | [sources/self-harness.md](sources/self-harness.md) |
+| `hf-harness` | [sources/evolve-the-harness.md](sources/evolve-the-harness.md) |
+| `interaction-trajectory-mining` | [sources/interaction-trajectory-mining.md](sources/interaction-trajectory-mining.md) |
+| `weng-blog` | [sources/weng-harness-blog.md](sources/weng-harness-blog.md) |

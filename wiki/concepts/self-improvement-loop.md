@@ -2,8 +2,8 @@
 title: The Self-Improvement Loop
 type: concept
 tags: [core-concept, loop, measure-fail-propose-gate]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt, evo-hq]
-last_updated: 2026-06-06
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt, evo-hq, self-harness, hf-harness]
+last_updated: 2026-07-10
 ---
 
 # The Self-Improvement Loop
@@ -61,7 +61,9 @@ See [concepts/regression-gating](regression-gating.md) for details.
 The loop can be instantiated in several ways:
 
 ### Single-agent self-edit
-One agent edits its own code, prompts, or config. Simple. Used by [sources/auto-harness](../sources/auto-harness.md), [sources/meta-harness](../sources/meta-harness.md).
+One agent edits its own code, prompts, or config. Simple. Used by [sources/auto-harness](../sources/auto-harness.md), [sources/meta-harness](../sources/meta-harness.md), [sources/self-harness](../sources/self-harness.md).
+
+[sources/self-harness](../sources/self-harness.md) is the purest form: a single model runs a three-stage loop — **weakness mining** (cluster its own failure traces) → **minimal harness proposal** (targeted, model-specific edits) → **non-detrimental validation** — with *no separate optimizer agent*. This is stricter than the [optimizer/target separation](#specialist-optimizer--target-separation) pattern: the model being improved is also the one proposing improvements. [sources/evolve-the-harness](../sources/evolve-the-harness.md) instead keeps them separate (Claude Opus 4.8 proposes edits to a frozen DeepSeek-V4-Pro's harness) on a single compounding frontier — one mechanism added per iteration, inherited via copy-and-adapt.
 
 ### Two-agent co-evolution
 Two agents (curriculum + executor) each improve by competing with the other. Neither needs external training data. Used by [sources/agent0](../sources/agent0.md).

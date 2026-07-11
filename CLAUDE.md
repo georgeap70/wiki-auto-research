@@ -55,6 +55,10 @@ Raw source files → wiki source pages:
 | autoagent2                 | wiki/sources/autoagent-kevinrgu.md |
 | rlm_gepa                   | wiki/sources/rlm-gepa.md      |
 | evo-hq                     | wiki/sources/evo.md           |
+| self-harness               | wiki/sources/self-harness.md  |
+| hf-harness                 | wiki/sources/evolve-the-harness.md |
+| interaction-trajectory-mining | wiki/sources/interaction-trajectory-mining.md |
+| weng-blog                  | wiki/sources/weng-harness-blog.md |
 
 ## Workflows
 

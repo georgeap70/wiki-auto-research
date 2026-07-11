@@ -1,9 +1,9 @@
 ---
 title: Feedback Signals — Scalar vs. Rich Diagnostic
 type: concept
-tags: [feedback, diagnostics, ASI, execution-traces, rich-context, capability-isolation]
-sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt, rlm_gepa, evo-hq]
-last_updated: 2026-06-06
+tags: [feedback, diagnostics, ASI, execution-traces, rich-context, capability-isolation, model-specific]
+sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt, rlm_gepa, evo-hq, self-harness, hf-harness, interaction-trajectory-mining]
+last_updated: 2026-07-10
 ---
 
 # Feedback Signals
@@ -58,6 +58,10 @@ Rich feedback tells the system *why* it failed and *what specific conditions* pr
 **Between-round cross-cutting scans** — [sources/evo](../sources/evo.md) runs RLM-inspired scan subagents between rounds of its tree search: they read trace batches in parallel and surface *gate-failure intersections* (which gates tend to fail together) and *shared root causes across traces*. Findings land in shared state for the next round. This is feedback compression at yet another scale — between [ASI-Evolve's](../sources/asi-evolve.md) per-experiment Analyzer and [HALO's](../sources/halo.md) production-traffic RLM — and is distinguished by being a *standing phase* of the loop rather than an analyzer that runs at the end. The signal explicitly targets *systemic* failure patterns over the population of branches, not per-experiment diagnosis.
 
 **Discarded-hypothesis store (negative-direction signal)** — [sources/evo](../sources/evo.md) keeps *discarded hypotheses* in shared state, readable by future subagents at startup. Conceptually parallel to [SkillOpt's](../sources/skillopt.md) rejected-edit buffer, but at the granularity of *experimental directions* rather than text edits: future subagents see "this approach was tried and shelved" alongside "this approach worked." Most systems retain only successful branches; treating negative experimental results as a first-class signal is unusual.
+
+**Model-specific weakness mining** — [sources/self-harness](../sources/self-harness.md) clusters failure traces *per base model* to produce a targeted list of that model's recurring errors, then proposes minimal harness edits against them. The signal is failure-mining (as in [auto-harness](../sources/auto-harness.md)) with an explicit claim attached: because the failure distribution is model-specific, the resulting feedback — and therefore the right harness edit — is model-specific too. [Evolve the Harness](../sources/evolve-the-harness.md) uses a related but *blended* acceptance signal (`pooled_criterion + 0.5·all_pass − 0.005·tokens/M`) that folds a dense diagnostic rate, an anti-luck whole-task bonus, and a token-cost penalty into one promotion score.
+
+**Offline reward-model feedback (a cautionary bound)** — [sources/interaction-trajectory-mining](../sources/interaction-trajectory-mining.md) is the negative case: it scores mined skills with an *offline* reward model over logged trajectories rather than live rollouts, and finds the signal too weak to drive cross-domain transfer (mined skills underperform a frequency prior). This is direct evidence from the failure side for the rich-*live*-feedback thesis: the artifact (legible skill clusters) was fine; the offline signal that was supposed to validate it was the bottleneck.
 
 ## Why Rich Feedback Wins
 
