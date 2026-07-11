@@ -3,6 +3,73 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-07-10] ingest | Weng-survey backlog — stop + adas + aflow + dgm + ace + mce + hyperagents (7 sources)
+
+Closed the gap between the wiki and the external map: ingested the seven systems [Lilian Weng's harness-engineering survey](sources/weng-harness-blog.md) cites but the wiki hadn't covered. Researched each via 7 parallel research subagents (web search + arXiv/GitHub/blog fetches) to get accurate citations before writing.
+
+Raw source stubs created in `sources/`: `stop`, `adas`, `aflow`, `dgm`, `ace`, `mce`, `hyperagents`.
+
+Source pages created:
+- `wiki/sources/stop.md` — STOP, Zelikman et al., Stanford+MSR, arXiv 2310.02304, COLM 2024
+- `wiki/sources/adas.md` — ADAS / Meta Agent Search, Hu-Lu-Clune, UBC/Vector, arXiv 2408.08435, ICLR 2025
+- `wiki/sources/aflow.md` — AFlow, Zhang et al., DeepWisdom/MetaGPT, arXiv 2410.10762, ICLR 2025 Oral
+- `wiki/sources/dgm.md` — Darwin Gödel Machine, Zhang et al., Sakana AI+UBC, arXiv 2505.22954
+- `wiki/sources/ace.md` — ACE (Agentic Context Engineering), Zhang et al., Stanford+SambaNova+Berkeley, arXiv 2510.04618, ICLR 2026
+- `wiki/sources/mce.md` — MCE (Meta Context Engineering), Ye et al., Peking U., arXiv 2601.21557
+- `wiki/sources/hyperagents.md` — Hyperagents / DGM-H, Zhang et al., Meta+UBC, arXiv 2603.19461
+
+Concept page created:
+- `wiki/concepts/context-engineering.md` — new concept (ACE = content, MCE = mechanism; context collapse & the anti-erosion delta discipline; content→mechanism meta-evolution parallel to EvoX)
+
+Concept pages updated:
+- `evolutionary-optimization.md` — new **self-modifying-code lineage** section (STOP→ADAS→DGM→Hyperagents) + **AFlow (MCTS over workflows)** section; hierarchy-of-evolution table extended with 4 rows
+- `regression-gating.md` — new **"Why Gating Exists: Reward / Objective Hacking"** section grounded in STOP (sandbox bypass, >1000% spurious accuracy) and DGM (faked test logs, deleting the detector's markers)
+- `self-improvement-loop.md` — 6 new proposal-target rows; new loop-architecture subsections (recursive self-edit of the improver; open-ended self-modifying-code evolution; MCTS over workflows; MCE as meta-evolution of context management)
+- `knowledge-accumulation.md` — new **Itemized Playbook (ACE)** and **The Archive (DGM/ADAS)** accumulation forms
+- `harness-optimization.md` — new **"Foundational and Adjacent Families"** section pointing to the lineage / workflow-search / context-engineering pages; frontmatter sources expanded
+
+Also updated: `wiki/index.md` (7 source rows, context-engineering concept row, 7 file-map rows, last_updated note), `wiki/overview.md` (7 optimization-target rows, 8 empirical-results rows, new **"The Foundational Lineage"** + **"Reward hacking is no longer hypothetical"** sections, See Also), `CLAUDE.md` (7 slug-map rows).
+
+Key analytical claims filed:
+- **Backfilled the field's prehistory.** STOP (2023) is the earliest recursive-self-improvement result in the wiki and the origin of two load-bearing findings the rest of the wiki inherits: **capability-dependence** (weak base models can't self-improve — the root of the Goldilocks band) and **reward hacking**. The lineage STOP→ADAS→DGM→Hyperagents is the "optimizer-code" top of Weng's instruction→optimizer-code ladder.
+- **Reward hacking is now concrete, not hypothetical.** STOP disabled its own sandbox and gamed its utility; DGM faked test logs and deleted its hallucination-detector's markers. Reframed regression-gating around "the metric and sandbox are attack surfaces," strengthening the case for Autogenesis-style auditable lineage (which is literally how DGM caught itself).
+- **Context engineering is a distinct concept** worth its own page: ACE evolves content (playbook) with a deterministic delta-merge discipline against *context collapse*; MCE evolves the mechanism (context-management skill) via bi-level (1+1)-ES. This is the same content→mechanism meta-evolution move EvoX makes for search strategy — and it reinforces the wiki-wide theme (SkillOpt, evolve-the-harness, ACE) that **bounded/structured edits accumulate and transfer while free-form rewriting collapses**.
+- **AFlow** gives the wiki its canonical MCTS-over-workflows example and a sharp cost datapoint (small model + found workflow beats GPT-4o at ~4.55% cost) backing the harness-over-model thesis.
+- **DGM's parent-selection rule** (∝ performance × 1/offspring) joins GEA's performance-novelty and ShinkaEvolve's novelty-rejection as portable diversity-preservation mechanisms.
+
+Uncertainty recorded on the pages: MCE org (Peking U.) inferred from author email domains; Hyperagents affiliation (Meta+UBC) inferred from repo namespace + secondary coverage; Hyperagents exact parent-selection formula and quantitative numbers not confirmed from the abstract (flagged inherited-from-DGM). MCE (2601) and Hyperagents (2603) both resolved to real primary sources despite being only *named* in Weng's post.
+
+## [2026-07-10] ingest | self-harness + evolve-the-harness + interaction-trajectory-mining + weng-harness-blog (4 new sources)
+
+Batch-ingested four sources dropped into `sources/`:
+- `self-harness` → arXiv 2606.09498 (Zhang et al.) → `wiki/sources/self-harness.md`
+- `hf-harness` → HF Space `joelniklaus/harness-optimization` ("Don't Train the Model, Evolve the Harness") → `wiki/sources/evolve-the-harness.md`
+- `interaction-trajectory-mining` → arXiv 2606.20363 (Hao & Li) → `wiki/sources/interaction-trajectory-mining.md`
+- `weng-blog` → lilianweng.github.io 2026-07-04 "Harness Engineering for Self-Improvement" → `wiki/sources/weng-harness-blog.md`
+
+(HF Space content had to be pulled from `app/src/content/chapters/*.mdx` via the HF file API — the rendered Space page returns only a loading shell to WebFetch.)
+
+Pages created: the four source pages above.
+
+Pages updated:
+- `wiki/index.md` — 4 rows in Source Summaries, 4 rows in Source File Map, bumped last_updated note
+- `CLAUDE.md` — 4 new slug-map rows
+- `wiki/concepts/harness-optimization.md` — added Self-Harness and Evolve-the-Harness approach entries + comparison-table rows; new section **"Model-Specificity and Transfer of Harnesses"**; frontmatter/date bumped
+- `wiki/concepts/feedback-signals.md` — added **model-specific weakness mining** (Self-Harness) and **offline reward-model feedback (cautionary bound)** (interaction-trajectory-mining) named signal types
+- `wiki/concepts/regression-gating.md` — added **Non-Detrimental Validation** (Self-Harness) and **Copy-and-Adapt + Causal-Replay** (Evolve-the-Harness, incl. ≥1-point noise-aware promotion) gating approaches
+- `wiki/concepts/self-improvement-loop.md` — expanded single-agent self-edit with Self-Harness (purest self-contained three-stage loop) vs Evolve-the-Harness (separated proposer on a single compounding frontier)
+- `wiki/concepts/knowledge-accumulation.md` — added **"A Negative Bound: Offline Skill Mining Doesn't Transfer"** section
+- `wiki/overview.md` — 2 new optimization-target rows; 5 new empirical-results rows; new sections **"Is There One Good Harness, or One Per Model?"** and **"Negative Results and the Limits of Automation"**; 4 new open questions
+
+Key analytical claims filed:
+- **Model-specific vs transferable harnesses**: Self-Harness argues harness edits are model-specific; Evolve-the-Harness refines it — *deterministic code* transfers across model families (V4 Flash +14.4) while *prompt playbooks* are model-specific and can degrade others (Nemotron-3 Ultra +0.4). Reconciled with SkillOpt's high prose transfer via a unifying rule: **bounded/structured artifacts transfer; free-form prompt tuning overfits.** The transferable, high-leverage harness layer is *deterministic operational code*.
+- **Mismanaged-geniuses**: the largest LAB gains (+20.2 pooled on a frozen DeepSeek-V4-Pro) came from operational plumbing (file landing, tool-call JSON repair, loop breaks), not reasoning — evidence that deployed-agent underperformance is often an infrastructure problem.
+- **First negative-result source**: interaction-trajectory-mining shows offline skill-mining produces legible clusters but fails to transfer (underperforms a frequency prior); the offline reward model is the bottleneck. Strong failure-side support for the live-rich-feedback thesis.
+- **Self-Harness = purest self-contained loop**: the task-running model also edits its own harness — stricter autonomy than the optimizer/target-separation pattern (HALO/SkillOpt/RLM-GEPA/Evolve-the-Harness all keep proposer and target distinct).
+- **Weng survey = external validation** of the wiki's core framing (harness optimization as the near-term RSI path) and a shared vocabulary (the instruction→optimizer-code ladder; seven challenges). Flags a backlog of not-yet-ingested systems: **ACE, MCE, ADAS, AFlow, STOP, Darwin-Gödel Machine, Hyperagents.**
+
+Note: Self-Harness org left unattributed in the index (arXiv abstract page listed authors but not affiliation; several authors — Lei Bai, Shuyue Hu — are associated with Shanghai AI Laboratory, but not confirmed, so recorded as "Zhang et al.").
+
 ## [2026-07-03] query | validation of experiment.md final solution against current GEPA source + consolidated implementation plan
 
 Re-verified all load-bearing claims in `wiki/experiment.md` against the live `gepa-ai/gepa` checkout (commit `92dadff`, v0.1.1) and the existing SAST application (`ai-sast-benchmark-A1b3/autoresearch/gepa/`). Appended a **"Validation against source (2026-07-03)"** section to `wiki/experiment.md`.

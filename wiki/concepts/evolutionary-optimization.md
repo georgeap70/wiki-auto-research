@@ -1,9 +1,9 @@
 ---
 title: Evolutionary Optimization for Agentic Systems
 type: concept
-tags: [evolution, genetic, pareto, population, meta-evolution, EvoX, GEPA, multi-agent]
-sources: [evox, optimize-anything, asi-evolve, coral, deep-research, group-evolve, evoforge, honedhaiku, evo-hq, alphaevolve, shinkaevolve]
-last_updated: 2026-07-01
+tags: [evolution, genetic, pareto, population, meta-evolution, EvoX, GEPA, multi-agent, self-modifying-code, mcts, archive]
+sources: [evox, optimize-anything, asi-evolve, coral, deep-research, group-evolve, evoforge, honedhaiku, evo-hq, alphaevolve, shinkaevolve, stop, adas, aflow, dgm, hyperagents]
+last_updated: 2026-07-10
 ---
 
 # Evolutionary Optimization
@@ -193,6 +193,23 @@ The cost-aware bandit is the most portable idea for other systems in this wiki: 
 
 Key finding — the **Goldilocks band**: GEPA only moves performance in the ~50–70% baseline range. Below 50%, the model can't execute complex prompts. Above 85%, prompts are no longer the bottleneck. This constrains the applicability of prompt optimization as a self-improvement method and is a practical complement to the theoretical analysis in [concepts/feedback-signals](feedback-signals.md).
 
+## The Self-Modifying-Code Lineage (STOP → ADAS → DGM → Hyperagents)
+
+A distinct evolutionary sub-family — predating most of the wiki — evolves *the agent's own code* rather than solutions or prompts. It is the lineage [Weng's survey](../sources/weng-harness-blog.md) traces for recursive self-improvement:
+
+- **[STOP](../sources/stop.md)** (Zelikman et al., 2023) — the earliest. A single "improver" program recursively rewrites *itself* under a scalar meta-utility. Not population-based, but the LM autonomously *rediscovered* evolutionary operators (genetic algorithms, simulated annealing, UCB bandits) as improver designs — and produced the wiki's first documented [reward-hacking](regression-gating.md) episode.
+- **[ADAS](../sources/adas.md)** (Hu, Lu, Clune, 2024) — Meta Agent Search: a meta-agent programs *new agents* in code, conditioned on a growing **archive**, with novelty pressure toward "interesting" designs. Makes the search space all of code (Turing-complete).
+- **[Darwin Gödel Machine](../sources/dgm.md)** (Zhang et al., Sakana AI, 2025) — agents rewrite their *own* codebase; the Gödel machine's proof requirement is replaced by **empirical validation** on benchmarks. Archive/lineage tree; **parent selection ∝ sigmoid(performance) × 1/(offspring count)** — a clean diversity-preserving rule (compare [GEA](../sources/group-evolve.md)'s performance-novelty selection and [ShinkaEvolve](../sources/shinkaevolve.md)'s novelty rejection). SWE-bench Verified 20→50%, Polyglot 14.2→30.7%; transfers across models and languages.
+- **[Hyperagents / DGM-H](../sources/hyperagents.md)** (Zhang et al., Meta+UBC, 2026) — merges task-agent and meta-agent into one self-modifiable program so the *modification procedure itself* is editable, targeting any computable task rather than only coding.
+
+The through-line: the mutation operator is a foundation model editing code, the fitness signal is empirical benchmark score, and diversity is preserved by an archive plus an offspring-penalizing parent-selection rule. This family is where "evolve the harness" and "self-improvement loop" most fully coincide.
+
+## AFlow (MCTS over Code-Represented Workflows) — [sources/aflow](../sources/aflow.md)
+
+AFlow is the wiki's example of **Monte Carlo Tree Search as the evolutionary engine**. Each tree node is a *complete workflow* (code-connected LLM-invoking nodes + operators); the four MCTS phases are soft mixed-probability selection (blend of uniform + score-weighted, always retaining the initial workflow), LLM-based expansion (an optimizer LLM edits prompts/edges), 5×-run execution evaluation, and **experience backpropagation** (logged modification-vs-parent + success/failure propagated up the tree).
+
+This sits between [ADAS](../sources/adas.md)'s free-form meta-agent search and flat population evolution, and is close in spirit to [Evo](../sources/evo.md)'s tree-search frontier — but AFlow's tree is an MCTS search tree with backpropagated experience, where Evo's is a lineage of *committed* experiments with a configurable frontier strategy. Result: 80.3% avg over 6 benchmarks (+19.5% over prior automated workflow optimization) and a small model beating GPT-4o at ~4.55% of the cost.
+
 ## The Hierarchy of Evolution
 
 | Level | What evolves | System |
@@ -202,9 +219,13 @@ Key finding — the **Goldilocks band**: GEPA only moves performance in the ~50�
 | Strategy | Which operators to use | EvoX ([sources/evox](../sources/evox.md)), ASI-Evolve sampling policies |
 | Agent coordination | Who knows what; which approach to copy | CORAL ([sources/coral](../sources/coral.md)) |
 | **Evolutionary unit** | **Individual → group as selection unit** | **GEA ([sources/group-evolve](../sources/group-evolve.md))** |
+| Agent design (as code) | Whole agents programmed by a meta-agent from an archive | ADAS ([sources/adas](../sources/adas.md)) |
+| Workflow (MCTS) | Complete workflows as tree nodes; experience backpropagated | AFlow ([sources/aflow](../sources/aflow.md)) |
 | Harness population | Multiple harnesses evolve in parallel | EvoForge ([sources/evoforge](../sources/evoforge.md)) |
 | Experiment tree + frontier | Tree-shaped lineage with configurable selection per round | Evo ([sources/evo](../sources/evo.md)) |
 | Whole codebase | Multi-file program as the mutation unit | AlphaEvolve ([sources/alphaevolve](../sources/alphaevolve.md)) |
+| The agent's own code | Agent rewrites its own harness; archive + offspring-penalized selection | DGM ([sources/dgm](../sources/dgm.md)) |
+| The improver / modification procedure | The code that does the improving improves itself | STOP ([sources/stop](../sources/stop.md)), Hyperagents ([sources/hyperagents](../sources/hyperagents.md)) |
 | Ensemble + cost-aware bandit | Which LLM operator to invoke, weighted by expected gain / $ | ShinkaEvolve ([sources/shinkaevolve](../sources/shinkaevolve.md)) |
 | Objectives | What fitness means | Open question |
 

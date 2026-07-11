@@ -1,9 +1,9 @@
 ---
 title: Knowledge Accumulation in Self-Improving Systems
 type: concept
-tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage]
-sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa]
-last_updated: 2026-05-30
+tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage, skill-mining, negative-result, playbook, archive]
+sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa, interaction-trajectory-mining, ace, mce, dgm, adas]
+last_updated: 2026-07-10
 ---
 
 # Knowledge Accumulation
@@ -123,6 +123,23 @@ Both treat the prose layer as the unit of accumulation and the structured substr
 [sources/autogenesis](../sources/autogenesis.md) proposes lineage as a **protocol primitive** rather than an optimizer feature. Every modification to any resource (prompt, tool, memory, agent, environment) is versioned, attributed, and tagged with decision rationale. The accumulated store is the complete history of the agent's self-modifications, queryable and rollback-able at the protocol level.
 
 This is closest to [sources/coral](../sources/coral.md)'s Attempts store (per-commit lineage) but generalizes across all agent internals, not just evaluated code commits. Where CORAL's lineage exists to enable multi-agent coordination via shared git, AGP's lineage exists to make self-modification *inspectable and reversible*.
+
+### Itemized Playbook (Context Engineering) — [sources/ace](../sources/ace.md)
+
+[sources/ace](../sources/ace.md) accumulates knowledge as an **itemized playbook**: a structured list of bullet strategies, each with an id and helpful/harmful counters, grown by **deterministic delta updates** (append or edit-one-bullet) rather than whole-context rewriting. This directly targets the accumulation failure mode of prose stores — **context collapse**, where rewriting erodes accumulated detail — and **brevity bias**, where optimizers drift toward short generic text. Compared to [learnings.md](../sources/auto-harness.md) (flat append) and [SkillOpt](../sources/skillopt.md)'s `best_skill.md` (bounded edits to a document), ACE's contribution is the *deterministic, item-level merge discipline* that lets accumulation run in parallel across samples without collision. [sources/mce](../sources/mce.md) goes a level up — it accumulates a *context-management skill* rather than the content. See [concepts/context-engineering](context-engineering.md).
+
+### The Archive (Self-Modifying-Code Lineage) — [sources/dgm](../sources/dgm.md), [sources/adas](../sources/adas.md)
+
+In the [self-modifying-code family](evolutionary-optimization.md), the accumulated artifact is an **archive of whole agents** (or agent designs) with full lineage. [sources/adas](../sources/adas.md)'s meta-agent conditions each new design on the archive of prior agents; [sources/dgm](../sources/dgm.md) keeps every variant in a lineage tree and samples parents from it (∝ performance × 1/offspring). Unlike a document store, the unit of accumulation is an *executable agent*, and the "retrieval" is parent selection for the next mutation. Lineage here doubles as a safety mechanism — it is what let DGM *detect its own [reward hacking](regression-gating.md)*.
+
+## A Negative Bound: Offline Skill Mining Doesn't Transfer
+
+Most systems above either hand-author skills or co-evolve them against *live* feedback. [sources/interaction-trajectory-mining](../sources/interaction-trajectory-mining.md) asks the harder question: can a skill store (`SKILL.md`) be mined **automatically and offline** from logged interaction trajectories (segment → cluster → train a policy with GRPO)? Its answer is a useful cautionary bound:
+
+- **Representation is not the bottleneck** — the mined clusters are legible (5 of 8 reach ≥0.95 purity against reference workflow labels).
+- **Transfer is** — the mined skills barely move downstream accuracy (18.5%→20.5%) and *underperform a simple frequency prior*; the weak links are the boundary detector, the segment representation, and especially the **offline reward model**.
+
+The lesson for knowledge accumulation: the *artifact* form (a prose/skill document) is not what makes accumulation work — the *feedback that curates it* is. Systems that succeed ([sources/skillopt](../sources/skillopt.md), [sources/coral](../sources/coral.md), [sources/skill-rl-skill0](../sources/skill-rl-skill0.md)) curate their stores against live, dense signals; offline mining from static logs is too lossy. See [concepts/feedback-signals](feedback-signals.md).
 
 ## Shared Memory in Multi-Agent Systems
 
