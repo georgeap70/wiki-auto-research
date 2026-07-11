@@ -59,6 +59,13 @@ Raw source files → wiki source pages:
 | hf-harness                 | wiki/sources/evolve-the-harness.md |
 | interaction-trajectory-mining | wiki/sources/interaction-trajectory-mining.md |
 | weng-blog                  | wiki/sources/weng-harness-blog.md |
+| stop                       | wiki/sources/stop.md          |
+| adas                       | wiki/sources/adas.md          |
+| aflow                      | wiki/sources/aflow.md         |
+| dgm                        | wiki/sources/dgm.md           |
+| ace                        | wiki/sources/ace.md           |
+| mce                        | wiki/sources/mce.md           |
+| hyperagents                | wiki/sources/hyperagents.md   |
 
 ## Workflows
 

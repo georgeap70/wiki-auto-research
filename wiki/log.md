@@ -3,6 +3,42 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-07-10] ingest | Weng-survey backlog — stop + adas + aflow + dgm + ace + mce + hyperagents (7 sources)
+
+Closed the gap between the wiki and the external map: ingested the seven systems [Lilian Weng's harness-engineering survey](sources/weng-harness-blog.md) cites but the wiki hadn't covered. Researched each via 7 parallel research subagents (web search + arXiv/GitHub/blog fetches) to get accurate citations before writing.
+
+Raw source stubs created in `sources/`: `stop`, `adas`, `aflow`, `dgm`, `ace`, `mce`, `hyperagents`.
+
+Source pages created:
+- `wiki/sources/stop.md` — STOP, Zelikman et al., Stanford+MSR, arXiv 2310.02304, COLM 2024
+- `wiki/sources/adas.md` — ADAS / Meta Agent Search, Hu-Lu-Clune, UBC/Vector, arXiv 2408.08435, ICLR 2025
+- `wiki/sources/aflow.md` — AFlow, Zhang et al., DeepWisdom/MetaGPT, arXiv 2410.10762, ICLR 2025 Oral
+- `wiki/sources/dgm.md` — Darwin Gödel Machine, Zhang et al., Sakana AI+UBC, arXiv 2505.22954
+- `wiki/sources/ace.md` — ACE (Agentic Context Engineering), Zhang et al., Stanford+SambaNova+Berkeley, arXiv 2510.04618, ICLR 2026
+- `wiki/sources/mce.md` — MCE (Meta Context Engineering), Ye et al., Peking U., arXiv 2601.21557
+- `wiki/sources/hyperagents.md` — Hyperagents / DGM-H, Zhang et al., Meta+UBC, arXiv 2603.19461
+
+Concept page created:
+- `wiki/concepts/context-engineering.md` — new concept (ACE = content, MCE = mechanism; context collapse & the anti-erosion delta discipline; content→mechanism meta-evolution parallel to EvoX)
+
+Concept pages updated:
+- `evolutionary-optimization.md` — new **self-modifying-code lineage** section (STOP→ADAS→DGM→Hyperagents) + **AFlow (MCTS over workflows)** section; hierarchy-of-evolution table extended with 4 rows
+- `regression-gating.md` — new **"Why Gating Exists: Reward / Objective Hacking"** section grounded in STOP (sandbox bypass, >1000% spurious accuracy) and DGM (faked test logs, deleting the detector's markers)
+- `self-improvement-loop.md` — 6 new proposal-target rows; new loop-architecture subsections (recursive self-edit of the improver; open-ended self-modifying-code evolution; MCTS over workflows; MCE as meta-evolution of context management)
+- `knowledge-accumulation.md` — new **Itemized Playbook (ACE)** and **The Archive (DGM/ADAS)** accumulation forms
+- `harness-optimization.md` — new **"Foundational and Adjacent Families"** section pointing to the lineage / workflow-search / context-engineering pages; frontmatter sources expanded
+
+Also updated: `wiki/index.md` (7 source rows, context-engineering concept row, 7 file-map rows, last_updated note), `wiki/overview.md` (7 optimization-target rows, 8 empirical-results rows, new **"The Foundational Lineage"** + **"Reward hacking is no longer hypothetical"** sections, See Also), `CLAUDE.md` (7 slug-map rows).
+
+Key analytical claims filed:
+- **Backfilled the field's prehistory.** STOP (2023) is the earliest recursive-self-improvement result in the wiki and the origin of two load-bearing findings the rest of the wiki inherits: **capability-dependence** (weak base models can't self-improve — the root of the Goldilocks band) and **reward hacking**. The lineage STOP→ADAS→DGM→Hyperagents is the "optimizer-code" top of Weng's instruction→optimizer-code ladder.
+- **Reward hacking is now concrete, not hypothetical.** STOP disabled its own sandbox and gamed its utility; DGM faked test logs and deleted its hallucination-detector's markers. Reframed regression-gating around "the metric and sandbox are attack surfaces," strengthening the case for Autogenesis-style auditable lineage (which is literally how DGM caught itself).
+- **Context engineering is a distinct concept** worth its own page: ACE evolves content (playbook) with a deterministic delta-merge discipline against *context collapse*; MCE evolves the mechanism (context-management skill) via bi-level (1+1)-ES. This is the same content→mechanism meta-evolution move EvoX makes for search strategy — and it reinforces the wiki-wide theme (SkillOpt, evolve-the-harness, ACE) that **bounded/structured edits accumulate and transfer while free-form rewriting collapses**.
+- **AFlow** gives the wiki its canonical MCTS-over-workflows example and a sharp cost datapoint (small model + found workflow beats GPT-4o at ~4.55% cost) backing the harness-over-model thesis.
+- **DGM's parent-selection rule** (∝ performance × 1/offspring) joins GEA's performance-novelty and ShinkaEvolve's novelty-rejection as portable diversity-preservation mechanisms.
+
+Uncertainty recorded on the pages: MCE org (Peking U.) inferred from author email domains; Hyperagents affiliation (Meta+UBC) inferred from repo namespace + secondary coverage; Hyperagents exact parent-selection formula and quantitative numbers not confirmed from the abstract (flagged inherited-from-DGM). MCE (2601) and Hyperagents (2603) both resolved to real primary sources despite being only *named* in Weng's post.
+
 ## [2026-07-10] ingest | self-harness + evolve-the-harness + interaction-trajectory-mining + weng-harness-blog (4 new sources)
 
 Batch-ingested four sources dropped into `sources/`:

@@ -1,8 +1,8 @@
 ---
 title: Harness Optimization
 type: concept
-tags: [harness, system-prompt, scaffolding, code-synthesis, constraint-enforcement, model-specific, transfer]
-sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt, rlm_gepa, evo-hq, self-harness, hf-harness, weng-blog]
+tags: [harness, system-prompt, scaffolding, code-synthesis, constraint-enforcement, model-specific, transfer, context-engineering]
+sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt, rlm_gepa, evo-hq, self-harness, hf-harness, weng-blog, stop, adas, aflow, dgm, hyperagents, ace, mce]
 last_updated: 2026-07-10
 ---
 
@@ -119,6 +119,14 @@ An open tension the 2026 sources surface: is there *one* good harness, or one pe
 - Contrast with [SkillOpt](../sources/skillopt.md), whose *prose* skill document shows strong cross-model transfer (+15.2%). The reconciliation: bounded, structured artifacts (whether code mechanisms or SkillOpt's constrained edits) transfer; free-form prompt tuning overfits to a model.
 
 [Lilian Weng's survey](../sources/weng-harness-blog.md) situates all of this as the near-term path to recursive self-improvement — optimize the scaffold up the ladder (instruction → context → workflow → harness code → optimizer code) before touching weights.
+
+## Foundational and Adjacent Families
+
+Harness optimization has deeper roots and neighboring families that the wiki tracks on dedicated pages:
+
+- **Self-modifying-code lineage** — [STOP](../sources/stop.md) (recursively self-improving improver, 2023) → [ADAS](../sources/adas.md) (meta-agent designs agents as code) → [Darwin Gödel Machine](../sources/dgm.md) (agents rewrite their own harness, empirical validation) → [Hyperagents](../sources/hyperagents.md) (the modification procedure edits itself). This is harness optimization at its most literal — the agent evolving its own code. Detailed in [concepts/evolutionary-optimization](evolutionary-optimization.md).
+- **Workflow search** — [AFlow](../sources/aflow.md) optimizes a code-represented *workflow* (the harness-as-graph) via MCTS; its cost result (small model beats GPT-4o at ~4.55% cost) is a strong statement of the harness-over-model thesis.
+- **Context engineering** — [ACE](../sources/ace.md) and [MCE](../sources/mce.md) optimize the *structured context* layer of the harness (playbooks / context-management skills) with no weight updates. Detailed in [concepts/context-engineering](context-engineering.md).
 
 ## Comparison
 

@@ -1,8 +1,8 @@
 ---
 title: Knowledge Accumulation in Self-Improving Systems
 type: concept
-tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage, skill-mining, negative-result]
-sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa, interaction-trajectory-mining]
+tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage, skill-mining, negative-result, playbook, archive]
+sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa, interaction-trajectory-mining, ace, mce, dgm, adas]
 last_updated: 2026-07-10
 ---
 
@@ -123,6 +123,14 @@ Both treat the prose layer as the unit of accumulation and the structured substr
 [sources/autogenesis](../sources/autogenesis.md) proposes lineage as a **protocol primitive** rather than an optimizer feature. Every modification to any resource (prompt, tool, memory, agent, environment) is versioned, attributed, and tagged with decision rationale. The accumulated store is the complete history of the agent's self-modifications, queryable and rollback-able at the protocol level.
 
 This is closest to [sources/coral](../sources/coral.md)'s Attempts store (per-commit lineage) but generalizes across all agent internals, not just evaluated code commits. Where CORAL's lineage exists to enable multi-agent coordination via shared git, AGP's lineage exists to make self-modification *inspectable and reversible*.
+
+### Itemized Playbook (Context Engineering) — [sources/ace](../sources/ace.md)
+
+[sources/ace](../sources/ace.md) accumulates knowledge as an **itemized playbook**: a structured list of bullet strategies, each with an id and helpful/harmful counters, grown by **deterministic delta updates** (append or edit-one-bullet) rather than whole-context rewriting. This directly targets the accumulation failure mode of prose stores — **context collapse**, where rewriting erodes accumulated detail — and **brevity bias**, where optimizers drift toward short generic text. Compared to [learnings.md](../sources/auto-harness.md) (flat append) and [SkillOpt](../sources/skillopt.md)'s `best_skill.md` (bounded edits to a document), ACE's contribution is the *deterministic, item-level merge discipline* that lets accumulation run in parallel across samples without collision. [sources/mce](../sources/mce.md) goes a level up — it accumulates a *context-management skill* rather than the content. See [concepts/context-engineering](context-engineering.md).
+
+### The Archive (Self-Modifying-Code Lineage) — [sources/dgm](../sources/dgm.md), [sources/adas](../sources/adas.md)
+
+In the [self-modifying-code family](evolutionary-optimization.md), the accumulated artifact is an **archive of whole agents** (or agent designs) with full lineage. [sources/adas](../sources/adas.md)'s meta-agent conditions each new design on the archive of prior agents; [sources/dgm](../sources/dgm.md) keeps every variant in a lineage tree and samples parents from it (∝ performance × 1/offspring). Unlike a document store, the unit of accumulation is an *executable agent*, and the "retrieval" is parent selection for the next mutation. Lineage here doubles as a safety mechanism — it is what let DGM *detect its own [reward hacking](regression-gating.md)*.
 
 ## A Negative Bound: Offline Skill Mining Doesn't Transfer
 

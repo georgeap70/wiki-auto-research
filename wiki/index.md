@@ -1,6 +1,6 @@
 # Self-Improving Agentic Systems — Wiki Index
 
-A catalog of all pages. Read this first when answering queries. Last updated: 2026-07-10 (+ self-harness, evolve-the-harness, interaction-trajectory-mining, weng-harness-blog).
+A catalog of all pages. Read this first when answering queries. Last updated: 2026-07-10 (+ self-harness, evolve-the-harness, interaction-trajectory-mining, weng-harness-blog; + Weng-backlog: stop, adas, aflow, dgm, ace, mce, hyperagents; + context-engineering concept).
 
 ---
 
@@ -50,6 +50,13 @@ One page per raw source. See `sources/` directory for raw URLs.
 | [Evolve the Harness (LAB)](sources/evolve-the-harness.md) | `sources/hf-harness` | [HF Space](https://huggingface.co/spaces/joelniklaus/harness-optimization) | Joel Niklaus: Meta-Harness loop on Harvey's Legal Agent Benchmark; frozen DeepSeek-V4-Pro + Claude Opus 4.8 proposer; **deterministic code beats prompts** and transfers across model families; pooled 63.1→83.3% dev (+20.2), 63.4→80.1% test |
 | [Interaction Trajectory Mining](sources/interaction-trajectory-mining.md) | `sources/interaction-trajectory-mining` | none | Hao & Li: **negative-result** study — auto-mining `SKILL.md` from GUI trajectories (segment→cluster→GRPO); clusters legible but transfer fails (underperforms frequency prior); offline reward model is the bottleneck (arXiv 2606.20363) |
 | [Weng: Harness Engineering](sources/weng-harness-blog.md) | `sources/weng-blog` | none | Lilian Weng survey: harness optimization as the near-term path to recursive self-improvement; instruction→context→workflow→harness-code→optimizer-code ladder; seven challenges (weak evaluators, reward hacking, diversity collapse…); external map of this wiki's territory |
+| [STOP](sources/stop.md) | `sources/stop` | [github](https://github.com/microsoft/stop) | Zelikman et al. (Stanford + MSR): earliest recursive self-improvement — an "improver" scaffold rewrites itself under a scalar meta-utility; source of the capability-dependence and reward-hacking (sandbox-bypass) findings (arXiv 2310.02304, COLM 2024) |
+| [ADAS](sources/adas.md) | `sources/adas` | [github](https://github.com/ShengranHu/ADAS) | Hu, Lu, Clune (UBC/Vector): Meta Agent Search — a meta-agent programs new agents in code, growing an archive; code as a Turing-complete search space; beats hand-designed baselines on ARC/DROP/MGSM/MMLU; transfers across domains + models (arXiv 2408.08435, ICLR 2025) |
+| [AFlow](sources/aflow.md) | `sources/aflow` | [github](https://github.com/FoundationAgents/AFlow) | Zhang et al. (DeepWisdom/MetaGPT): MCTS over code-represented workflows (each node = a full workflow) with experience backpropagation; 80.3% avg on 6 benchmarks; small model beats GPT-4o at ~4.55% cost (arXiv 2410.10762, ICLR 2025 Oral) |
+| [Darwin Gödel Machine](sources/dgm.md) | `sources/dgm` | [github](https://github.com/jennyzzt/dgm) | Zhang et al. (Sakana AI + UBC): agents rewrite their own code in an open-ended archive; proof replaced by empirical validation; parent selection ∝ performance × 1/offspring; SWE-bench 20→50%, Polyglot 14.2→30.7%; documented reward hacking (arXiv 2505.22954) |
+| [ACE](sources/ace.md) | `sources/ace` | [github](https://github.com/ace-agent/ace) | Zhang et al. (Stanford + SambaNova + Berkeley): Agentic Context Engineering — context as an itemized playbook grown by deterministic delta updates; avoids context collapse; +10.6% agents / +8.6% finance; big latency/cost wins vs GEPA (arXiv 2510.04618, ICLR 2026) |
+| [MCE](sources/mce.md) | `sources/mce` | [github](https://github.com/metaevo-ai/meta-context-engineering) | Ye et al. (Peking U.): Meta Context Engineering — bi-level (1+1)-ES that evolves the context-management *skill* (mechanism), not just content; beats ACE on all 5 domains (mean +16.9% over SOTA agentic-CE) (arXiv 2601.21557) |
+| [Hyperagents (DGM-H)](sources/hyperagents.md) | `sources/hyperagents` | [github](https://github.com/facebookresearch/HyperAgents) | Zhang et al. (Meta + UBC): DGM follow-up — merges task agent + meta-agent into one self-modifiable program so the modification procedure edits itself; targets any computable task (coding, review, robotics, grading) (arXiv 2603.19461) |
 
 ---
 
@@ -62,7 +69,8 @@ One page per raw source. See `sources/` directory for raw URLs.
 | [Harness Optimization](concepts/harness-optimization.md) | Optimizing the wrapper around a base LLM (prompts, tools, constraints) without touching weights |
 | [Regression Gating](concepts/regression-gating.md) | How safe self-improvement is enforced: threshold, Pareto, held-out eval, stagnation-based |
 | [Evolutionary Optimization](concepts/evolutionary-optimization.md) | Population-based search; LLMs as operators; GEPA; meta-evolution (EvoX); CORAL multi-agent co-evolution |
-| [Knowledge Accumulation](concepts/knowledge-accumulation.md) | Persistent memory across iterations: learnings.md, Cognition Base, Attempts/Notes/Skills; what makes loops compound |
+| [Knowledge Accumulation](concepts/knowledge-accumulation.md) | Persistent memory across iterations: learnings.md, Cognition Base, Attempts/Notes/Skills, playbooks, archives; what makes loops compound |
+| [Context Engineering](concepts/context-engineering.md) | Evolving the model's structured context (playbook/skill) with no weight updates; content (ACE) vs. mechanism (MCE); context collapse and the anti-erosion discipline |
 
 ---
 
@@ -114,3 +122,10 @@ One page per raw source. See `sources/` directory for raw URLs.
 | `hf-harness` | [sources/evolve-the-harness.md](sources/evolve-the-harness.md) |
 | `interaction-trajectory-mining` | [sources/interaction-trajectory-mining.md](sources/interaction-trajectory-mining.md) |
 | `weng-blog` | [sources/weng-harness-blog.md](sources/weng-harness-blog.md) |
+| `stop` | [sources/stop.md](sources/stop.md) |
+| `adas` | [sources/adas.md](sources/adas.md) |
+| `aflow` | [sources/aflow.md](sources/aflow.md) |
+| `dgm` | [sources/dgm.md](sources/dgm.md) |
+| `ace` | [sources/ace.md](sources/ace.md) |
+| `mce` | [sources/mce.md](sources/mce.md) |
+| `hyperagents` | [sources/hyperagents.md](sources/hyperagents.md) |

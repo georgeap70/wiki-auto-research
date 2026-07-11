@@ -2,7 +2,7 @@
 title: The Self-Improvement Loop
 type: concept
 tags: [core-concept, loop, measure-fail-propose-gate]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt, evo-hq, self-harness, hf-harness]
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt, evo-hq, self-harness, hf-harness, stop, adas, aflow, dgm, hyperagents, ace, mce]
 last_updated: 2026-07-10
 ---
 
@@ -41,6 +41,11 @@ Generate a candidate improvement. This is the creative step. What is proposed de
 | Per-capability LoRA adapters | New modular weight deltas + router | [sources/trace](../sources/trace.md) |
 | Executable skills (param program + NL) | New dual-mode skill artifacts | [sources/webxskill](../sources/webxskill.md) |
 | Typed versioned resources (prompts/tools/memory) | Protocol-level modifications with rationale | [sources/autogenesis](../sources/autogenesis.md) |
+| Structured context / playbook | Itemized bullets or context-management skill | [sources/ace](../sources/ace.md), [sources/mce](../sources/mce.md) |
+| Whole agent design (as code) | A meta-agent programs a new agent | [sources/adas](../sources/adas.md) |
+| A complete workflow (MCTS node) | Edit prompts/edges of a code-represented workflow | [sources/aflow](../sources/aflow.md) |
+| The agent's own codebase | The agent rewrites its own harness | [sources/dgm](../sources/dgm.md), [sources/hyperagents](../sources/hyperagents.md) |
+| The improver / modification procedure | The improving code improves itself | [sources/stop](../sources/stop.md) |
 | The optimization algorithm | Switch search strategy | [sources/evox](../sources/evox.md) |
 
 ### 4. Gate
@@ -129,8 +134,17 @@ This is the set of loop types that optimize **weights** rather than harness code
 | [sources/skill-rl-skill0](../sources/skill-rl-skill0.md) SKILL-0 | Base policy weights | Curriculum RL, progressive skill withdrawal |
 | [sources/trace](../sources/trace.md) | Per-capability LoRA adapters | GRPO in capability-isolated environments |
 
+### Recursive self-edit of the improver (the foundational case)
+[sources/stop](../sources/stop.md) (2023) is the earliest instance in the wiki's lineage: a single "improver" program recursively rewrites *its own source* under a scalar meta-utility, with weights frozen. It established two facts the rest of the field inherits — **capability-dependence** (only strong-enough base models can self-improve) and **reward hacking** (the loop will game a mis-specified objective; see [regression-gating](regression-gating.md)). [sources/hyperagents](../sources/hyperagents.md) is its most literal modern realization: the meta-agent's *modification procedure itself* is editable.
+
+### Open-ended self-modifying-code evolution
+An archive-based variant where a foundation model rewrites the agent's *own* codebase and keeps empirically-better variants in a growing lineage tree. Used by [sources/dgm](../sources/dgm.md) (Darwin Gödel Machine — proof replaced by benchmark validation; parent selection ∝ performance × 1/offspring) and its follow-up [sources/hyperagents](../sources/hyperagents.md); the design lineage runs back through [sources/adas](../sources/adas.md) (a meta-agent programs new agents from an archive). See [concepts/evolutionary-optimization](evolutionary-optimization.md) for the full family.
+
+### MCTS over workflows
+[sources/aflow](../sources/aflow.md) instantiates the loop as Monte Carlo Tree Search where each node is a complete code-represented workflow: select (soft mixed-probability) → expand (an LLM edits prompts/edges) → evaluate (execute 5×) → backpropagate logged experience. A structured middle ground between free-form meta-agent search and flat population evolution.
+
 ### Meta-evolution
-The evolution strategy itself is subject to the same evolutionary loop. Used by [sources/evox](../sources/evox.md).
+The evolution strategy itself is subject to the same evolutionary loop. Used by [sources/evox](../sources/evox.md). [sources/mce](../sources/mce.md) applies the identical move to *context management*: a base loop engineers the context while a meta-loop evolves the context-management skill (bi-level (1+1)-ES). See [concepts/context-engineering](context-engineering.md).
 
 ## What Makes the Loop Compound?
 
