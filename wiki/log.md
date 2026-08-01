@@ -3,6 +3,46 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-07-31] ingest | OPHIS + optimize_anything Omni + Squeeze-Evolve + Self-Evolving taxonomy → 4 new source pages
+
+Four sources ingested together (each lands in a different part of the wiki):
+
+**optimize_anything Omni** (GEPA team, blog 2026-07-22, `optimize-anything-omni`):
+- `optimize_anything` becomes **engine-pluggable** (`engine=gepa|autoresearch|meta_harness`) and **pipeline-composable**. The three engines are three systems already in the wiki: [GEPA](sources/optimize-anything.md), [AutoResearch](sources/autoresearch-vs-hpo.md), [Meta-Harness](sources/meta-harness.md).
+- **omni** meta-optimizer = 2-phase: explore (race all engines in parallel on a shared budget, keep best) → continue (seed a *fresh* optimizer with the winner to break plateaus). Composition helpers: `optimize_sequential/best_of/parallel/vote/adaptive_sequential`. **Terrarium** = fair-comparison harness (pins tasks/budget/model = Sonnet 4.6 medium thinking).
+- Frontier-CS (10 problems, $20 each): **no single optimizer dominates**, but every omni variant beats every standalone (GEPA 43.8→61.8 +41%; omni-AutoResearch 63.2 best).
+
+**Squeeze-Evolve** (COLM 2026, `squeeze-evolve`):
+- Verifier-free evolutionary **test-time scaling**; population = candidate *answers*. 5-stage loop Score→Select→Route→Recombine→Update; routes each refinement step to a cheap/expensive model by **per-instance difficulty** (confidence via logprobs / answer diversity percentiles). Inspired by RSA; cites OpenEvolve. AIME25/HMMT25/GPQA-Diamond; NVIDIA Dynamo + Claude Code plugin. Same-or-better accuracy at a fraction of the cost (no printed numbers).
+- Contrast baked in: ShinkaEvolve routes the *mutation operator* by cost-UCB; Squeeze-Evolve routes the *per-instance answer refinement* by difficulty — two layers of the same `[model]` idea.
+
+**OPHIS** (MetaCircle / Ziming Liu, blog Jul 2026, `ophis`):
+- The **contrarian**: mechanistic auto-research, **no LLM, no evolution**. Loop = Observation→Problem→Hypothesis→Intervention→Speed-up over ~6,000 tensor-level training-dynamics observables; *deduces* interventions from causal hypotheses instead of searching.
+- Results: grokking 72.9% substantial-improve / 13.7% fail vs LLM 57.9% / 42.1% (350 tricks); NanoGPT val BPB 0.93410→0.93184 = **−7.43σ** on an already-RSI-optimized baseline. Discovered a novel "forking" phenomenon.
+- Carries its **own** Stage 1/2/3 taxonomy (causal depth: internet-prior/Karpathy → RSI statistical memory → mechanistic) — flagged everywhere as *not* CORAL's Stage 1/2/3 (autonomy) taxonomy.
+
+**Self-Evolving Agents** (Xinming Tu, blog 2026-07-22, `self-evolving`):
+- Taxonomy, not a system. **3×3 matrix**: What evolves (External Files / Agent Harness / Model Weights) × When it persists (Single Session / Across Sessions / Across Users). **Consolidation path** files→harness→weights (durability & update-cost rise). Recursive self-improvement = the loop applied to AI development itself.
+- Used as a wiki-wide lens: mapped existing wiki systems onto the matrix (densest in Harness × Across-Sessions; sparse in Across-Users).
+
+Wiki updates:
+- 4 new source pages under `wiki/sources/`.
+- `index.md`: 4 rows in Source Summaries + 4 in Source File Map; last_updated bumped.
+- `concepts/evolutionary-optimization.md`: Squeeze-Evolve (cost-routed test-time population) + omni (portfolio of optimizers) sections; 2 new hierarchy-of-evolution rows; frontmatter.
+- `concepts/feedback-signals.md`: OPHIS (mechanistic internal-dynamics = new richest tier) + Squeeze-Evolve (verifier-free difficulty proxy) named concepts; frontmatter.
+- `concepts/self-improvement-loop.md`: OPHIS mechanistic non-search loop + taxonomy-collision warning; note pointing to Tu's What×When cut; frontmatter.
+- `concepts/harness-optimization.md`: omni subsection + comparison row + connections; Tu "Agent Harness" substrate; frontmatter.
+- `concepts/regression-gating.md`: OPHIS plausibility+variance (pre-eval) gating; Squeeze-Evolve verifier-free counterexample; frontmatter.
+- `concepts/knowledge-accumulation.md`: "Consolidation Path files→harness→weights" section (Tu) reorganizing the existing stores; frontmatter.
+- `overview.md`: What-Can-Be-Optimized rows (OPHIS, AlphaEvolve/ShinkaEvolve backfill, Squeeze-Evolve, omni) + Tu cross-cut note; feedback-signal bullets; 2 new loop-architecture subsections (omni portfolio, OPHIS mechanistic); 6 empirical-results rows (backfilled AlphaEvolve/ShinkaEvolve too); 4 open questions; See-Also; frontmatter (also added alphaevolve/shinkaevolve, missing since the prior ingest).
+- `experiment.md`: "omni portfolio beats single optimizer — ablation arm, not a replacement" subsection (does NOT overturn the committed single-GEPA-loop decision: different objective shape, orthogonal to the `[prompt,model]` candidate layout, budget already partly covered by Evo's (β,V) sweep); added portfolio ablation to the experimental design + connections; frontmatter.
+
+Key positional claims:
+- omni is the top of the "hierarchy of evolution" — optimizing the *portfolio of optimizers*; its "no single optimizer dominates" is EvoX's "no single strategy dominates" lifted one level, and the strongest external tension with experiment.md's single-loop commitment (added as an ablation arm, not a plan change).
+- OPHIS is the wiki's clearest mechanistic-understanding alternative to search-based self-improvement, and pushes the feedback-signal spectrum a layer deeper (internal training dynamics). Its observable-design-carries-the-value finding suggests those observables could feed an LLM/evolutionary proposer as ASI.
+- Squeeze-Evolve + ShinkaEvolve together are the cleanest illustration of two layers at which `[model]` becomes a search coordinate (per-instance difficulty vs. operator cost-UCB) — relevant to experiment.md.
+- Tu's What×When taxonomy is the best external organizing lens for the whole wiki; folded into overview.md and the loop/harness/knowledge concept pages.
+
 ## [2026-07-03] query | validation of experiment.md final solution against current GEPA source + consolidated implementation plan
 
 Re-verified all load-bearing claims in `wiki/experiment.md` against the live `gepa-ai/gepa` checkout (commit `92dadff`, v0.1.1) and the existing SAST application (`ai-sast-benchmark-A1b3/autoresearch/gepa/`). Appended a **"Validation against source (2026-07-03)"** section to `wiki/experiment.md`.

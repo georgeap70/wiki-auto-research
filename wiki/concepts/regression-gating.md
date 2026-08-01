@@ -2,8 +2,8 @@
 title: Regression Gating
 type: concept
 tags: [safety, regression, gating, threshold, pareto, lineage, rollback]
-sources: [auto-harness, optimize-anything, evox, meta-harness, autogenesis, autoreason, skillOpt, evo-hq]
-last_updated: 2026-06-06
+sources: [auto-harness, optimize-anything, evox, meta-harness, autogenesis, autoreason, skillOpt, evo-hq, ophis, squeeze-evolve]
+last_updated: 2026-07-31
 ---
 
 # Regression Gating
@@ -109,6 +109,19 @@ Conceptually adjacent to:
 - Trust-region methods in numerical optimization
 - The "step size" parameter in policy-gradient RL
 - The patience limit in [sources/deep-research](../sources/deep-research.md)'s GEPA setup, but applied to edit magnitude rather than iteration count
+
+### Plausibility + Variance Gating (Pre-Evaluation)
+
+Used by [sources/ophis](../sources/ophis.md), and unusual in *where* it gates. Two filters, one before evaluation and one after:
+
+1. **Mechanistic plausibility (pre-eval)** — candidate interventions are filtered through a causal model of training dynamics *before* they are run. An intervention that no hypothesis supports is never evaluated. This is prior restraint by *causal reasoning* rather than by edit magnitude ([SkillOpt's](../sources/skillopt.md) budget) — it is why OPHIS can test hundreds of interventions with a much lower failure rate (13.7% vs 42.1% for an LLM baseline).
+2. **Mean + stability + variance (post-eval)** — acceptance is multi-criterion (mean validation metric, stability, and a standard-deviation threshold), with **10 repeated evaluations** per candidate to separate real gains from kernel noise. OPHIS explicitly flags that some high-mean proposals were *unstable*, motivating variance as a first-class gate term, not just the mean.
+
+Variance-aware gating is a distinct axis from every scalar/Pareto gate above: those ask *"is it better?"*; this also asks *"is the improvement reliable?"*
+
+### Counterexample: verifier-free selection (no gate)
+
+[sources/squeeze-evolve](../sources/squeeze-evolve.md) is a deliberate *absence* of gating: being **verifier-free**, it has no ground-truth signal to gate against. It selects and routes purely on a zero-cost difficulty proxy (confidence/diversity), never accepting/rejecting a candidate on measured quality. This marks the boundary of the gating concept — when no verifier exists, self-consistency-style *consensus* substitutes for a gate, trading correctness guarantees for cost.
 
 ## Design Considerations
 

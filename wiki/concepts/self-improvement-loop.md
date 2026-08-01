@@ -2,8 +2,8 @@
 title: The Self-Improvement Loop
 type: concept
 tags: [core-concept, loop, measure-fail-propose-gate]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt, evo-hq]
-last_updated: 2026-06-06
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, optimize-anything-omni, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt, evo-hq, ophis, self-evolving]
+last_updated: 2026-07-31
 ---
 
 # The Self-Improvement Loop
@@ -58,6 +58,8 @@ See [concepts/regression-gating](regression-gating.md) for details.
 
 ## Loop Architectures
 
+The list below organizes loops by their **mechanism**. An orthogonal cut — *where the change lands and how long it persists* — comes from [sources/self-evolving](../sources/self-evolving.md)'s What×When taxonomy: any loop can be indexed by substrate (external files / harness / weights) and horizon (single session / across sessions / across users). The "weight optimization" subsection below is exactly the *weights* column; most other loops here live in the *harness across-sessions* cell.
+
 The loop can be instantiated in several ways:
 
 ### Single-agent self-edit
@@ -110,6 +112,11 @@ The agent being improved does not drive its own diagnosis — supervising LLM ag
 [sources/evo](../sources/evo.md) sits between single-thread hill-climb and flat population evolution. The orchestrator maintains a *tree of committed experiments*. Each round, a configurable **frontier strategy** (`argmax`, `top_k`, `epsilon_greedy`, `softmax`, `pareto_per_task`) picks which committed branch to extend; within the round, parallel subagents in isolated git worktrees each pick up shared state (failure traces, annotations, discarded hypotheses), form a hypothesis, edit, and benchmark. Between rounds, RLM-inspired **cross-cutting scan subagents** read trace batches in parallel and surface compound failure patterns (gate-failure intersections, shared root causes); their findings land in shared state for the next round.
 
 Two distinguishing features: (a) tree shape preserves lineage and exposes the selection operator as a tunable knob (the `pareto_per_task` strategy is credited to GEPA); (b) cross-cutting scans are a *standing between-round phase*, not a one-shot analyzer — feedback compression woven into the loop rather than bolted on at the end.
+
+### Mechanistic hypothesis-driven loop (non-search)
+[sources/ophis](../sources/ophis.md) is the wiki's one loop that is **neither LLM-proposer-driven nor evolutionary**. Its cycle is **Observation → Problem → Hypothesis → Intervention → Speed-up**: measure ~6,000 tensor-level training-dynamics observables, localize a bottleneck, form a *causal* hypothesis about why it occurs, derive a targeted intervention *from that hypothesis*, and validate the speed-up. The "propose" step is deduction from a mechanistic model, not sampling from a proposer or a population — which is why it can generate candidates "almost instantly" and fail far less often (13.7% vs 42.1% for an LLM baseline on grokking). Gating is by *mechanistic plausibility* plus a mean/stability/variance criterion, with 10 repeated evals to beat kernel noise.
+
+> OPHIS also carries its own **Stage 1/2/3 taxonomy of causal depth** (internet-prior recombination → statistical memory/RSI → mechanistic reasoning). This is orthogonal to — and easily confused with — [CORAL's Stage 1/2/3 *autonomy* taxonomy](../sources/coral.md). They rank different axes; see [sources/ophis](../sources/ophis.md).
 
 ### Protocol-governed self-modification
 [sources/autogenesis](../sources/autogenesis.md) formalizes the loop as a **protocol** rather than an algorithm. The measure → fail → propose → gate → repeat cycle is implemented as typed operators (Proposal / Assessment / Commitment) over versioned resources (prompts, tools, agents, environments, memory). Every commitment leaves a rollback path; every modification carries decision rationale.

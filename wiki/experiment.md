@@ -2,8 +2,8 @@
 title: Experiment — Optimizing Vulnerability-Detection Scanning Workflows
 type: analysis
 tags: [experiment, vulnerability-detection, security, claude-code-skills, harness-optimization, application]
-sources: [skillopt, evo-hq, honedhaiku, optimize-anything, rlm_gepa, auto-harness]
-last_updated: 2026-07-03
+sources: [skillopt, evo-hq, honedhaiku, optimize-anything, optimize-anything-omni, rlm_gepa, auto-harness]
+last_updated: 2026-07-31
 ---
 
 # Experiment — Optimizing Vulnerability-Detection Scanning Workflows
@@ -205,6 +205,18 @@ Keep Evo as the substrate. Run **one GEPA loop with no outer model sweep** (see 
 
 The earlier open question is now **resolved**: GEPA's shipped `scores` is `list[float]` (per-instance scalar), so it does not *search* an objective Pareto — but it *tracks* one via `objective_scores`, so no frontier-code patch is needed. The remaining work is designing the scalarization and unioning frontiers across runs, not extending GEPA's core.
 
+### New (2026-07-31): omni's "portfolio beats any single optimizer" — an ablation arm, not a replacement
+
+[sources/optimize-anything-omni](sources/optimize-anything-omni.md) is directly on-point for the committed design and deserves a check. It productizes exactly the three engines this experiment has been choosing among — **GEPA**, **AutoResearch** ([autoresearch-vs-hpo](sources/autoresearch-vs-hpo.md)), and **Meta-Harness** ([meta-harness](sources/meta-harness.md)) — behind one `(candidate, score, loop)` contract, and reports on Frontier-CS that **no single optimizer dominates** and **every portfolio (`omni`) beats every standalone engine** (GEPA 43.8 → 61.8 when wrapped in omni). That is a direct, empirical tension with the committed choice to run **one** GEPA loop.
+
+Why it does **not** overturn the commitment:
+
+- **Different objective shape.** Frontier-CS is single-objective competitive programming scored by a fixed grader. This experiment is genuinely multi-objective `(precision, recall, $/scan)` with a Pareto readout and a hard cost gate. Omni's "keep the single highest-scoring candidate" explore-phase collapses to a scalar — it would need a Pareto-aware selection to preserve the frontier this experiment exists to produce.
+- **The commitment is about the *candidate layout* (`[prompt, model]` in one component), not about forbidding a portfolio.** Omni composes *at the optimizer level*; the single-loop `[prompt, model]` decision is *inside* the GEPA engine. They are orthogonal — omni could wrap the very GEPA loop specified in the Final Solution.
+- **Budget.** Omni's win comes partly from a fresh-optimizer restart breaking plateaus. The Final Solution already gets much of that from Evo's outer `(β, V)` sweep + frontier union (fresh runs, unioned frontiers).
+
+**What to actually take from it:** add a **portfolio ablation arm** to the experimental design — alongside the committed single-GEPA-loop, run an omni-style race of {GEPA, AutoResearch-on-Evo, Meta-Harness} on the *same* cost-aware evaluator + cost gate, and continue the winner. If the portfolio's unioned `(P, R, $)` frontier dominates the single-loop frontier at matched dollar budget, revisit the commitment. Terrarium's "pin tasks/budget/model" discipline is the right template for making that comparison fair. Treat this as a control arm, not a plan change.
+
 ## Secondary fits — useful as control arms or supplements
 
 ### [sources/honedhaiku](sources/honedhaiku.md) (Tim Waldin) — closest empirical analog
@@ -313,6 +325,7 @@ A concrete plan that uses the primary recommendation:
    - The [auto-harness](sources/auto-harness.md) single-thread loop on the same skill (single-thread control)
    - The same Evo run with the `argmax` frontier strategy (ablation: does `pareto_per_task` matter?)
    - The same Evo run with no rejected-edit / discarded-hypothesis store (ablation: does negative-signal storage matter?)
+   - An **omni-style portfolio** of {GEPA, AutoResearch, Meta-Harness} on the same cost-aware evaluator, winner continued with a fresh optimizer (ablation: does a portfolio beat the single GEPA loop at matched budget? — see [optimize-anything-omni](sources/optimize-anything-omni.md))
 8. **Generalization probes** at the end:
    - Score the optimized skill under a different Claude model (transfer probe — SkillOpt-style)
    - Score on the cross-CWE-holdout split
@@ -467,4 +480,5 @@ Re-verified the load-bearing claims above against the current `gepa-ai/gepa` che
 - [concepts/regression-gating](concepts/regression-gating.md) — held-out-slice gating (Evo auto-attaches it; SkillOpt uses it) is the central anti-overfitting mechanism
 - [concepts/evolutionary-optimization](concepts/evolutionary-optimization.md) — Pareto-per-task selection is the right shape for the multi-CWE objective
 - [concepts/self-improvement-loop](concepts/self-improvement-loop.md) — the measure → fail → propose → gate cycle is the abstract skeleton you are instantiating
+- [sources/optimize-anything-omni](sources/optimize-anything-omni.md) — the three engines this experiment chooses among, now composable; the portfolio-vs-single-loop ablation arm
 - [overview](overview.md) — wiki-wide synthesis; see especially the *Productive Band* and *Modular Decomposition* sections, both of which apply

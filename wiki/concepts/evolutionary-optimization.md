@@ -2,8 +2,8 @@
 title: Evolutionary Optimization for Agentic Systems
 type: concept
 tags: [evolution, genetic, pareto, population, meta-evolution, EvoX, GEPA, multi-agent]
-sources: [evox, optimize-anything, asi-evolve, coral, deep-research, group-evolve, evoforge, honedhaiku, evo-hq, alphaevolve, shinkaevolve]
-last_updated: 2026-07-01
+sources: [evox, optimize-anything, optimize-anything-omni, asi-evolve, coral, deep-research, group-evolve, evoforge, honedhaiku, evo-hq, alphaevolve, shinkaevolve, squeeze-evolve]
+last_updated: 2026-07-31
 ---
 
 # Evolutionary Optimization
@@ -117,6 +117,14 @@ The outer loop monitors stagnation and switches strategies accordingly. This is 
 
 **Key insight**: No single search strategy dominates across all tasks and all phases of optimization. Adaptive strategy selection beats any fixed strategy.
 
+## optimize_anything Omni (Portfolio of Whole Optimizers) — [sources/optimize-anything-omni](../sources/optimize-anything-omni.md)
+
+Omni lifts EvoX's insight one level higher. EvoX says *no single search strategy dominates*, so adapt the strategy. Omni says *no single **optimizer** dominates*, so **race whole optimizer families and continue the winner**. The pluggable engines are three systems the wiki tracks separately — [GEPA](../sources/optimize-anything.md) (LLM-reflective), [AutoResearch](../sources/autoresearch-vs-hpo.md) (autonomous agent owns the loop), and [Meta-Harness](../sources/meta-harness.md) (framework outer loop + agent proposer) — now interchangeable behind one `(candidate, score, loop)` contract.
+
+The **omni** meta-optimizer is two-phase on a fixed budget: (1) **explore** — run all engines in parallel, keep the best candidate; (2) **continue** — seed a *fresh* optimizer with that winner to break the plateau ("every optimizer makes most of its gains early and then plateaus"). Composition primitives (`optimize_sequential` / `best_of` / `parallel` / `vote` / `adaptive_sequential`) generalize this, and **Terrarium** pins tasks/budget/model so engines can be compared fairly.
+
+Result on Frontier-CS (10 problems, $20 each): each engine wins ~⅓ of problems unpredictably, yet **every omni variant beats every standalone optimizer** — the biggest lift going to the most plateau-prone engine (GEPA 43.8 → 61.8, +41%). This is the wiki's strongest evidence that *portfolio-then-restart over optimizers* is a real free lunch, and the direct counterpoint to [wiki/experiment.md](../experiment.md)'s committed single-GEPA-loop design.
+
 ## EvoForge (Population Harness Evolution) — [sources/evoforge](../sources/evoforge.md)
 
 EvoForge applies the hill-climbing harness loop from [sources/autoagent-kevinrgu](../sources/autoagent-kevinrgu.md) to an entire population simultaneously. Each agent in the population independently mutates its `agent.py` harness, scores against a benchmark, and keeps improvements. After each round, successful mutations are synthesized into shared learnings.
@@ -183,6 +191,17 @@ Signature result: **new SOTA circle packing in only 150 samples** — headline f
 
 The cost-aware bandit is the most portable idea for other systems in this wiki: any evolutionary loop with an LLM-mutation-operator stage can drop this in when using a multi-tier ensemble.
 
+## Squeeze-Evolve (Cost-Routed Test-Time Population) — [sources/squeeze-evolve](../sources/squeeze-evolve.md)
+
+Squeeze-Evolve (COLM 2026) applies population-based evolution not to *code* but to **candidate answers at inference time**, and adds a **cost-routing** axis: each refinement step is dispatched to a cheap or expensive model according to per-problem difficulty. Its five-stage loop is Score → Select → Route → Recombine → Update.
+
+Two things make it distinct from the AlphaEvolve family:
+
+- **Verifier-free fitness.** Selection uses a *zero-cost proxy* — group confidence from token log-probabilities, or answer diversity — not a graded `evaluate.py` score. High agreement ⇒ easy ⇒ route cheap; high spread ⇒ hard ⇒ route expensive. This is the same "difficulty is estimable without ground truth" bet as self-consistency, brought inside an evolutionary loop.
+- **Routing keyed on per-instance difficulty**, via adaptive percentile thresholds over the population — as opposed to [ShinkaEvolve](../sources/shinkaevolve.md)'s cost-aware **UCB bandit**, which routes the *mutation-operator* choice by expected fitness-gain-per-dollar. Both spend the expensive model only where it earns its cost, but at different layers: ShinkaEvolve at the operator layer, Squeeze-Evolve at the per-instance layer. This contrast is the cleanest illustration in the wiki of the two ways to make `[model]` a first-class search coordinate (see [wiki/experiment.md](../experiment.md)).
+
+It inherits its recombination loop from **RSA (Recursive Self-Aggregation)** and cites OpenEvolve — placing it between the evolutionary-code lineage and the test-time-scaling / self-consistency lineage.
+
 ## GEPA for Coding Prompts — [sources/honedhaiku](../sources/honedhaiku.md)
 
 [sources/deep-research](../sources/deep-research.md) showed GEPA generalizes from code to prompt search. HonedHaiku applies the same primitive to **bug-fixing system prompts**:
@@ -206,6 +225,8 @@ Key finding — the **Goldilocks band**: GEPA only moves performance in the ~50�
 | Experiment tree + frontier | Tree-shaped lineage with configurable selection per round | Evo ([sources/evo](../sources/evo.md)) |
 | Whole codebase | Multi-file program as the mutation unit | AlphaEvolve ([sources/alphaevolve](../sources/alphaevolve.md)) |
 | Ensemble + cost-aware bandit | Which LLM operator to invoke, weighted by expected gain / $ | ShinkaEvolve ([sources/shinkaevolve](../sources/shinkaevolve.md)) |
+| Cost-routed test-time population | Which model refines each candidate answer, by per-instance difficulty | Squeeze-Evolve ([sources/squeeze-evolve](../sources/squeeze-evolve.md)) |
+| Portfolio of optimizers | Which whole optimizer family (or schedule of them) to run | omni ([sources/optimize-anything-omni](../sources/optimize-anything-omni.md)) |
 | Objectives | What fitness means | Open question |
 
 ## Connections

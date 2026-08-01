@@ -2,8 +2,8 @@
 title: Feedback Signals — Scalar vs. Rich Diagnostic
 type: concept
 tags: [feedback, diagnostics, ASI, execution-traces, rich-context, capability-isolation]
-sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt, rlm_gepa, evo-hq]
-last_updated: 2026-06-06
+sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt, rlm_gepa, evo-hq, ophis, squeeze-evolve]
+last_updated: 2026-07-31
 ---
 
 # Feedback Signals
@@ -54,6 +54,10 @@ Rich feedback tells the system *why* it failed and *what specific conditions* pr
 **Evidence-bounded feedback contract** — [sources/rlm-gepa](../sources/rlm-gepa.md) makes the rich-feedback principle into an explicit design constraint: *"optimization quality is bounded by the evidence your metric returns."* Effective feedback should *name specific failures* (missing findings, unsupported claims, wrong cells/clauses) but **not** prescribe text rewrites. This is the same principle as ASI, sharpened into a contract: the metric authors a *failure description*, the proposer authors the *fix*. Prescriptive metrics ("the prompt should say X") collapse the optimizer/target separation and tend to overfit.
 
 **Declared optimization context (AgentSpec)** — [sources/rlm-gepa](../sources/rlm-gepa.md) introduces `AgentSpec` as a typed companion to the trace-level feedback: a structured description of *what's in-scope* for the optimizer (use cases, runtime affordances, scoring methodology, counterfactual axes for generalization). Most prior systems leave this context implicit, forcing the proposer to infer it from traces alone. AgentSpec treats it as a first-class input — a different category of feedback than "this run failed because X," more like a standing brief on the project.
+
+**Mechanistic internal-dynamics observables** — [sources/ophis](../sources/ophis.md) reads a signal one layer deeper than any execution trace: ~6,000 **tensor-level training-dynamics** quantities (norms, entropy-like measures, parameter/activation statistics) sampled *while the model trains*. Where traces answer "what did the program do," these answer "what are the weights doing" — and OPHIS uses them to *localize* a problem to a specific module and derive a mechanistically-motivated intervention (not a trial-and-error edit). It is a distinct, richest tier on the scalar → trace → internal-dynamics spectrum, and it is notable that restricting an LLM to the *same* observable subspace closed most of the gap to OPHIS on grokking (70.0% vs 72.9% substantial-improvement rate) — evidence that **the observable design carries much of the signal's value**, independent of the reasoner consuming it. The obvious wiki-native extension: feed such observables as [ASI](../sources/optimize-anything.md) into an LLM proposer.
+
+**Verifier-free difficulty proxy (confidence / diversity)** — [sources/squeeze-evolve](../sources/squeeze-evolve.md) selects and routes using a *zero-cost* signal that requires no verifier, no ground truth, and no reward model: group confidence from token log-probabilities, or unique-answer diversity. It measures neither *how much* nor *why* a candidate failed — it estimates *how hard the problem is* so compute can be routed accordingly. This is a fourth signal role alongside scalar-quality, rich-diagnostic, and peer-comparison ([sources/autoreason](../sources/autoreason.md)): a **difficulty estimate used for cost allocation** rather than for proposal or gating.
 
 **Between-round cross-cutting scans** — [sources/evo](../sources/evo.md) runs RLM-inspired scan subagents between rounds of its tree search: they read trace batches in parallel and surface *gate-failure intersections* (which gates tend to fail together) and *shared root causes across traces*. Findings land in shared state for the next round. This is feedback compression at yet another scale — between [ASI-Evolve's](../sources/asi-evolve.md) per-experiment Analyzer and [HALO's](../sources/halo.md) production-traffic RLM — and is distinguished by being a *standing phase* of the loop rather than an analyzer that runs at the end. The signal explicitly targets *systemic* failure patterns over the population of branches, not per-experiment diagnosis.
 

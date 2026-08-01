@@ -2,8 +2,8 @@
 title: Self-Improving Agentic Systems — Overview
 type: overview
 tags: [self-improvement, agentic-ai, meta-learning, optimization]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill, evoforge, honedhaiku, autoreason, halo, skillopt, rlm-gepa, evo-hq]
-last_updated: 2026-06-06
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, optimize-anything-omni, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill, evoforge, honedhaiku, autoreason, halo, skillopt, rlm-gepa, evo-hq, alphaevolve, shinkaevolve, squeeze-evolve, ophis, self-evolving]
+last_updated: 2026-07-31
 ---
 
 # Self-Improving Agentic Systems — Overview
@@ -37,6 +37,8 @@ The key insight across this literature is that the optimization target can be an
 | Hyperparameters → architecture | Training configs, then structural code changes | [AutoResearch](sources/autoresearch-vs-hpo.md), [ASI-Evolve](sources/asi-evolve.md) |
 | Data curation pipelines | Preprocessing strategies for training corpora | [ASI-Evolve](sources/asi-evolve.md) |
 | RL algorithms | Advantage allocation, gradient computation | [ASI-Evolve](sources/asi-evolve.md) |
+| Training interventions (mechanistic) | Tricks/edits derived from ~6,000 training-dynamics observables — no LLM, no search | [OPHIS](sources/ophis.md) |
+| Whole codebases | Multi-file programs evolved by an LLM ensemble under evaluators | [AlphaEvolve](sources/alphaevolve.md), [ShinkaEvolve](sources/shinkaevolve.md) |
 | Open-ended code solutions | Any code maximizing a grader score | [CORAL](sources/coral.md) |
 | Agent policy weights (in-the-flow) | Planner weights updated during live execution | [AgentFlow](sources/agentflow.md) |
 | Per-capability LoRA adapters | One adapter per identified capability gap | [TRACE](sources/trace.md) |
@@ -45,13 +47,17 @@ The key insight across this literature is that the optimization target can be an
 | Population of agent harnesses | Each agent in a parallel population hill-climbs its own `agent.py` | [EvoForge](sources/evoforge.md) |
 | System prompt (only) | Prompt evolved by GEPA against PR-test-suite feedback | [HonedHaiku](sources/honedhaiku.md) |
 | The output itself (per-query) | Inference-time tournament between incumbent / revision / synthesis | [AutoReason](sources/autoreason.md) |
+| The output itself (per-query), cost-routed | Evolutionary refinement of answers, each step routed to a cheap/expensive model by per-instance difficulty | [Squeeze-Evolve](sources/squeeze-evolve.md) |
 | Harness driven by production traces | OpenTelemetry traces → specialized RLM → coding-agent edits | [HALO](sources/halo.md) |
 | Skill document as trainable state | Bounded add/delete/replace edits ("textual learning rate") to a markdown skill | [SkillOpt](sources/skillopt.md) |
 | Skill instructions on an RLM runtime | GEPA proposes surgical edits to prose layered on top of a fixed RLM/DSPy structure; `AgentSpec` declares what's in-scope | [RLM-GEPA](sources/rlm-gepa.md) |
 | Arbitrary repo metric via auto-discovery | `discover` skill instruments the benchmark; parallel subagents hill-climb under tree-search frontier strategies; gates inherit down the tree | [Evo](sources/evo.md) |
 | The optimization algorithm itself | Which search strategy the optimizer uses | [EvoX](sources/evox.md) |
+| The portfolio of optimizers | Which whole optimizer family / schedule to run | [optimize_anything Omni](sources/optimize-anything-omni.md) |
 
-This progression — from task outputs → code policies → scaffolding → architecture → training data → learning algorithm → the optimizer — represents increasing levels of meta-cognition in self-improvement. [ASI-Evolve](sources/asi-evolve.md) is the first system to target multiple levels (architecture + data + RL algorithm) simultaneously in a single automated loop.
+This progression — from task outputs → code policies → scaffolding → architecture → training data → learning algorithm → the optimizer → the portfolio of optimizers — represents increasing levels of meta-cognition in self-improvement. [ASI-Evolve](sources/asi-evolve.md) is the first system to target multiple levels (architecture + data + RL algorithm) simultaneously in a single automated loop; [optimize_anything Omni](sources/optimize-anything-omni.md) sits at the top, treating the *choice of optimizer itself* as composable — and finds empirically that no single optimizer dominates, so a portfolio-then-continue schedule beats any one engine.
+
+An orthogonal way to read this whole table comes from [Xinming Tu's What×When taxonomy](sources/self-evolving.md): every row can also be indexed by *substrate* (external files / harness / weights) and *persistence horizon* (single session / across sessions / across users). The table above is essentially the "what changes" axis; Tu adds "how long it lasts," and a **consolidation path** — discoveries migrate files → harness → weights as they prove durable.
 
 ## Feedback Signals: Scalar vs. Rich
 
@@ -64,6 +70,8 @@ A recurring theme is that **rich diagnostic feedback substantially outperforms s
 - [HALO](sources/halo.md) makes the richest signal in the wiki — full OpenTelemetry production traces — tractable by inserting a *specialized trace-analysis RLM* between the raw traces and the harness-editor. The RLM's only job is to compress many traces into a diagnostic report; the coding agent then acts on the compressed signal
 - [RLM-GEPA](sources/rlm-gepa.md) codifies the feedback contract: *"optimization quality is bounded by the evidence your metric returns."* Effective feedback must *name specific failures* (missing findings, unsupported claims, wrong cells) rather than *prescribe rewrites*. This is a clean restatement of the ASI thesis applied to skill-instruction optimization
 - [Evo](sources/evo.md) runs RLM-inspired *cross-cutting scan subagents* between rounds: they read trace batches in parallel and surface compound failure patterns — explicitly *gate-failure intersections* and *shared root causes across traces*. Where HALO compresses production traffic and ASI-Evolve compresses experimental output, Evo compresses *within-loop* trace batches as a standing between-round phase
+- [OPHIS](sources/ophis.md) pushes the signal a layer deeper still — past execution traces to **internal training dynamics**: ~6,000 tensor-level observables (norms, entropy-like measures, activation statistics) read *while the model trains*. Traces say what the program did; these say what the weights are doing. Strikingly, restricting an LLM to the *same* observable subspace nearly matched OPHIS on grokking — suggesting the *observable design* carries much of the value, independent of whether an LLM or a mechanistic reasoner consumes it
+- [Squeeze-Evolve](sources/squeeze-evolve.md) uses feedback for a different job entirely: a **verifier-free difficulty proxy** (token-log-prob confidence or answer diversity) that estimates *how hard a problem is* so compute can be routed to a cheap or expensive model — signal-as-router rather than signal-as-critic
 
 The implication: systems that explain *why* they failed improve faster than systems that only signal *how much* they failed. A corollary is becoming clear: when feedback is *too* rich, a dedicated compressor (a la HALO's RLM, or [ASI-Evolve](sources/asi-evolve.md)'s Analyzer) is itself a load-bearing component.
 
@@ -95,6 +103,12 @@ A four-stage loop designed for long-horizon AI research tasks. The Analyzer agen
 
 ### Meta-evolution (EvoX)
 The evolution strategy itself is a candidate subject to evolution. An outer loop updates *how* candidates are generated; an inner loop generates candidates using the current strategy. The system can escape local optima by changing its own search operators.
+
+### Portfolio-of-optimizers meta-loop ([optimize_anything Omni](sources/optimize-anything-omni.md))
+One level above meta-evolution: rather than adapting the search strategy *inside* one optimizer, omni treats whole optimizer families ([GEPA](sources/optimize-anything.md), [AutoResearch](sources/autoresearch-vs-hpo.md), [Meta-Harness](sources/meta-harness.md)) as interchangeable engines behind one contract, races them in parallel on a shared budget, and continues the winner with a *fresh* optimizer to break plateaus. The empirical finding — no single optimizer dominates, but every portfolio beats every standalone — is EvoX's "no single strategy dominates" lifted to the optimizer level, and it is the direct counterweight to committing to one optimizer (see [experiment.md](experiment.md)).
+
+### Mechanistic, non-search loop ([OPHIS](sources/ophis.md))
+The one loop here that uses neither an LLM proposer nor a population. Its cycle — **Observation → Problem → Hypothesis → Intervention → Speed-up** — *deduces* interventions from a causal model of training dynamics instead of sampling and selecting. It generates candidates near-instantly and fails far less often than an LLM baseline (13.7% vs 42.1% on grokking), at the cost of being architecture-fixed (a "Training Copilot," not an architecture searcher). It is the wiki's sharpest statement that *understanding why* can substitute for *searching over what*. (OPHIS also carries its own causal-depth Stage 1/2/3 ladder — not to be confused with [CORAL's autonomy ladder](sources/coral.md).)
 
 ## Gating and Safety
 
@@ -141,6 +155,12 @@ Without regression gating, self-improvement risks catastrophic forgetting or pro
 | SkillOpt | ALFWorld | 70.9% | 85.8% | +14.9pp |
 | SkillOpt | cross-model skill transfer | — | +15.2% | strongest transfer evidence in the wiki |
 | SkillOpt | cross-harness skill transfer | — | +31.8% | — |
+| AlphaEvolve | Borg data-center scheduler (production) | prior heuristic | recovers 0.7% of global compute | in prod >1yr |
+| AlphaEvolve | 4×4 complex matmul | Strassen (1969) | **48 scalar mults** | first improvement in 56 yrs |
+| ShinkaEvolve | Circle packing | prior SOTA | new SOTA | **in 150 samples** |
+| optimize_anything Omni | Frontier-CS (10 problems, $20 each) | GEPA 43.8 | **omni-GEPA 61.8 / omni-AutoResearch 63.2** | +41% on the weakest engine; every omni > every standalone |
+| OPHIS | Grokking (modular addition) | LLM 57.9% substantial-improve, 42.1% fail | **72.9% substantial-improve, 13.7% fail** | 350 tricks tested |
+| OPHIS | NanoGPT (already RSI-optimized) | Karpathy-autoresearch +0.001 (noise) | val BPB 0.93410 → 0.93184 | **−7.43σ** |
 
 ## Modular Decomposition of the Improvement Problem
 
@@ -201,6 +221,10 @@ Two independent sources converged on the same shape: text-only optimization (no 
 - Inference-time loops like [AutoReason](sources/autoreason.md) sit beside training-time and deployment-time loops. Should these three time scales compose (per-query refinement *inside* per-deployment harness optimization *inside* long-horizon architecture search), or do their objectives interfere?
 - [Evo](sources/evo.md) is one of the first packaged orchestrators for [Karpathy-style autoresearch](sources/autoresearch-vs-hpo.md). Does the *tree*-shaped exploration (with configurable frontier strategies) genuinely beat flat-population evolution ([EvoForge](sources/evoforge.md), [Group-Evolving Agents](sources/group-evolve.md)) in practice, or is the tree mostly a UX/lineage win that doesn't change the search outcomes?
 - Evo's *discarded-hypothesis* bucket is unusual — most systems retain only successful branches. [SkillOpt](sources/skillopt.md) mined rejected text edits as a negative-signal buffer; Evo does this at the granularity of *experimental directions*. Does negative-hypothesis storage become a standard piece of population-based agentic search, the way replay buffers became standard in deep RL?
+- [optimize_anything Omni](sources/optimize-anything-omni.md) finds that a *portfolio* of optimizers plus a fresh-optimizer restart beats any single optimizer on Frontier-CS. Is "portfolio-then-continue" a general free lunch, or an artifact of competitive-programming tasks with steep early plateaus? Does the gain survive when all engines share the same base model, or is engine *diversity* the real source of the lift? And how does it interact with [experiment.md](experiment.md)'s decision to commit to a single GEPA loop?
+- [OPHIS](sources/ophis.md) argues that *understanding why* (mechanistic reasoning over training dynamics) can substitute for *searching over what* (LLM/evolutionary proposal) — with far lower failure rates but a fixed architecture. Can the two be combined: feed OPHIS-style internal-dynamics observables as [ASI](sources/optimize-anything.md) into an LLM or evolutionary proposer? Its own result (an LLM on the same observable subspace nearly matched it) suggests the observable design, not the reasoner, is the lever — does that generalize beyond grokking/NanoGPT?
+- Cost-aware model routing now appears at three distinct layers: [ShinkaEvolve](sources/shinkaevolve.md)'s operator-level UCB bandit, [Squeeze-Evolve](sources/squeeze-evolve.md)'s per-instance difficulty routing, and [experiment.md](experiment.md)'s per-stage `[prompt, model]` co-optimization. Are these substitutes or complements — could a single system route cheap-vs-expensive at the operator, the instance, *and* the pipeline-stage level at once?
+- [Xinming Tu's taxonomy](sources/self-evolving.md) makes plain that this wiki is dense in the *harness × across-sessions* cell and sparse in *across-users*. Is the population-level flywheel (discoveries that benefit every user) the field's next frontier, and does it necessarily require the *weights* substrate — or can shared files/skills ([CORAL](sources/coral.md)'s Skills, Agent Skills) carry most of it?
 
 ## See Also
 
@@ -209,3 +233,4 @@ Two independent sources converged on the same shape: text-only optimization (no 
 - [Harness Optimization](concepts/harness-optimization.md) — optimizing the code wrapper around an agent
 - [Evolutionary Optimization](concepts/evolutionary-optimization.md) — population-based and meta-evolutionary approaches
 - [Regression Gating](concepts/regression-gating.md) — how safe self-improvement is enforced
+- [Self-Evolving Agents (Tu)](sources/self-evolving.md) — a companion What×When taxonomy that indexes every entry above by substrate and persistence horizon

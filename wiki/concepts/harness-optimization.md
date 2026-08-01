@@ -2,8 +2,8 @@
 title: Harness Optimization
 type: concept
 tags: [harness, system-prompt, scaffolding, code-synthesis, constraint-enforcement]
-sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt, rlm_gepa, evo-hq]
-last_updated: 2026-06-06
+sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt, rlm_gepa, evo-hq, optimize-anything-omni, self-evolving]
+last_updated: 2026-07-31
 ---
 
 # Harness Optimization
@@ -98,6 +98,14 @@ last_updated: 2026-06-06
 - Key feature: **AgentSpec** as a typed, declared description of optimization context (use cases, runtime affordances, scoring methodology, counterfactual axes) — solves the "what should the optimizer know that it can't infer" problem; evidence-bounded feedback contract (name failures, don't prescribe rewrites)
 - Result: no published benchmarks — positioned as production-grade infrastructure
 
+### optimize_anything Omni (GEPA team) — [sources/optimize-anything-omni](../sources/optimize-anything-omni.md)
+- Optimizes: any text-representable artifact (harness/prompt/code) — *and* the choice of optimizer applied to it
+- Method: three interchangeable engines behind one contract — **GEPA** (LLM-reflective), **AutoResearch** ([autoresearch-vs-hpo](../sources/autoresearch-vs-hpo.md), agent owns the loop), **Meta-Harness** ([meta-harness](../sources/meta-harness.md), framework outer loop + agent proposer) — plus an **omni** meta-optimizer that races them in parallel and continues the winner
+- Key feature: unifies harness optimizers this page already lists as *pluggable engines*; **Terrarium** pins tasks/budget/model for fair comparison
+- Result: Frontier-CS — no single optimizer dominates, but every omni portfolio beats every standalone (GEPA 43.8 → 61.8)
+
+> This is the meta-layer of harness optimization: [sources/meta-harness](../sources/meta-harness.md) and GEPA optimize *the harness*; omni optimizes *which harness-optimizer to run*. In [Xinming Tu's taxonomy](../sources/self-evolving.md), all of the above live in the **Agent Harness** substrate — the wiki's densest region, and the one this concept page covers.
+
 ## Comparison
 
 | System | Feedback type | Scope | Human involvement |
@@ -113,6 +121,7 @@ last_updated: 2026-06-06
 | SkillOpt | Rollout scores + rejected-edit buffer | Structured skill document | Define benchmarks once |
 | RLM-GEPA | RunTrace + score + failure-description feedback | Skill instructions over a fixed RLM/DSPy structure | Author RLM, dataset, metric, and AgentSpec |
 | Evo | Score + gate pass/fail + cross-cutting scan findings (gate intersections, shared root causes) + shared discarded-hypothesis bucket | Any repo metric, via auto-discovered benchmark | Run `/evo:discover` once; configure frontier strategy; optionally pause between rounds |
+| omni | Whatever the chosen engine consumes (ASI/traces/scores) | Any text artifact — plus the optimizer choice itself | Pick engine or `omni`; design evaluator + budget |
 
 ## Connections
 
@@ -120,3 +129,5 @@ last_updated: 2026-06-06
 - [concepts/feedback-signals](feedback-signals.md) — rich traces vs. scalar pass/fail determines proposal quality
 - [concepts/regression-gating](regression-gating.md) — all three systems use gating to prevent regressions
 - [sources/optimize-anything](../sources/optimize-anything.md) — generalizes harness optimization to any text artifact
+- [sources/optimize-anything-omni](../sources/optimize-anything-omni.md) — makes the *choice of harness-optimizer* itself pluggable and composable
+- [sources/self-evolving](../sources/self-evolving.md) — names this the "Agent Harness" substrate; the densest cell of its What×When matrix

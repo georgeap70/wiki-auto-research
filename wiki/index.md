@@ -1,6 +1,6 @@
 # Self-Improving Agentic Systems — Wiki Index
 
-A catalog of all pages. Read this first when answering queries. Last updated: 2026-07-01 (+ alphaevolve, shinkaevolve).
+A catalog of all pages. Read this first when answering queries. Last updated: 2026-07-31 (+ optimize-anything-omni, squeeze-evolve, ophis, self-evolving).
 
 ---
 
@@ -46,6 +46,10 @@ One page per raw source. See `sources/` directory for raw URLs.
 | [Evo](sources/evo.md) | `sources/evo-hq` | [github](https://github.com/evo-hq/evo) | evo-hq (Alok Kumar Bishoyi): autoresearch orchestrator; `discover` instruments the benchmark, parallel subagents in isolated worktrees hill-climb under tree-search frontier strategies (`argmax`/`top_k`/`epsilon_greedy`/`softmax`/`pareto_per_task`); RLM-inspired cross-cutting scans between rounds; gates inherit down the experiment tree; held-out-slice score floor auto-attached on discover; 8 execution backends |
 | [AlphaEvolve](sources/alphaevolve.md) | `sources/alphaevolve` | closed | Google DeepMind: evolutionary coding agent over whole codebases with a Gemini Flash+Pro ensemble and automated evaluators; production wins (Borg +0.7% compute, Gemini training kernel +23%, FlashAttention +32.5%) and 4×4 complex matmul in 48 mults — first improvement over Strassen in 56 years (arXiv 2506.13131) |
 | [ShinkaEvolve](sources/shinkaevolve.md) | `sources/shinkaevolve` | [github](https://github.com/SakanaAI/ShinkaEvolve) | Sakana AI: open-source, sample-efficient AlphaEvolve sibling; three innovations — adaptive parent sampling, code-novelty rejection sampling, cost-aware UCB bandit over LLM ensemble; 150-sample circle-packing SOTA; islands + archive + diff/full/cross patches; SLURM support (arXiv 2509.19349) |
+| [optimize_anything Omni](sources/optimize-anything-omni.md) | `sources/optimize-anything-omni` | [github](https://github.com/gepa-ai/gepa) | GEPA team: `optimize_anything` becomes engine-pluggable (GEPA / AutoResearch / Meta-Harness — all three already in the wiki) and pipeline-composable; **omni** meta-optimizer races engines in parallel then continues the winner; Terrarium eval harness; on Frontier-CS no single optimizer dominates but every omni variant beats every standalone (GEPA 43.8→61.8) |
+| [Squeeze-Evolve](sources/squeeze-evolve.md) | `sources/squeeze-evolve` | [github](https://github.com/squeeze-evolve/squeeze-evolve) | COLM 2026: verifier-free evolutionary test-time scaling; routes each refinement step to a cost-appropriate model by per-problem difficulty (confidence/diversity percentiles); same-or-better accuracy at a fraction of the cost; AIME25/HMMT25/GPQA-Diamond; NVIDIA Dynamo + Claude Code plugin |
+| [OPHIS](sources/ophis.md) | `sources/ophis` | none | MetaCircle (Ziming Liu): **mechanistic** auto-research — Observation→Problem→Hypothesis→Intervention→Speed-up over ~6,000 training-dynamics observables; **no LLM, no evolution**; grokking 72.9% substantial-improvement rate vs 57.9% LLM; NanoGPT BPB −7.43σ; its own causal-depth Stage 1/2/3 taxonomy |
+| [Self-Evolving Agents (Tu)](sources/self-evolving.md) | `sources/self-evolving` | none | Xinming Tu: taxonomy of self-evolving agents on a **3×3 matrix** — What evolves (Files / Harness / Weights) × When it persists (Single Session / Across Sessions / Across Users); consolidation path files→harness→weights; a lens for placing every wiki source on one map |
 
 ---
 
@@ -106,3 +110,7 @@ One page per raw source. See `sources/` directory for raw URLs.
 | `evo-hq` | [sources/evo.md](sources/evo.md) |
 | `alphaevolve` | [sources/alphaevolve.md](sources/alphaevolve.md) |
 | `shinkaevolve` | [sources/shinkaevolve.md](sources/shinkaevolve.md) |
+| `optimize-anything-omni` | [sources/optimize-anything-omni.md](sources/optimize-anything-omni.md) |
+| `squeeze-evolve` | [sources/squeeze-evolve.md](sources/squeeze-evolve.md) |
+| `ophis` | [sources/ophis.md](sources/ophis.md) |
+| `self-evolving` | [sources/self-evolving.md](sources/self-evolving.md) |

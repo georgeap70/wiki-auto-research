@@ -2,8 +2,8 @@
 title: Knowledge Accumulation in Self-Improving Systems
 type: concept
 tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage]
-sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa]
-last_updated: 2026-05-30
+sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa, self-evolving]
+last_updated: 2026-07-31
 ---
 
 # Knowledge Accumulation
@@ -130,6 +130,24 @@ When multiple agents run in parallel, knowledge accumulation must address concur
 
 The result: emergent coordination behaviors arise from shared memory access alone. Agents copy each other's successful techniques (copycatting), synthesize patterns across agents' notes (cross-referencing), and eventually form consensus on what's been exhausted (agent consensus). See [concepts/self-improvement-loop](self-improvement-loop.md).
 
+## The Consolidation Path: Files → Harness → Weights
+
+[sources/self-evolving](../sources/self-evolving.md) (Xinming Tu) supplies a unifying axis over every store catalogued above: accumulated knowledge lives in one of three **substrates**, and discoveries migrate *upward* through them as they prove durable — a **consolidation path**.
+
+| Substrate | Stores on this page | Durability / cost to update |
+|-----------|---------------------|-----------------------------|
+| **External files** | `learnings.md`, Cognition Base, CORAL Notes/Skills, `best_skill.md`, RLM-GEPA skill instructions, WebXSkill artifacts | Cheapest to extend; least durable/general |
+| **Agent harness** | tool wiring, prompts, skill *structure* (the layer SkillOpt/RLM-GEPA edit) | Medium |
+| **Model weights** | SKILL-0 internalization, TRACE LoRA adapters, AgentFlow planner | Most durable/general; costliest (retraining) |
+
+The path explains several cross-source patterns the wiki had noted only pairwise:
+
+- **SKILL-RL → SKILL-0** is a *file → weights* consolidation: skills accumulate externally in a SkillBank, then a curriculum internalizes them into weights once stable. Tu's framing names exactly this move.
+- The **"structured prose skill document" convergence** ([SkillOpt](../sources/skillopt.md) + [RLM-GEPA](../sources/rlm-gepa.md)) is the field settling on the *file/harness boundary* as the sweet spot: durable enough to transfer (SkillOpt's +15.2% cross-model), cheap enough to edit every round.
+- The tradeoff this page already draws (external stores extend anytime; weight internalization needs retraining) *is* Tu's durability-vs-cost gradient.
+
+The consolidation lens also reframes the **Forgetting** open question below: pruning is deciding *when a discovery should stop consolidating upward* (or be demoted), not just deleting stale entries.
+
 ## Knowledge Accumulation vs. Feedback Signals
 
 These are related but distinct:
@@ -154,3 +172,4 @@ See [concepts/feedback-signals](feedback-signals.md) for the per-iteration side.
 - [concepts/self-improvement-loop](self-improvement-loop.md) — knowledge accumulation makes the loop compound rather than restart
 - [concepts/feedback-signals](feedback-signals.md) — rich feedback is often the raw material that knowledge accumulation structures and stores
 - [concepts/regression-gating](regression-gating.md) — the knowledge base can store which changes caused regressions, preventing re-testing failed approaches
+- [sources/self-evolving](../sources/self-evolving.md) — the files → harness → weights consolidation path that organizes every store on this page
