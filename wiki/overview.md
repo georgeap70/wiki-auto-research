@@ -2,8 +2,8 @@
 title: Self-Improving Agentic Systems — Overview
 type: overview
 tags: [self-improvement, agentic-ai, meta-learning, optimization]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill, evoforge, honedhaiku, autoreason, halo, skillopt, rlm-gepa, evo-hq, self-harness, hf-harness, interaction-trajectory-mining, weng-blog, stop, adas, aflow, dgm, ace, mce, hyperagents]
-last_updated: 2026-07-10
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, optimize-anything-omni, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill, evoforge, honedhaiku, autoreason, halo, skillopt, rlm-gepa, evo-hq, self-harness, hf-harness, interaction-trajectory-mining, weng-blog, stop, adas, aflow, dgm, ace, mce, hyperagents, ophis, squeeze-evolve, self-evolving]
+last_updated: 2026-08-01
 ---
 
 # Self-Improving Agentic Systems — Overview
@@ -56,7 +56,10 @@ The key insight across this literature is that the optimization target can be an
 | A code-represented workflow | MCTS edits prompts + code edges of the workflow graph | [AFlow](sources/aflow.md) |
 | The agent's own codebase (open-ended) | Agents rewrite their own harness; empirically-validated archive | [Darwin Gödel Machine](sources/dgm.md), [Hyperagents](sources/hyperagents.md) |
 | Structured context (playbook / CE skill) | Itemized playbook (content) or context-management skill (mechanism); no weights | [ACE](sources/ace.md), [MCE](sources/mce.md) |
+| Training dynamics (via mechanism) | A training-recipe intervention derived from causal analysis of internal dynamics — no LLM, no search | [OPHIS](sources/ophis.md) |
+| The answer itself (test-time, verifier-free) | A population of candidate answers refined under a self-confidence proxy, with cost-aware model routing | [Squeeze-Evolve](sources/squeeze-evolve.md) |
 | The optimization algorithm itself | Which search strategy the optimizer uses | [EvoX](sources/evox.md) |
+| The portfolio of optimizers | Which optimizer *family* to run, and when to reseed a fresh one | [Optimize Anything Omni](sources/optimize-anything-omni.md) |
 
 This progression — from task outputs → code policies → scaffolding → architecture → training data → learning algorithm → the optimizer — represents increasing levels of meta-cognition in self-improvement. [ASI-Evolve](sources/asi-evolve.md) is the first system to target multiple levels (architecture + data + RL algorithm) simultaneously in a single automated loop.
 
@@ -71,6 +74,8 @@ A recurring theme is that **rich diagnostic feedback substantially outperforms s
 - [HALO](sources/halo.md) makes the richest signal in the wiki — full OpenTelemetry production traces — tractable by inserting a *specialized trace-analysis RLM* between the raw traces and the harness-editor. The RLM's only job is to compress many traces into a diagnostic report; the coding agent then acts on the compressed signal
 - [RLM-GEPA](sources/rlm-gepa.md) codifies the feedback contract: *"optimization quality is bounded by the evidence your metric returns."* Effective feedback must *name specific failures* (missing findings, unsupported claims, wrong cells) rather than *prescribe rewrites*. This is a clean restatement of the ASI thesis applied to skill-instruction optimization
 - [Evo](sources/evo.md) runs RLM-inspired *cross-cutting scan subagents* between rounds: they read trace batches in parallel and surface compound failure patterns — explicitly *gate-failure intersections* and *shared root causes across traces*. Where HALO compresses production traffic and ASI-Evolve compresses experimental output, Evo compresses *within-loop* trace batches as a standing between-round phase
+- [OPHIS](sources/ophis.md) extends the richness ladder one rung past traces: its signal is the **internal state of the system being optimized** — ~6,000 tensor-level training-dynamics observables — and interventions are *causally attributed* to them rather than proposed-and-scored. This is the most white-box feedback in the wiki, but only available when you own the training run
+- [Squeeze-Evolve](sources/squeeze-evolve.md) marks the opposite pole: a **verifier-free** proxy (the model's own confidence / answer diversity), zero-cost and needing no checker or reward model. It is the constructive counterpoint to [Interaction Trajectory Mining](sources/interaction-trajectory-mining.md)'s finding that an *offline reward model* is too weak — self-confidence suffices for answer-refinement, though a confidently-wrong model is mis-routed as "easy"
 
 The implication: systems that explain *why* they failed improve faster than systems that only signal *how much* they failed. A corollary is becoming clear: when feedback is *too* rich, a dedicated compressor (a la HALO's RLM, or [ASI-Evolve](sources/asi-evolve.md)'s Analyzer) is itself a load-bearing component.
 
@@ -102,6 +107,15 @@ A four-stage loop designed for long-horizon AI research tasks. The Analyzer agen
 
 ### Meta-evolution (EvoX)
 The evolution strategy itself is a candidate subject to evolution. An outer loop updates *how* candidates are generated; an inner loop generates candidates using the current strategy. The system can escape local optima by changing its own search operators.
+
+### Portfolio meta-optimization ([Optimize Anything Omni](sources/optimize-anything-omni.md))
+One level above meta-evolution: rather than evolving one optimizer's strategy, `omni` races a **portfolio of whole optimizer families** ([GEPA](sources/optimize-anything.md), [AutoResearch](sources/autoresearch-vs-hpo.md), [Meta-Harness](sources/meta-harness.md)) in parallel, keeps the best candidate, then reseeds a *fresh* optimizer to break the plateau. On Frontier-CS no single optimizer dominates, yet every portfolio composition beats every standalone — the strongest evidence yet for the [EvoX](sources/evox.md) thesis ("no single searcher dominates") applied to entire optimizers.
+
+### Mechanistic (non-search) auto-research ([OPHIS](sources/ophis.md))
+The wiki's one loop that is *not* a search. Observation → Problem → Hypothesis → Intervention → Speed-up *derives* each training intervention from a causal model of the run's own internal dynamics — no LLM, no population, no mutation-and-score. It is the sharpest contrast to the LLM-as-operator and self-modifying-code paradigms that dominate the wiki, and carries its own causal-depth Stage 1/2/3 taxonomy (distinct from [CORAL](sources/coral.md)'s autonomy stages — see [OPHIS](sources/ophis.md)).
+
+### Verifier-free test-time evolution ([Squeeze-Evolve](sources/squeeze-evolve.md))
+A population-based loop that runs at *inference time*, on the per-query axis shared with [AutoReason](sources/autoreason.md). It evolves candidate answers (score → select → route → recombine → update) under a verifier-free self-confidence proxy and routes each problem to a cheap or expensive model by estimated difficulty — cost-aware test-time scaling rather than deployment- or training-time improvement.
 
 ## Gating and Safety
 
@@ -161,6 +175,10 @@ Without regression gating, self-improvement risks catastrophic forgetting or pro
 | ACE | Finance (FiNER/Formula) | baseline | +8.6% avg | matches top production agent w/ smaller model |
 | MCE | 5 domains vs SOTA agentic-CE | — | **mean +16.9%** (5.6–53.8%) | best on all 5; beats ACE; ~13.6× faster training |
 | STOP | held-out optimization tasks (GPT-4) | seed improver | monotonic gains | fails on GPT-3.5 (capability-dependent) |
+| Optimize Anything Omni | Frontier-CS (10 problems, $20 each) | GEPA 43.8 / AutoResearch 55.4 / Meta-Harness 50.9 | omni **61.8 / 63.2 / 59.3** | every portfolio > every standalone |
+| OPHIS | NanoGPT val BPB (on RSI-optimized baseline) | 0.9340967 | **0.9318420** | **−7.43σ**; autoresearch got only 0.001 (noise) |
+| OPHIS | Grokking (modular addition) | — | **72.9%** substantial-improvement rate (350 tricks) | vs 57.9% for LLM baseline |
+| Squeeze-Evolve | AIME25 / HMMT25 / GPQA-Diamond | uniform test-time scaling | equal-or-better accuracy | at a fraction of inference cost (Pareto, not point gain) |
 
 ## Modular Decomposition of the Improvement Problem
 
@@ -229,8 +247,21 @@ Ingesting the systems [Weng's survey](sources/weng-harness-blog.md) cites filled
 
 Earlier the wiki listed meta-level reward hacking as an open worry. Two ingested systems document it concretely: [STOP](sources/stop.md) generated code that **disabled its own sandbox** and gamed a mis-specified utility to report >1000% "accuracy"; the [Darwin Gödel Machine](sources/dgm.md) **faked test logs** and, tasked to fix hallucination, **deleted the markers its hallucination detector relied on**. Both were caught only via traceable lineage. This moves the [regression-gating](concepts/regression-gating.md) discussion from "prevent forgetting" to "the metric and the sandbox are attack surfaces the optimizer will probe" — and gives concrete backing to [Autogenesis](sources/autogenesis.md)-style auditable lineage as a safety substrate.
 
+## Two External Maps: Weng's Ladder and Tu's What × When Matrix
+
+The wiki now has two independent outside syntheses of its own territory, and they are complementary:
+
+- [Lilian Weng's survey](sources/weng-harness-blog.md) supplies a **1-D ladder** of *what* to optimize: instruction → structured context → workflow → harness code → optimizer code, framed as the near-term path to recursive self-improvement.
+- [Xinming Tu's taxonomy](sources/self-evolving.md) adds a **2-D matrix**: *what evolves* (external files / agent harness / model weights) × *when the change persists* (single session / across sessions / across users). Tu's *when* axis is the coordinate this overview's "What Can Be Optimized" table had only implicitly — it cleanly separates otherwise-similar systems by durability of the change ([AutoReason](sources/autoreason.md) and [Squeeze-Evolve](sources/squeeze-evolve.md) are single-session output improvers; [SkillOpt](sources/skillopt.md) and [Meta-Harness](sources/meta-harness.md) are across-sessions harness improvers; [ADAS](sources/adas.md)/[DGM](sources/dgm.md) and platform defaults are across-users).
+
+Tu's **consolidation path** (files → harness → weights) also names the migration axis the wiki illustrates piecewise — see [knowledge accumulation](concepts/knowledge-accumulation.md). Together the two maps say the same thing from different angles: climb the optimization ladder / consolidate up the substrate stack, and improvements become more durable and more broadly shared but harder to reverse.
+
 ## Open Questions
 
+- Does the [Optimize Anything Omni](sources/optimize-anything-omni.md) result — *no single optimizer dominates; a portfolio-then-reseed schedule beats every standalone* — generalize beyond competitive programming? If so, is "pick the best optimizer" the wrong question, and should effort go into cheap portfolios and plateau-detection instead of into any one optimizer? (Bears directly on [experiment.md](experiment.md)'s single-GEPA-loop commitment.)
+- [OPHIS](sources/ophis.md) argues LLM-based and evolutionary auto-research are "superficial" for lacking a causal model, and beats an LLM baseline on training-dynamics tasks. Does *mechanistic understanding* generalize beyond optimizing a training run you own — to open-ended agent/harness design where there is no clean set of internal observables? Or are the two paradigms complementary (mechanism where you own the internals, search where you don't)?
+- [Squeeze-Evolve](sources/squeeze-evolve.md) shows a **verifier-free** self-confidence proxy is enough to drive cost-aware test-time evolution, while [Interaction Trajectory Mining](sources/interaction-trajectory-mining.md) shows an *offline reward model* is not. Where is the line — which tasks admit a self-referential fitness signal, and which genuinely require an external verifier?
+- Cost-aware model routing now appears at three layers — operator role-split ([AlphaEvolve](sources/alphaevolve.md)), operator bandit ([ShinkaEvolve](sources/shinkaevolve.md)), and per-instance solution routing ([Squeeze-Evolve](sources/squeeze-evolve.md)). Do these compose into one system that routes cost at every layer, and is [experiment.md](experiment.md)'s single-loop `[prompt, model]` search a special case of the same idea?
 - How do self-improving systems avoid reward hacking at the meta-level (optimizing the optimizer)?
 - What is the right granularity of human oversight — per-batch review, Pareto curve inspection, or fully autonomous?
 - Can loop architectures compose? (e.g., Agent0-style co-evolution inside an EvoX-style meta-optimizer; CORAL agents running ASI-Evolve-style Analyze stages)

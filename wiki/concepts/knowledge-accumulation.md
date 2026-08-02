@@ -2,8 +2,8 @@
 title: Knowledge Accumulation in Self-Improving Systems
 type: concept
 tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage, skill-mining, negative-result, playbook, archive]
-sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa, interaction-trajectory-mining, ace, mce, dgm, adas]
-last_updated: 2026-07-10
+sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa, interaction-trajectory-mining, ace, mce, dgm, adas, self-evolving]
+last_updated: 2026-08-01
 ---
 
 # Knowledge Accumulation
@@ -140,6 +140,16 @@ Most systems above either hand-author skills or co-evolve them against *live* fe
 - **Transfer is** — the mined skills barely move downstream accuracy (18.5%→20.5%) and *underperform a simple frequency prior*; the weak links are the boundary detector, the segment representation, and especially the **offline reward model**.
 
 The lesson for knowledge accumulation: the *artifact* form (a prose/skill document) is not what makes accumulation work — the *feedback that curates it* is. Systems that succeed ([sources/skillopt](../sources/skillopt.md), [sources/coral](../sources/coral.md), [sources/skill-rl-skill0](../sources/skill-rl-skill0.md)) curate their stores against live, dense signals; offline mining from static logs is too lossy. See [concepts/feedback-signals](feedback-signals.md).
+
+## The Consolidation Path (files → harness → weights)
+
+[sources/self-evolving](../sources/self-evolving.md) (Xinming Tu) gives the migration axis this page illustrates piecewise a name: accumulated knowledge can **consolidate upward** through substrates — **task-local files → reusable harness logic → internalized model weights** — trading reversibility and portability for durability and generalization at each step. The systems above are points on that path:
+
+- **Files** — [learnings.md](../sources/auto-harness.md), the [Cognition Base](../sources/asi-evolve.md), CORAL's [Notes/Skills](../sources/coral.md), [SkillOpt](../sources/skillopt.md)'s `best_skill.md`, [ACE](../sources/ace.md)'s playbook: cheap to edit, fully reversible, but re-read every run.
+- **Harness** — skills distilled into executable procedures ([SKILL-RL's SkillBank](../sources/skill-rl-skill0.md), [WebXSkill](../sources/webxskill.md)) or into the agent's own code ([DGM](../sources/dgm.md)'s archive): more durable, still inspectable.
+- **Weights** — [SKILL-0](../sources/skill-rl-skill0.md) internalizes in-context skills into the base model via curriculum withdrawal; [TRACE](../sources/trace.md) consolidates diagnosed gaps into per-capability LoRA adapters: maximally durable and low-latency, but require retraining to update and lose the auditability of a text store.
+
+The path is a **ratchet, not a free lunch** — the same tradeoff [SKILL-0](../sources/skill-rl-skill0.md) makes explicit (internalized knowledge needs retraining; external stores extend anytime). Reading the wiki through Tu's *when-it-persists* axis (single-session / across-sessions / across-users) is the complementary lens: consolidation raises both *durability of substrate* and *breadth of horizon* together.
 
 ## Shared Memory in Multi-Agent Systems
 

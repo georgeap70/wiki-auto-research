@@ -2,8 +2,8 @@
 title: Evolutionary Optimization for Agentic Systems
 type: concept
 tags: [evolution, genetic, pareto, population, meta-evolution, EvoX, GEPA, multi-agent, self-modifying-code, mcts, archive]
-sources: [evox, optimize-anything, asi-evolve, coral, deep-research, group-evolve, evoforge, honedhaiku, evo-hq, alphaevolve, shinkaevolve, stop, adas, aflow, dgm, hyperagents]
-last_updated: 2026-07-10
+sources: [evox, optimize-anything, optimize-anything-omni, asi-evolve, coral, deep-research, group-evolve, evoforge, honedhaiku, evo-hq, alphaevolve, shinkaevolve, squeeze-evolve, stop, adas, aflow, dgm, hyperagents]
+last_updated: 2026-08-01
 ---
 
 # Evolutionary Optimization
@@ -183,6 +183,23 @@ Signature result: **new SOTA circle packing in only 150 samples** — headline f
 
 The cost-aware bandit is the most portable idea for other systems in this wiki: any evolutionary loop with an LLM-mutation-operator stage can drop this in when using a multi-tier ensemble.
 
+## Squeeze-Evolve (Verifier-Free, Cost-Aware Test-Time Evolution) — [sources/squeeze-evolve](../sources/squeeze-evolve.md)
+
+Squeeze-Evolve moves cost-aware model selection **down one layer** from ShinkaEvolve — from *which model mutates the code* to *which model refines each solution at inference*. It runs a population-based evolutionary loop **at test time** (score → select → route → recombine → update) and routes each candidate group to a cheap or expensive model by **per-problem difficulty**, estimated with a **zero-cost, verifier-free fitness proxy**: group confidence (token log-probabilities) or answer diversity.
+
+Two things make it notable here:
+
+- **Verifier-free fitness.** Unlike every other selection signal in this section (benchmark score, evaluator, grader), Squeeze-Evolve needs no checker and no learned reward model — it reads difficulty off the model's own uncertainty. This is the constructive answer to [interaction-trajectory-mining](../sources/interaction-trajectory-mining.md)'s failure (an offline reward model too weak to curate a skill library): skip the reward model, use self-confidence.
+- **Difficulty-keyed routing, not a bandit.** Where [ShinkaEvolve](../sources/shinkaevolve.md) uses a running UCB bandit over operators, Squeeze-Evolve thresholds a *per-instance* difficulty percentile and assigns cheapest→dearest models across the population — spending compute where the answer is still uncertain.
+
+Cost-aware model orchestration now spans three rungs of the evolutionary stack: fixed-role split ([AlphaEvolve](../sources/alphaevolve.md) Flash/Pro), running bandit over operators ([ShinkaEvolve](../sources/shinkaevolve.md)), and per-instance difficulty routing over solutions (Squeeze-Evolve). All three engineer the same cost/capability trade-off central to [wiki/experiment.md](../experiment.md).
+
+## optimize_anything Omni (Portfolio of Whole Optimizers) — [sources/optimize-anything-omni](../sources/optimize-anything-omni.md)
+
+Omni lifts the [EvoX](../sources/evox.md) insight to the top of the stack. EvoX says *no single search strategy dominates*, and evolves the strategy; omni says *no single **optimizer** dominates*, and **portfolios the optimizers themselves**. The three engines it races — [GEPA](../sources/optimize-anything.md), [AutoResearch](../sources/autoresearch-vs-hpo.md), [Meta-Harness](../sources/meta-harness.md) — are three separate wiki systems, now interchangeable behind one contract.
+
+The `omni` schedule is **explore-then-continue**: run all engines in parallel on a fraction of the budget, keep the best candidate, then hand it to a *fresh* optimizer for the rest. On Frontier-CS (10 competitive-programming problems, $20 each) each engine wins ~⅓ of problems unpredictably, yet **every omni composition beats every standalone optimizer** (GEPA 43.8→61.8, AutoResearch 55.4→63.2, Meta-Harness 50.9→59.3). The largest lift lands on the most plateau-prone engine — direct evidence for "a fresh optimizer breaks plateaus." Unlike [MCE](../sources/mce.md) or the [self-modifying-code lineage](#the-self-modifying-code-lineage-stop--adas--dgm--hyperagents), omni does not *rewrite* the optimizer — it *selects and reseeds* among fixed engines (a portfolio/meta-scheduling layer, not self-modification). See [concepts/harness-optimization](harness-optimization.md) for the engines as harness optimizers.
+
 ## GEPA for Coding Prompts — [sources/honedhaiku](../sources/honedhaiku.md)
 
 [sources/deep-research](../sources/deep-research.md) showed GEPA generalizes from code to prompt search. HonedHaiku applies the same primitive to **bug-fixing system prompts**:
@@ -227,6 +244,8 @@ This sits between [ADAS](../sources/adas.md)'s free-form meta-agent search and f
 | The agent's own code | Agent rewrites its own harness; archive + offspring-penalized selection | DGM ([sources/dgm](../sources/dgm.md)) |
 | The improver / modification procedure | The code that does the improving improves itself | STOP ([sources/stop](../sources/stop.md)), Hyperagents ([sources/hyperagents](../sources/hyperagents.md)) |
 | Ensemble + cost-aware bandit | Which LLM operator to invoke, weighted by expected gain / $ | ShinkaEvolve ([sources/shinkaevolve](../sources/shinkaevolve.md)) |
+| Ensemble routing by instance difficulty | Which model refines each solution, keyed on confidence/diversity (test-time) | Squeeze-Evolve ([sources/squeeze-evolve](../sources/squeeze-evolve.md)) |
+| Portfolio of whole optimizers | Which optimizer *family* to run, and when to reseed a fresh one | omni ([sources/optimize-anything-omni](../sources/optimize-anything-omni.md)) |
 | Objectives | What fitness means | Open question |
 
 ## Connections

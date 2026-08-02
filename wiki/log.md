@@ -3,6 +3,37 @@
 Append-only record of ingests, queries, and lint passes.
 Format: `## [YYYY-MM-DD] type | description`
 
+## [2026-08-01] ingest | optimize-anything-omni + squeeze-evolve + ophis + self-evolving (4 sources)
+
+Four sources ingested together, each landing in a different part of the wiki. (Re-ingest note: an earlier pass this session was accidentally built against a *stale* working tree that predated the 2026-07-10 backlog; discarded and redone fresh against current `main` so the cross-links reach the STOP/ADAS/DGM/AFlow/ACE/MCE/Hyperagents pages and the context-engineering concept.)
+
+Raw source stubs: `optimize-anything-omni`, `squeeze-evolve`, `ophis`, `self-evolving`.
+
+Source pages created:
+- `wiki/sources/optimize-anything-omni.md` — GEPA team, [blog 2026-07-22](https://gepa-ai.github.io/gepa/blog/2026/07/22/optimize-anything-omni/). `optimize_anything` becomes engine-pluggable (GEPA / AutoResearch / Meta-Harness — all three already in the wiki) + pipeline-composable; the `omni` meta-optimizer races engines in parallel then continues the winner with a fresh optimizer. Terrarium eval harness. Frontier-CS: **no single optimizer dominates, every omni portfolio beats every standalone** (GEPA 43.8→61.8).
+- `wiki/sources/squeeze-evolve.md` — COLM 2026, [github](https://github.com/squeeze-evolve/squeeze-evolve). Verifier-free evolutionary **test-time** scaling; routes each answer-refinement step to a cheap/expensive model by per-instance difficulty (confidence/diversity). Solution-layer sibling to ShinkaEvolve's operator-layer cost-aware bandit; credits RSA + OpenEvolve.
+- `wiki/sources/ophis.md` — MetaCircle (Ziming Liu), [blog](https://meta-circle.com/blog/ophis-a-new-paradigm-for-autoresearch). The contrarian: mechanistic auto-research, **no LLM and no evolution** — Observation→Problem→Hypothesis→Intervention→Speed-up over ~6,000 training-dynamics observables. NanoGPT val BPB −7.43σ; grokking 72.9% substantial-improvement rate. Carries its own causal-depth Stage 1/2/3 taxonomy — **flagged as distinct from CORAL's autonomy Stage 1/2/3** to avoid conflation.
+- `wiki/sources/self-evolving.md` — Xinming Tu, [blog 2026-07-22](https://xinmingtu.github.io/blog/2026/self-evolving-agents/). Taxonomy, not a system: a 3×3 *what-evolves* (files/harness/weights) × *when-it-persists* (single-session/across-sessions/across-users) matrix, populated with wiki systems as a hub page; consolidation path files→harness→weights.
+
+Concept pages updated:
+- `evolutionary-optimization.md` — Squeeze-Evolve (verifier-free cost-aware test-time evolution) + omni (portfolio of whole optimizers) sections; 2 new hierarchy-of-evolution rows; frontmatter.
+- `feedback-signals.md` — OPHIS internal-training-dynamics tier (richest/white-box end, with a 3-row richness ladder) + Squeeze-Evolve verifier-free confidence/diversity proxy; frontmatter.
+- `self-improvement-loop.md` — 3 new proposal-target rows + 3 loop-architecture subsections (portfolio meta-optimization; mechanistic non-search auto-research; verifier-free test-time evolution); frontmatter.
+- `regression-gating.md` — OPHIS mechanistic-plausibility + variance/stability gating; "understand-then-intervene" as a structural alternative to gating blind search (ties to the reward-hacking section); frontmatter.
+- `harness-optimization.md` — omni added to "Foundational and Adjacent Families" (portfolios GEPA/AutoResearch/Meta-Harness); frontmatter.
+- `knowledge-accumulation.md` — new "Consolidation Path (files→harness→weights)" section naming the migration axis the page illustrates piecewise (SKILL-0/TRACE as the weight rung); frontmatter.
+
+Overview + experiment:
+- `overview.md` — 4 optimization-target rows; OPHIS + Squeeze-Evolve feedback bullets; 4 loop-architecture subsections; 5 empirical-results rows; new "Two External Maps: Weng's Ladder and Tu's What×When Matrix" section; 4 new open questions.
+- `experiment.md` — omni added as a **plateau-breaking ablation arm** (reseed-on-plateau + portfolio) that does *not* overturn the committed single-GEPA-loop design; Squeeze-Evolve added as a scan-time cost-routing lever; ablation bullet in the experimental design; frontmatter.
+- `index.md` — 4 source-summary rows + 4 file-map rows + last_updated.
+
+Key positional claims:
+- **omni** is the top of the optimizer stack (portfolio over whole optimizer families) and the strongest external evidence for "no single searcher dominates," lifted from EvoX's strategy level to the optimizer level; directly relevant to experiment.md's single-GEPA commitment.
+- **Squeeze-Evolve** completes a cost-aware-model-routing trio with AlphaEvolve (role split) and ShinkaEvolve (operator bandit), adding per-instance solution-layer routing — and is the constructive counterpoint to interaction-trajectory-mining's offline-reward-model failure (verifier-free self-confidence).
+- **OPHIS** is the wiki's foil: mechanistic, non-LLM, non-evolutionary auto-research; richest (white-box internal-dynamics) feedback signal in the wiki; argues the dominant search paradigms are "superficial" for lacking causal understanding.
+- **Self-Evolving (Tu)** is an orientation lens: its (what × when) matrix + consolidation path cross-cut the whole wiki, complementing Weng's optimization ladder.
+
 ## [2026-07-10] ingest | Weng-survey backlog — stop + adas + aflow + dgm + ace + mce + hyperagents (7 sources)
 
 Closed the gap between the wiki and the external map: ingested the seven systems [Lilian Weng's harness-engineering survey](sources/weng-harness-blog.md) cites but the wiki hadn't covered. Researched each via 7 parallel research subagents (web search + arXiv/GitHub/blog fetches) to get accurate citations before writing.

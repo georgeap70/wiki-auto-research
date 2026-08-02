@@ -1,6 +1,6 @@
 # Self-Improving Agentic Systems — Wiki Index
 
-A catalog of all pages. Read this first when answering queries. Last updated: 2026-07-10 (+ self-harness, evolve-the-harness, interaction-trajectory-mining, weng-harness-blog; + Weng-backlog: stop, adas, aflow, dgm, ace, mce, hyperagents; + context-engineering concept).
+A catalog of all pages. Read this first when answering queries. Last updated: 2026-08-01 (+ optimize-anything-omni, squeeze-evolve, ophis, self-evolving).
 
 ---
 
@@ -57,6 +57,10 @@ One page per raw source. See `sources/` directory for raw URLs.
 | [ACE](sources/ace.md) | `sources/ace` | [github](https://github.com/ace-agent/ace) | Zhang et al. (Stanford + SambaNova + Berkeley): Agentic Context Engineering — context as an itemized playbook grown by deterministic delta updates; avoids context collapse; +10.6% agents / +8.6% finance; big latency/cost wins vs GEPA (arXiv 2510.04618, ICLR 2026) |
 | [MCE](sources/mce.md) | `sources/mce` | [github](https://github.com/metaevo-ai/meta-context-engineering) | Ye et al. (Peking U.): Meta Context Engineering — bi-level (1+1)-ES that evolves the context-management *skill* (mechanism), not just content; beats ACE on all 5 domains (mean +16.9% over SOTA agentic-CE) (arXiv 2601.21557) |
 | [Hyperagents (DGM-H)](sources/hyperagents.md) | `sources/hyperagents` | [github](https://github.com/facebookresearch/HyperAgents) | Zhang et al. (Meta + UBC): DGM follow-up — merges task agent + meta-agent into one self-modifiable program so the modification procedure edits itself; targets any computable task (coding, review, robotics, grading) (arXiv 2603.19461) |
+| [Optimize Anything Omni](sources/optimize-anything-omni.md) | `sources/optimize-anything-omni` | [github](https://github.com/gepa-ai/gepa) | GEPA team: `optimize_anything` becomes engine-pluggable (GEPA / AutoResearch / Meta-Harness) + pipeline-composable; the `omni` meta-optimizer races engines then continues the winner — Frontier-CS: no single optimizer dominates, every omni portfolio beats every standalone (GEPA 43.8→61.8) |
+| [Squeeze-Evolve](sources/squeeze-evolve.md) | `sources/squeeze-evolve` | [github](https://github.com/squeeze-evolve/squeeze-evolve) | COLM 2026: verifier-free evolutionary test-time scaling — routes each answer-refinement step to a cheap/expensive model by per-instance difficulty (confidence/diversity); equal-or-better accuracy at a fraction of cost; solution-layer sibling to ShinkaEvolve's cost-aware bandit |
+| [OPHIS](sources/ophis.md) | `sources/ophis` | none | MetaCircle (Ziming Liu): mechanistic auto-research — **no LLM, no evolution**; Observation→Problem→Hypothesis→Intervention→Speed-up over ~6,000 training-dynamics observables; NanoGPT val BPB −7.43σ; own causal-depth Stage 1/2/3 (≠ CORAL's) |
+| [Self-Evolving Agents (Tu)](sources/self-evolving.md) | `sources/self-evolving` | none | Xinming Tu: taxonomy — a 3×3 *what-evolves* (files/harness/weights) × *when-it-persists* (session/sessions/users) matrix; consolidation path files→harness→weights; an external cross-cut lens over the whole wiki |
 
 ---
 
@@ -129,3 +133,7 @@ One page per raw source. See `sources/` directory for raw URLs.
 | `ace` | [sources/ace.md](sources/ace.md) |
 | `mce` | [sources/mce.md](sources/mce.md) |
 | `hyperagents` | [sources/hyperagents.md](sources/hyperagents.md) |
+| `optimize-anything-omni` | [sources/optimize-anything-omni.md](sources/optimize-anything-omni.md) |
+| `squeeze-evolve` | [sources/squeeze-evolve.md](sources/squeeze-evolve.md) |
+| `ophis` | [sources/ophis.md](sources/ophis.md) |
+| `self-evolving` | [sources/self-evolving.md](sources/self-evolving.md) |

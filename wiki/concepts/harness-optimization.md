@@ -2,8 +2,8 @@
 title: Harness Optimization
 type: concept
 tags: [harness, system-prompt, scaffolding, code-synthesis, constraint-enforcement, model-specific, transfer, context-engineering]
-sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt, rlm_gepa, evo-hq, self-harness, hf-harness, weng-blog, stop, adas, aflow, dgm, hyperagents, ace, mce]
-last_updated: 2026-07-10
+sources: [auto-harness, meta-harness, autoharness-arxiv, autoagent, autoagent2, evoforge, honedhaiku, halo, skillOpt, rlm_gepa, evo-hq, self-harness, hf-harness, weng-blog, stop, adas, aflow, dgm, hyperagents, ace, mce, optimize-anything-omni]
+last_updated: 2026-08-01
 ---
 
 # Harness Optimization
@@ -127,6 +127,7 @@ Harness optimization has deeper roots and neighboring families that the wiki tra
 - **Self-modifying-code lineage** — [STOP](../sources/stop.md) (recursively self-improving improver, 2023) → [ADAS](../sources/adas.md) (meta-agent designs agents as code) → [Darwin Gödel Machine](../sources/dgm.md) (agents rewrite their own harness, empirical validation) → [Hyperagents](../sources/hyperagents.md) (the modification procedure edits itself). This is harness optimization at its most literal — the agent evolving its own code. Detailed in [concepts/evolutionary-optimization](evolutionary-optimization.md).
 - **Workflow search** — [AFlow](../sources/aflow.md) optimizes a code-represented *workflow* (the harness-as-graph) via MCTS; its cost result (small model beats GPT-4o at ~4.55% cost) is a strong statement of the harness-over-model thesis.
 - **Context engineering** — [ACE](../sources/ace.md) and [MCE](../sources/mce.md) optimize the *structured context* layer of the harness (playbooks / context-management skills) with no weight updates. Detailed in [concepts/context-engineering](context-engineering.md).
+- **Portfolio of optimizers** — [Optimize Anything Omni](../sources/optimize-anything-omni.md) makes three of this wiki's harness/text optimizers — [GEPA](../sources/optimize-anything.md), [AutoResearch](../sources/autoresearch-vs-hpo.md), [Meta-Harness](../sources/meta-harness.md) — interchangeable engines behind one API, then races and reseeds them (`omni`). On Frontier-CS no single engine dominates and every portfolio beats every standalone — evidence that *which* harness optimizer you pick matters less than running several and continuing the winner. Detailed in [concepts/evolutionary-optimization](evolutionary-optimization.md).
 
 ## Comparison
 

@@ -2,8 +2,8 @@
 title: Experiment — Optimizing Vulnerability-Detection Scanning Workflows
 type: analysis
 tags: [experiment, vulnerability-detection, security, claude-code-skills, harness-optimization, application]
-sources: [skillopt, evo-hq, honedhaiku, optimize-anything, rlm_gepa, auto-harness]
-last_updated: 2026-07-03
+sources: [skillopt, evo-hq, honedhaiku, optimize-anything, optimize-anything-omni, rlm_gepa, auto-harness, squeeze-evolve]
+last_updated: 2026-08-01
 ---
 
 # Experiment — Optimizing Vulnerability-Detection Scanning Workflows
@@ -220,6 +220,17 @@ Two lessons port directly:
 
 GEPA is the search primitive both HonedHaiku and the suggested `pareto_per_task` Evo strategy rest on. If you want to *implement* the optimizer yourself rather than use Evo's packaged form, GEPA is the reference. The core idea — Pareto frontier over multi-metric scoring + LLM-proposed edits + **Actionable Side Information (ASI)** as the feedback channel — is exactly the shape of your problem.
 
+### [sources/optimize-anything-omni](sources/optimize-anything-omni.md) (portfolio of optimizers) — a plateau-breaking ablation, not a replacement
+
+The committed design runs a **single** GEPA loop. `omni` is the external data point arguing that may leave performance on the table: on Frontier-CS — competitive programming, $20/problem, close to this experiment's shape — **no single optimizer dominated**, and racing GEPA + AutoResearch + Meta-Harness then continuing the winner with a *fresh* optimizer beat every standalone (GEPA 43.8→61.8). Notably, all three omni engines are already in scope here: GEPA is the committed inner loop, [Evo](sources/evo.md) is the AutoResearch-style substrate, and [Meta-Harness](sources/meta-harness.md) is the research analog SkillOpt productized.
+
+Two reasons to treat it as an **ablation arm**, not a wholesale swap:
+
+- **The frontier readout needs adapting.** omni's reported protocol keeps a single "best" candidate at the phase boundary; this experiment needs the full `(P, R, cost)` objective frontier. The frontier-preserving version of omni's idea is exactly what the `(β, V)` scalarization sweep already does — race per scalarization, union the frontiers.
+- **The cheap, model-agnostic half is free to try.** omni's most portable finding is "a fresh optimizer breaks plateaus." Concretely: keep the committed GEPA loop but, when it plateaus, **reseed a fresh GEPA instance from the current best** before spending the rest of the budget. That costs nothing structurally and is the first thing to test before adding whole other engines.
+
+This does **not** overturn the [Final solution](#final-solution--single-loop-gepa-over-prompt-model) — it adds a reseed-on-plateau step and a portfolio ablation arm (below).
+
 ### [sources/rlm-gepa](sources/rlm-gepa.md)'s `AgentSpec` — adopt the *idea* even if not the framework
 
 Even if you don't use the predict-rlm runtime, write down explicitly what behavioral changes are *in-scope* for the optimizer. Example:
@@ -263,6 +274,10 @@ The closest single-thread control arm: agent edits its own harness, gates with a
 AutoReason's per-query tournament (incumbent vs. adversarial revision vs. synthesis, with a blind Borda-count judge panel) is an **inference-time** loop. It does not optimize the skill. But it could resolve a different problem inside your scanner: *"Is this candidate finding actually a vulnerability or a false positive?"* The tournament gating addresses three pathologies that show up in naive critique-revise (prompt bias, scope creep, lack-of-restraint) — all of which are real in security triage.
 
 Use it as a **separate axis** in your workflow comparison, not as an optimizer choice.
+
+### [sources/squeeze-evolve](sources/squeeze-evolve.md) — cost-aware model routing as a scan-time lever
+
+Squeeze-Evolve is the other inference-time option, and it speaks directly to the **cost** objective. Its idea — route each *problem* to a cheap or expensive model by a zero-cost difficulty proxy (self-confidence / answer diversity) — maps onto scanning as: run cheap models on obviously-clean files and escalate to an expensive model only where the cheap model is *uncertain*. This is the per-instance, verifier-free cousin of the [Final solution](#final-solution--single-loop-gepa-over-prompt-model)'s per-*stage* `[prompt, model]` search: the Final Solution decides model assignment **at optimization time** (baked into the artifact); Squeeze-Evolve decides it **at scan time** (per repo/file, from live confidence). They compose — the optimizer can fix per-stage models while a confidence router escalates hard inputs within a stage — but treat scan-time routing as a *cost lever inside the cost objective* (like AutoReason), not as an optimizer choice, and beware that a confidently-wrong scan is mis-routed as "easy."
 
 ## What to skip and why
 
@@ -313,6 +328,7 @@ A concrete plan that uses the primary recommendation:
    - The [auto-harness](sources/auto-harness.md) single-thread loop on the same skill (single-thread control)
    - The same Evo run with the `argmax` frontier strategy (ablation: does `pareto_per_task` matter?)
    - The same Evo run with no rejected-edit / discarded-hypothesis store (ablation: does negative-signal storage matter?)
+   - **Reseed-on-plateau** and an **`omni`-style portfolio arm** ([optimize-anything-omni](sources/optimize-anything-omni.md)): (a) reseed a fresh GEPA instance from the current best when a run plateaus; (b) race the GEPA loop against a Claude-Code AutoResearch run on the same tasks and continue the winner — does portfolio+continue beat the single GEPA loop at equal budget?
 8. **Generalization probes** at the end:
    - Score the optimized skill under a different Claude model (transfer probe — SkillOpt-style)
    - Score on the cross-CWE-holdout split

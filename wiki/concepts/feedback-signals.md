@@ -2,8 +2,8 @@
 title: Feedback Signals — Scalar vs. Rich Diagnostic
 type: concept
 tags: [feedback, diagnostics, ASI, execution-traces, rich-context, capability-isolation, model-specific]
-sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt, rlm_gepa, evo-hq, self-harness, hf-harness, interaction-trajectory-mining]
-last_updated: 2026-07-10
+sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt, rlm_gepa, evo-hq, self-harness, hf-harness, interaction-trajectory-mining, ophis, squeeze-evolve]
+last_updated: 2026-08-01
 ---
 
 # Feedback Signals
@@ -62,6 +62,18 @@ Rich feedback tells the system *why* it failed and *what specific conditions* pr
 **Model-specific weakness mining** — [sources/self-harness](../sources/self-harness.md) clusters failure traces *per base model* to produce a targeted list of that model's recurring errors, then proposes minimal harness edits against them. The signal is failure-mining (as in [auto-harness](../sources/auto-harness.md)) with an explicit claim attached: because the failure distribution is model-specific, the resulting feedback — and therefore the right harness edit — is model-specific too. [Evolve the Harness](../sources/evolve-the-harness.md) uses a related but *blended* acceptance signal (`pooled_criterion + 0.5·all_pass − 0.005·tokens/M`) that folds a dense diagnostic rate, an anti-luck whole-task bonus, and a token-cost penalty into one promotion score.
 
 **Offline reward-model feedback (a cautionary bound)** — [sources/interaction-trajectory-mining](../sources/interaction-trajectory-mining.md) is the negative case: it scores mined skills with an *offline* reward model over logged trajectories rather than live rollouts, and finds the signal too weak to drive cross-domain transfer (mined skills underperform a frequency prior). This is direct evidence from the failure side for the rich-*live*-feedback thesis: the artifact (legible skill clusters) was fine; the offline signal that was supposed to validate it was the bottleneck.
+
+**Verifier-free confidence / diversity proxy** — [sources/squeeze-evolve](../sources/squeeze-evolve.md) takes the opposite escape from the reward-model problem: use no external checker *and* no learned reward model, and read fitness off the **model's own uncertainty** — group confidence (token log-probabilities) or answer diversity. It is a **zero-cost, self-supervised** signal used both to rank candidates and to *route* each problem to a cheap or expensive model by estimated difficulty. Where [interaction-trajectory-mining](../sources/interaction-trajectory-mining.md) shows a weak offline signal fails, Squeeze-Evolve shows a *self-referential* signal can suffice when the task is answer-refinement rather than skill-curation — but it inherits the standard risk of confidence proxies (a confidently-wrong model is mis-routed as "easy").
+
+**Internal training-dynamics observables (white-box mechanistic feedback)** — [sources/ophis](../sources/ophis.md) sits at the far end of the richness spectrum. Instead of execution traces of *behavior*, its signal is the **internal state of the system being optimized**: ~6,000 tensor-level quantities of a training run (norms, entropy-like measures, parameter/activation statistics). Interventions are derived by *causal attribution* to observed dynamics rather than proposed and scored black-box. This extends the feedback ladder one rung deeper than traces:
+
+| Richness | Signal | Example |
+|----------|--------|---------|
+| Scalar | pass rate, loss | most gating |
+| Behavioral traces | execution logs, tool calls, errors | [Meta-Harness](../sources/meta-harness.md), [HALO](../sources/halo.md) |
+| **Internal dynamics** | **the model's own training-time tensors** | **[OPHIS](../sources/ophis.md)** |
+
+The cost is domain-specificity: internal-dynamics feedback is only available when you *own the training run* — it does not transfer to optimizing a frozen third-party model's harness.
 
 ## Why Rich Feedback Wins
 

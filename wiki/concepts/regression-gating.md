@@ -2,8 +2,8 @@
 title: Regression Gating
 type: concept
 tags: [safety, regression, gating, threshold, pareto, lineage, rollback, causal-replay, reward-hacking]
-sources: [auto-harness, optimize-anything, evox, meta-harness, autogenesis, autoreason, skillOpt, evo-hq, self-harness, hf-harness, stop, dgm]
-last_updated: 2026-07-10
+sources: [auto-harness, optimize-anything, evox, meta-harness, autogenesis, autoreason, skillOpt, evo-hq, self-harness, hf-harness, stop, dgm, ophis]
+last_updated: 2026-08-01
 ---
 
 # Regression Gating
@@ -123,6 +123,15 @@ Used by [sources/evolve-the-harness](../sources/evolve-the-harness.md), a Meta-H
 3. **Causal-replay / pooled validation** — a mechanism must prove itself either by re-scoring deterministic fixes on old transcripts (causal replay) or by pooled comparison across ≥5 fix tasks and ≥5 regression tasks. Single-trial swings are rejected as noise. Plus a `_touched_test()` guard that prevents the loop from reading the held-out split.
 
 Causal replay is a distinctive primitive: because many accepted mechanisms are *deterministic code* (file-landing gates, tool-call JSON repair), their effect can be re-scored on already-recorded transcripts without new rollouts — cheap, exact regression evidence unavailable to prompt-only edits.
+
+### Mechanistic-Plausibility + Variance Gating
+
+Used by [sources/ophis](../sources/ophis.md), whose interventions are *derived* from a causal model rather than searched. Two gates:
+
+1. **Mechanistic-plausibility filter** — candidate interventions are screened against the mechanistic hypothesis *before* evaluation, so implausible changes are never run. This is **prior restraint** like [SkillOpt's](../sources/skillopt.md) edit budget, but the restraint is *semantic* (must be consistent with the causal story) rather than *size-based*.
+2. **Variance / stability gate** — each candidate is evaluated **10 times** and must clear ≥3σ over baseline to count; high-*mean* but unstable interventions are rejected. This is the same noise-aware discipline as [evolve-the-harness](../sources/evolve-the-harness.md)'s ≥1-point-over-noise promotion and [Evo](../sources/evo.md)'s repeated trials — here applied to kernel-level training noise on a single GPU.
+
+There is also a deeper claim embedded in OPHIS's design: deriving interventions from *why* they should work is a **structural** alternative to gating blind search. Where the reward-hacking cases below arise precisely because a loop optimizes a hackable proxy without understanding it, "understand-then-intervene" attacks that failure at its root rather than filtering its symptoms after the fact.
 
 ## Why Gating Exists: Reward / Objective Hacking
 

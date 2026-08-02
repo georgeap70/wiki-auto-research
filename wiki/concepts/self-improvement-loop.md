@@ -2,8 +2,8 @@
 title: The Self-Improvement Loop
 type: concept
 tags: [core-concept, loop, measure-fail-propose-gate]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt, evo-hq, self-harness, hf-harness, stop, adas, aflow, dgm, hyperagents, ace, mce]
-last_updated: 2026-07-10
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, optimize-anything-omni, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt, evo-hq, self-harness, hf-harness, stop, adas, aflow, dgm, hyperagents, ace, mce, ophis, squeeze-evolve]
+last_updated: 2026-08-01
 ---
 
 # The Self-Improvement Loop
@@ -46,6 +46,9 @@ Generate a candidate improvement. This is the creative step. What is proposed de
 | A complete workflow (MCTS node) | Edit prompts/edges of a code-represented workflow | [sources/aflow](../sources/aflow.md) |
 | The agent's own codebase | The agent rewrites its own harness | [sources/dgm](../sources/dgm.md), [sources/hyperagents](../sources/hyperagents.md) |
 | The improver / modification procedure | The improving code improves itself | [sources/stop](../sources/stop.md) |
+| Training interventions (from mechanism) | Derive a training-recipe change from causal analysis of internal dynamics — no search | [sources/ophis](../sources/ophis.md) |
+| The answer, at test time | Refine a population of candidate answers under a verifier-free proxy | [sources/squeeze-evolve](../sources/squeeze-evolve.md) |
+| The portfolio of optimizers | Which optimizer family to run, and when to reseed a fresh one | [sources/optimize-anything-omni](../sources/optimize-anything-omni.md) |
 | The optimization algorithm | Switch search strategy | [sources/evox](../sources/evox.md) |
 
 ### 4. Gate
@@ -145,6 +148,15 @@ An archive-based variant where a foundation model rewrites the agent's *own* cod
 
 ### Meta-evolution
 The evolution strategy itself is subject to the same evolutionary loop. Used by [sources/evox](../sources/evox.md). [sources/mce](../sources/mce.md) applies the identical move to *context management*: a base loop engineers the context while a meta-loop evolves the context-management skill (bi-level (1+1)-ES). See [concepts/context-engineering](context-engineering.md).
+
+### Portfolio meta-optimization (race, then reseed)
+[sources/optimize-anything-omni](../sources/optimize-anything-omni.md) sits above meta-evolution: instead of evolving one optimizer's *strategy*, it runs a **portfolio of whole optimizer families** ([GEPA](../sources/optimize-anything.md), [AutoResearch](../sources/autoresearch-vs-hpo.md), [Meta-Harness](../sources/meta-harness.md)) in parallel, keeps the best candidate, then **reseeds a fresh optimizer** to break the plateau. The `measure → propose → gate` cycle is unchanged *within* each engine; the meta-loop only decides which engine's proposals to keep and when to restart. Empirically, every portfolio composition beat every standalone optimizer (Frontier-CS). See [concepts/evolutionary-optimization](evolutionary-optimization.md).
+
+### Mechanistic (non-search) auto-research
+[sources/ophis](../sources/ophis.md) is the wiki's one loop that is **not a search at all**. Its cycle — Observation → Problem → Hypothesis → Intervention → Speed-up — *derives* each candidate from a causal model of the system's own internal training dynamics (~6,000 tensor-level observables) rather than proposing-and-scoring blindly. The "propose" step is a mechanistic deduction, not a mutation; the "gate" step is a mechanistic-plausibility filter plus a variance check (10 repeated evals). No LLM and no population are involved. OPHIS frames a **causal-depth Stage 1/2/3** taxonomy (internet-prior → statistical RSI memory → mechanistic) that is **distinct from [CORAL](../sources/coral.md)'s autonomy Stage 1/2/3** — see [sources/ophis](../sources/ophis.md) for the collision warning.
+
+### Verifier-free test-time evolution
+[sources/squeeze-evolve](../sources/squeeze-evolve.md) runs the loop **at inference time**, on the same per-query time axis as [sources/autoreason](../sources/autoreason.md) but population-based: it evolves a set of candidate answers (score → select → route → recombine → update) using a **verifier-free** fitness proxy (self-confidence / diversity), and routes each problem to a cheap or expensive model by estimated difficulty. Improvement lands in the *output*, lasts one query, and needs no ground-truth checker — a different point on the "when does the change persist" axis from the deployment- and training-time loops above (see [sources/self-evolving](../sources/self-evolving.md)'s *when* dimension).
 
 ## What Makes the Loop Compound?
 
