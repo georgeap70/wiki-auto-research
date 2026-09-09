@@ -1,9 +1,9 @@
 ---
 title: Knowledge Accumulation in Self-Improving Systems
 type: concept
-tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage, skill-mining, negative-result, playbook, archive]
-sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa, interaction-trajectory-mining, ace, mce, dgm, adas, self-evolving]
-last_updated: 2026-08-01
+tags: [knowledge, memory, persistence, compounding, cognition-base, shared-memory, adapters, protocol-lineage, skill-mining, negative-result, playbook, archive, two-speed-state, pruning, forgetting]
+sources: [auto-harness, meta-harness, asi-evolve, coral, skill0, webxskill, trace, autogenesis, skillOpt, rlm_gepa, interaction-trajectory-mining, ace, mce, dgm, adas, self-evolving, wiki.skill, auto.saddler, skill.state, harnessdev]
+last_updated: 2026-09-08
 ---
 
 # Knowledge Accumulation
@@ -132,6 +132,30 @@ This is closest to [sources/coral](../sources/coral.md)'s Attempts store (per-co
 
 In the [self-modifying-code family](evolutionary-optimization.md), the accumulated artifact is an **archive of whole agents** (or agent designs) with full lineage. [sources/adas](../sources/adas.md)'s meta-agent conditions each new design on the archive of prior agents; [sources/dgm](../sources/dgm.md) keeps every variant in a lineage tree and samples parents from it (∝ performance × 1/offspring). Unlike a document store, the unit of accumulation is an *executable agent*, and the "retrieval" is parent selection for the next mutation. Lineage here doubles as a safety mechanism — it is what let DGM *detect its own [reward hacking](regression-gating.md)*.
 
+### The Persistent Wiki — Two-Speed State — [sources/wikiskill](../sources/wikiskill.md)
+
+[sources/wikiskill](../sources/wikiskill.md) is the first source to **ablate persistence directly inside a single system** and put a number on it. Its workspace is split by *mutability and lifetime*, which is the whole design:
+
+| Layer | Contents | Lifecycle |
+|-------|----------|-----------|
+| `raw/` | Complete execution traces | **Permanent, write-once** |
+| `wiki/` | `patterns/*.md` (failure modes + workarounds), `index.md`, `logs.md`, `skill-impact.md` | **Compounding, never reset** |
+| `skills/` | `SKILL.md` + `PURPOSE.md` (maps each skill to the patterns that motivated it) | **Reversible, gated** |
+
+The asymmetry is the mechanism: **skills roll back under a validation gate; the wiki never does.** A rejected proposal still deposits permanent knowledge, so a failed iteration is not a wasted one — it answers the question of what a rejected proposal is *for*. This is a genuinely new primitive relative to the stores above: [SkillOpt](../sources/skillopt.md)'s rejected-edit buffer and [Evo](../sources/evo.md)'s discarded-hypothesis bucket also keep negative signal, and [Autogenesis](../sources/autogenesis.md) makes everything reversible, but WikiSkill runs **two layers at deliberately different speeds** — a fast reversible artifact over a slow irreversible knowledge base immune to the gate.
+
+Three further details are transferable:
+
+- **The audit trail is written programmatically, not by an LLM.** `skill-impact.md` is appended by the outer harness with proposal metadata, target skill, unified diff, validation score, and accept/reject outcome. The Proposer reads ground truth about its own history rather than self-report — the same instinct as [HarnessDev](../sources/harnessdev.md)'s unassertable scoring.
+- **Retrieval on demand, not pre-sampling.** The Skill Proposer runs in ReAct style with only the wiki *index*, the impact tracker, and a pass/fail summary, then pulls specific pattern pages and traces via `read_file` as needed. This is a different answer to the context-budget problem than a dedicated compressor agent ([HALO](../sources/halo.md)'s RLM, [ASI-Evolve](../sources/asi-evolve.md)'s Analyzer): let the consumer choose, and maintain an index. As stores outgrow any context window, it is likely the more scalable pattern.
+- **Accumulation for the *proposer*, not the executor.** Ablation: giving the Skill Proposer wiki access lifts average performance **48.7% → 63.7% (+15.0)**; additionally giving the **Inference Agent** wiki access during rollouts *hurts* (63.7% → 60.9%). When the executing agent can read the knowledge base, it solves tasks from the wiki instead of the skills, and the resulting trajectories become **less informative about skill quality**. Contaminating execution with the diagnostic layer degrades the very signal that curates it.
+
+### EvoDAG — Lineage Annotated with Lessons — [sources/autosaddler](../sources/autosaddler.md)
+
+[sources/autosaddler](../sources/autosaddler.md) accumulates a **directed acyclic graph** whose nodes are explored harnesses and whose edges are diffs. What distinguishes it from the [archive](#the-archive-self-modifying-code-lineage) forms above is what the nodes *carry*: each is annotated with the reflection output for that patch — every mini-batch task sorted into **fixed / regressed / still-failing / still-passing**, with targeted analysis of why. The Evolution Agent then consults the whole DAG and may **recombine components from any subset of prior harnesses** rather than continuing from the latest one.
+
+So the accumulated artifact is neither a document ([SkillOpt](../sources/skillopt.md)) nor a bare population of executables ([DGM](../sources/dgm.md)) but a **lineage graph carrying causal notes about each edge** — closest to [CORAL](../sources/coral.md)'s Attempts store, but with a reflection report attached to every transition and recombination as the retrieval operation.
+
 ## A Negative Bound: Offline Skill Mining Doesn't Transfer
 
 Most systems above either hand-author skills or co-evolve them against *live* feedback. [sources/interaction-trajectory-mining](../sources/interaction-trajectory-mining.md) asks the harder question: can a skill store (`SKILL.md`) be mined **automatically and offline** from logged interaction trajectories (segment → cluster → train a policy with GRPO)? Its answer is a useful cautionary bound:
@@ -140,6 +164,35 @@ Most systems above either hand-author skills or co-evolve them against *live* fe
 - **Transfer is** — the mined skills barely move downstream accuracy (18.5%→20.5%) and *underperform a simple frequency prior*; the weak links are the boundary detector, the segment representation, and especially the **offline reward model**.
 
 The lesson for knowledge accumulation: the *artifact* form (a prose/skill document) is not what makes accumulation work — the *feedback that curates it* is. Systems that succeed ([sources/skillopt](../sources/skillopt.md), [sources/coral](../sources/coral.md), [sources/skill-rl-skill0](../sources/skill-rl-skill0.md)) curate their stores against live, dense signals; offline mining from static logs is too lossy. See [concepts/feedback-signals](feedback-signals.md).
+
+## The Opposite Bound: Deliberate Discarding Within a Run
+
+Every store above answers "keep more, structured better." [sources/skill-state](../sources/skill-state.md) argues the reverse for a different time horizon, and its results are strong enough to bound this page's thesis.
+
+SKILL.state replaces an agent's append-only conversational history with an **explicit mutable execution state** `Σ_t`, and **discards the intermediate reasoning trace permanently** once it has produced a validated state update. The model sees only `(P, Σ_t, O_t)` — immutable skill spec, current state, latest observation — never prior observations, actions, or reasoning. Prompt size is O(1) and cumulative tokens O(T), versus O(T²) for history-appending runtimes.
+
+The accuracy results are what make this a knowledge-accumulation claim rather than a cost optimization:
+
+- **Accumulated history actively harms long-horizon accuracy.** ReAct decays 0.90 → 0.74 from T=10 to T=200; SKILL.state holds 0.94 at 122k tokens against Memory's 6.18M.
+- **Stale context defeats new evidence.** When the world changes outside the agent's action loop, history-based runtimes **hallucinate for 5–8 consecutive turns** because obsolete facts in the prompt overpower contradictory new observations. SKILL.state needs **zero** recovery steps.
+- **Structure, not brevity, is doing the work.** Pinned to the same ~1,800-token budget, sliding-window truncation scores 0.18 and LLMLingua compression 0.22, against SKILL.state's 0.94 (and unbounded ReAct's 0.84). Statistical compressors destroy exactly the relational detail — slot identifiers — that looks redundant and is semantically vital.
+
+The reconciliation with the rest of this page is a **time-horizon split**: *accumulate across runs, discard within one.* The two are complementary rather than contradictory — [sources/wikiskill](../sources/wikiskill.md) compounds patterns across iterations while each rollout could perfectly well run on a bounded-state runtime; SKILL.state's immutable spec `P` is precisely the artifact a skill-evolution loop produces.
+
+It also sharpens [ACE](../sources/ace.md)'s **context-collapse** concern. Collapse is bad when a *rewrite* silently erodes accumulated detail; deliberate projection into a validated schema is a different operation, and the merge operator `⊕` (dictionary merge with null-deletion, validated by the deterministic runtime rather than the model) is the same anti-erosion instinct as ACE's item-level deltas.
+
+The condition for the whole approach is that state be a **sufficient statistic** for future execution, and SKILL.state is candid that this fails in three cases — no schema known in advance, an earlier observation whose relevance went unrecognized when seen (discarded context cannot be revisited), and tasks where the **history itself is the objective**: auditing, debugging provenance, explaining past actions. That last case is in direct tension with [sources/autogenesis](../sources/autogenesis.md)'s auditable-lineage safety substrate and with how [sources/dgm](../sources/dgm.md) detected its own reward hacking. **Discarded reasoning is unauditable reasoning.**
+
+## The Gap: State Is What Agent-Built Harnesses Omit
+
+[sources/harnessdev](../sources/harnessdev.md) audited what frontier models actually build when asked to construct a harness from a weak seed, and **state/memory was the systematic failure** across all six creator models:
+
+- 11 of 18 Code artifacts define a `State` class, but **only one exposes a state-saving interface and only one implements periodic checkpointing**.
+- **No checkpoint event appears in 26,679 recorded task trajectories.**
+- Of 108 audited component instances, 18 never trigger in any run — and **all 18 concern state and memory**.
+- Across 64 Evolution version switches, 58 changed execution/control flow, 37 changed tools, 17 changed lifecycle recovery, 16 changed context, and **only 4 changed state**.
+
+Set against [sources/skill-state](../sources/skill-state.md)'s claim that explicit execution state is the highest-leverage runtime abstraction available, this is a concrete and actionable finding: models will **declare** state and not **use** it, and self-improvement loops are not currently discovering the mechanism on their own. Persistence has to be designed in, or a proposer has to be constrained toward it (as [AutoSaddler](../sources/autosaddler.md)'s taxonomy constrains toward capability patches).
 
 ## The Consolidation Path (files → harness → weights)
 
@@ -173,7 +226,7 @@ See [concepts/feedback-signals](feedback-signals.md) for the per-iteration side.
 ## Open Questions
 
 - **Scale:** At what point does the knowledge base become too large to retrieve from efficiently? [sources/asi-evolve](../sources/asi-evolve.md) uses embedding-based semantic search; [sources/coral](../sources/coral.md) relies on agent judgment about what to read. Neither has been tested at thousands of hours of accumulated runs.
-- **Forgetting:** Should outdated knowledge (from early in the run, before key insights) be pruned? None of the current systems address this.
+- **Forgetting:** Should outdated knowledge be pruned? Still open, but no longer unexamined from both ends. [sources/wikiskill](../sources/wikiskill.md) hit the problem and names it as an acknowledged gap — its Wiki Layer accumulates pattern pages, logs, and proposal diffs across iterations with **no automated pruning mechanism**, which the authors expect to become necessary over longer runs. [sources/skill-state](../sources/skill-state.md) takes the opposite extreme *within* a run (see below) and shows aggressive discarding is not only safe but beneficial when the retained state is a sufficient statistic. What no system yet does is prune an *across-run* store.
 - **Cross-domain transfer:** Can a knowledge base trained on one task transfer to another? [sources/asi-evolve](../sources/asi-evolve.md) seeds the Cognition Base from human literature; genuinely cross-task accumulation has not been demonstrated.
 
 ## Connections
@@ -181,3 +234,5 @@ See [concepts/feedback-signals](feedback-signals.md) for the per-iteration side.
 - [concepts/self-improvement-loop](self-improvement-loop.md) — knowledge accumulation makes the loop compound rather than restart
 - [concepts/feedback-signals](feedback-signals.md) — rich feedback is often the raw material that knowledge accumulation structures and stores
 - [concepts/regression-gating](regression-gating.md) — the knowledge base can store which changes caused regressions, preventing re-testing failed approaches
+- [concepts/context-engineering](context-engineering.md) — the anti-erosion discipline for growing a context artifact, and [SKILL.state](../sources/skill-state.md)'s bounded-state alternative
+- [concepts/evaluating-self-improvement](evaluating-self-improvement.md) — dead accumulated knowledge (never-triggered components, unread stores) is a measurement problem too

@@ -2,8 +2,8 @@
 title: Self-Improving Agentic Systems — Overview
 type: overview
 tags: [self-improvement, agentic-ai, meta-learning, optimization]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, optimize-anything-omni, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill, evoforge, honedhaiku, autoreason, halo, skillopt, rlm-gepa, evo-hq, self-harness, hf-harness, interaction-trajectory-mining, weng-blog, stop, adas, aflow, dgm, ace, mce, hyperagents, ophis, squeeze-evolve, self-evolving]
-last_updated: 2026-08-01
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, optimize-anything-omni, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, group-evolve, skill0, autogenesis, trace, webxskill, evoforge, honedhaiku, autoreason, halo, skillopt, rlm-gepa, evo-hq, self-harness, hf-harness, interaction-trajectory-mining, weng-blog, stop, adas, aflow, dgm, ace, mce, hyperagents, ophis, squeeze-evolve, self-evolving, auto.saddler, harnessdev, skill.state, wiki.skill]
+last_updated: 2026-09-08
 ---
 
 # Self-Improving Agentic Systems — Overview
@@ -58,6 +58,10 @@ The key insight across this literature is that the optimization target can be an
 | Structured context (playbook / CE skill) | Itemized playbook (content) or context-management skill (mechanism); no weights | [ACE](sources/ace.md), [MCE](sources/mce.md) |
 | Training dynamics (via mechanism) | A training-recipe intervention derived from causal analysis of internal dynamics — no LLM, no search | [OPHIS](sources/ophis.md) |
 | The answer itself (test-time, verifier-free) | A population of candidate answers refined under a self-confidence proxy, with cost-aware model routing | [Squeeze-Evolve](sources/squeeze-evolve.md) |
+| Harness code as typed patches | Prompt / tool / middleware patches from an enumerated taxonomy, scheduled capability-before-steering | [AutoSaddler](sources/autosaddler.md) |
+| Skills co-evolved with a persistent wiki | Atomic skill create-or-patch proposed from accumulated pattern pages; the wiki never rolls back | [WikiSkill](sources/wikiskill.md) |
+| The execution substrate (not searched) | Append-only history replaced by a validated, bounded execution state | [SKILL.state](sources/skill-state.md) |
+| *(the loop itself, as an object of measurement)* | Creation from a zero-scoring seed, then Evolution; creator and executor models separated | [HarnessDev](sources/harnessdev.md) |
 | The optimization algorithm itself | Which search strategy the optimizer uses | [EvoX](sources/evox.md) |
 | The portfolio of optimizers | Which optimizer *family* to run, and when to reseed a fresh one | [Optimize Anything Omni](sources/optimize-anything-omni.md) |
 
@@ -76,6 +80,10 @@ A recurring theme is that **rich diagnostic feedback substantially outperforms s
 - [Evo](sources/evo.md) runs RLM-inspired *cross-cutting scan subagents* between rounds: they read trace batches in parallel and surface compound failure patterns — explicitly *gate-failure intersections* and *shared root causes across traces*. Where HALO compresses production traffic and ASI-Evolve compresses experimental output, Evo compresses *within-loop* trace batches as a standing between-round phase
 - [OPHIS](sources/ophis.md) extends the richness ladder one rung past traces: its signal is the **internal state of the system being optimized** — ~6,000 tensor-level training-dynamics observables — and interventions are *causally attributed* to them rather than proposed-and-scored. This is the most white-box feedback in the wiki, but only available when you own the training run
 - [Squeeze-Evolve](sources/squeeze-evolve.md) marks the opposite pole: a **verifier-free** proxy (the model's own confidence / answer diversity), zero-cost and needing no checker or reward model. It is the constructive counterpoint to [Interaction Trajectory Mining](sources/interaction-trajectory-mining.md)'s finding that an *offline reward model* is too weak — self-confidence suffices for answer-refinement, though a confidently-wrong model is mis-routed as "easy"
+
+- [AutoSaddler](sources/autosaddler.md) converts this page's thesis into a controlled ablation. Replacing agentic investigation with the standard **single-call reflection** ("here is the trace and the score, infer the failure reason") costs **62.0 → 57.8** Pass@1 on GAIA2. The mechanism is measurable: deep diagnosis issues **6.2 more tool calls and 5.8 more file accesses per step** and yields more accepted patches throughout training (13 vs. 5 by end of epoch 1). Its slogan — *long-horizon failures require deep debugging rather than shallow reflection* — is the sharpest statement of the rich-feedback thesis in the wiki, and it deliberately **fuses diagnosis with patch generation** so the patcher keeps the context it gathered while investigating
+- [WikiSkill](sources/wikiskill.md) adds a third answer to "feedback too rich for the context window", alongside enriching and compressing: **index it and retrieve on demand.** Its ReAct-style proposer starts with only a wiki index, a programmatic accept/reject tracker, and a pass/fail summary, then pulls specific pattern pages and traces via `read_file`. It also shows the *diagnostic channel's persistence* outweighs method sophistication — proposer access to the accumulated wiki is worth **+15.0 average points**
+- [HarnessDev](sources/harnessdev.md) is the counter-case for how feedback misleads inside a working loop: the same frozen artifact varies by **±4.75** points (27 of 64 reported gains sit inside that noise band), cheap 5-task probes disagree with full evaluation (one candidate passed all five probes and scored 0.584 on the full set), and feedback-set and held-out scores move in the same direction only **53.1%** of the time
 
 The implication: systems that explain *why* they failed improve faster than systems that only signal *how much* they failed. A corollary is becoming clear: when feedback is *too* rich, a dedicated compressor (a la HALO's RLM, or [ASI-Evolve](sources/asi-evolve.md)'s Analyzer) is itself a load-bearing component.
 
@@ -117,6 +125,15 @@ The wiki's one loop that is *not* a search. Observation → Problem → Hypothes
 ### Verifier-free test-time evolution ([Squeeze-Evolve](sources/squeeze-evolve.md))
 A population-based loop that runs at *inference time*, on the per-query axis shared with [AutoReason](sources/autoreason.md). It evolves candidate answers (score → select → route → recombine → update) under a verifier-free self-confidence proxy and routes each problem to a cheap or expensive model by estimated difficulty — cost-aware test-time scaling rather than deployment- or training-time improvement.
 
+### Offline mini-batch learning over harness code ([AutoSaddler](sources/autosaddler.md))
+The most thorough attempt to run the loop as textbook supervised learning: mini-batches of training tasks, an agentic diagnosis-and-patch step as textual backpropagation (with *mandatory* empirical verification, since textual "gradients" are unverified hypotheses), a **typed patch taxonomy** as a constrained parameter space, **Phased Patch Scheduling** as a learning-rate schedule, an **EvoDAG** lineage graph as optimizer state, and a dev-set as early stopping. It is a hybrid rather than pure descent: the Evolution Session consults the whole DAG and may **recombine components from any subset of previously explored harnesses**. [SkillOpt](sources/skillopt.md) made the same SGD framing at the prose-document layer; AutoSaddler adds mini-batches, disjoint task-group splits, and the schedule.
+
+### Two-speed state: reversible artifact over irreversible knowledge ([WikiSkill](sources/wikiskill.md))
+A four-component loop (Inference Agent → Wiki Maintainer → Skill Proposer → Gate) over joint state `(S_k, W_k)`, whose novelty is that **the gate applies to only one layer**. Skills roll back on rejection; the wiki — pattern pages, evolution log, and a programmatically-written accept/reject audit trail — is never rolled back. A rejected proposal therefore still advances the system, which answers the awkward question of what a failed iteration is *for*.
+
+### Create-then-evolve, as an object of measurement ([HarnessDev](sources/harnessdev.md))
+Not a method but a benchmark of the loop, which stages what method papers usually merge: **Creation** (build a complete harness from a zero-scoring seed plus 1–3 dev cases) then **Evolution** (revise your own artifact from downstream feedback), with the **creator model separated from the executor model** throughout.
+
 ## Gating and Safety
 
 Without regression gating, self-improvement risks catastrophic forgetting or proxy-metric overfitting:
@@ -128,6 +145,9 @@ Without regression gating, self-improvement risks catastrophic forgetting or pro
 - [Autogenesis](sources/autogenesis.md) proposes **auditable lineage + rollback** as protocol primitives — every entity (prompt, tool, memory) is versioned, every modification carries rationale, and any degradation can be reverted. Safety is built into the substrate rather than the optimizer
 - [SkillOpt](sources/skillopt.md) uses a held-out validation gate *and* mines rejected edits as a negative-example buffer for the optimizer — failed proposals become structured negative signal rather than discarded noise (analogous to hard-negative mining)
 - [AutoReason](sources/autoreason.md)'s Borda-count tournament is itself the gate: a change only lands when an independent judge panel ranks it above the incumbent, eliminating the "always revise" bias of vanilla self-refinement
+- [AutoSaddler](sources/autosaddler.md) supplies the wiki's strongest quantitative case for gating. **Generalization-aware selection** — staged mini-batch → dev-set evaluation plus a reflection pass sorting every task into fixed/regressed/still-failing/still-passing — is its **largest ablation: 62.0 → 50.6** against a 53.0 base, worse than losing deep diagnosis or the patch taxonomy. The decomposition explains why: with and without the gate the **fix rate is essentially the same**, while the regression-rate *trend* diverges (−0.24 vs. +0.16 pp/iter). An ungated loop does not fail by finding bad fixes — it fails by shipping real fixes alongside real regressions
+- [WikiSkill](sources/wikiskill.md) gates **one layer of two**: a strict validation-improvement rule reverts skills, while the knowledge layer that produced them is exempt and compounds. Ablating that exemption costs 15.0 points. Its acknowledged costs are also instructive — strict improvement **excludes neutral proposals** that might enable later gains, and there is **no wiki-pruning mechanism**
+- [HarnessDev](sources/harnessdev.md) shows the attack surface is closable **by construction**: a harness's self-reported status is never a scoring input (SWE-Pro credit comes only from the real repository diff, Terminal-Bench credit only from final environment state), so **no harness can earn score by asserting success**. Every run was audited against an explicit prohibited-route list, with a clean null result — the first such audit in the wiki, and a direct answer to [STOP](sources/stop.md)'s and [DGM](sources/dgm.md)'s documented hacks
 - [Evo](sources/evo.md) treats gates as first-class primitives that **inherit down the experiment tree**: a gate at the root runs on every descendant; narrower gates attach to specific branches. Gate failure overrides score improvement (*"An experiment that fails a gate is discarded even if its score beats the current best"*), a stronger commitment than soft-threshold gating. The held-out-slice score-floor gate is *auto-attached* during the `discover` bootstrap, so even a naive user gets generalization protection by default
 
 ## Empirical Results
@@ -179,6 +199,22 @@ Without regression gating, self-improvement risks catastrophic forgetting or pro
 | OPHIS | NanoGPT val BPB (on RSI-optimized baseline) | 0.9340967 | **0.9318420** | **−7.43σ**; autoresearch got only 0.001 (noise) |
 | OPHIS | Grokking (modular addition) | — | **72.9%** substantial-improvement rate (350 tricks) | vs 57.9% for LLM baseline |
 | Squeeze-Evolve | AIME25 / HMMT25 / GPQA-Diamond | uniform test-time scaling | equal-or-better accuracy | at a fraction of inference cost (Pareto, not point gain) |
+| AutoSaddler | GAIA2 | 53.0 (default agent) | **62.0** | +9.0pp; +7.4 over best automated baseline |
+| AutoSaddler | SWE-Bench Pro | 37.3 (SWE-agent) | **46.9** | +9.6pp; disjoint-repo test split |
+| AutoSaddler | Terminal-Bench 2.0 | 40.0 (Terminus 2) | **50.0** | +10.0pp; beats expert-tuned Terminus KIRA (47.5) |
+| AutoSaddler | GAIA2 optimization efficiency | Meta-Harness 1,400 traces | **147 traces** | ~10× fewer to reach best dev score |
+| WikiSkill | 5 benchmarks × 5 models (avg) | no-skill 26.2–49.5 | **38.5–68.1** | +12.3 to +23.9pp; beats Trace2Skill/EvoSkill/SkillOpt on all 5 models |
+| WikiSkill | persistent-wiki ablation (Gemini-3.5-Flash) | 48.7% (no accumulation) | **63.7%** | **+15.0** — persistence, not method, is the active ingredient |
+| WikiSkill | Qwen-27B SpreadsheetBench | 40.8% | **81.7%** | +40.9pp |
+| WikiSkill | cross-model transfer (Qwen-9B ALFWorld) | 63.4% self-evolved | **70.2%** (Qwen-27B skill) | transferred skills can beat self-evolved |
+| SKILL.state | Warehouse T=200 (Gemini-3-Flash) | ReAct 0.74 / 2.61M tokens | **0.94 / 122k tokens** | accuracy up, ~21–50× fewer tokens |
+| SKILL.state | InterCode CTF pass@1 | 46.4% (best baseline) | **54.2%** | +7.8pp at 60–66% fewer tokens |
+| SKILL.state | budget-matched @~1,800 tokens (T=100) | truncation 0.18 / LLMLingua 0.22 | **0.94** | structure, not brevity, is the mechanism |
+| SKILL.state | external state drift (recovery) | baselines hallucinate 5–8 turns | **0 recovery steps** | context poisoning, quantified |
+| HarnessDev | Creation, Self-Eval avg (best creator) | seed harness 0.0 | Opus 4.8 **67.8** | vs. human-engineered reference 86.2 |
+| HarnessDev | Evolution, held-out-630 (5 self-runtime lineages) | H0 | +1.43 to **+4.44** (mean +3.11) | feedback-set gains were 2–4× larger |
+| HarnessDev | Evolution under a *fixed* executor | H0 | **3 of 4 lineages regress** (to −10.32) | gains specialize to the runtime model |
+| HarnessDev | Opus code harness under a different executor | 69.3 (self) | **33.0** (Gemini) | creator co-adaptation, measured |
 
 ## Modular Decomposition of the Improvement Problem
 
@@ -201,11 +237,27 @@ A theme that emerges strongly from the newest sources: **persistent, structured 
 - [SkillOpt](sources/skillopt.md): single `best_skill.md` *is* the accumulated knowledge, plus a secondary store of rejected-edit negatives that informs future proposals
 - [RLM-GEPA](sources/rlm-gepa.md): optimized skill instructions layered on top of a fixed RLM/DSPy structure; transfer across use cases is the explicit design goal, with `AgentSpec` declaring the transfer boundary
 
+- [WikiSkill](sources/wikiskill.md): a three-layer split by *lifetime* — immutable `raw/` traces, a compounding `wiki/` of pattern pages plus logs and a programmatic audit trail, and reversible `skills/` under a gate. The wiki is **never rolled back**, so rejected proposals still deposit permanent knowledge
+- [AutoSaddler](sources/autosaddler.md): **EvoDAG**, a lineage graph whose nodes carry the four-way reflection report (fixed/regressed/still-failing/still-passing) for each patch, and whose retrieval operation is *recombination* across lineages rather than parent selection
+
 The right form of accumulation depends on the time horizon and the number of agents. Single-agent sequential loops benefit from simple document stores; multi-agent parallel runs require concurrent access and explicit distillation into transferable skills.
 
 SkillOpt's transfer results (+15.2% cross-model, +31.8% cross-harness, +10.4% when used as the optimizer's own meta-skill) are the strongest evidence in the wiki that accumulated knowledge artifacts are not model- or harness-specific — i.e., that the "knowledge" being accumulated really is about the *task*, not about an incidental detail of how it was learned.
 
-See [Knowledge Accumulation](concepts/knowledge-accumulation.md).
+[WikiSkill](sources/wikiskill.md) is the first source to **ablate persistence inside a single system** rather than inferring its value across systems, and the number is large: **+15.0 average points** from giving the proposer access to an accumulated wiki. That implies much of the reported spread between skill-evolution *methods* may be a proxy for how well each retains cross-iteration knowledge. Two further findings generalize:
+
+- **The audit trail should not be written by an LLM.** WikiSkill's `skill-impact.md` is appended programmatically by the outer harness, so the proposer reads ground truth about its own history rather than a self-report — the same instinct as [HarnessDev](sources/harnessdev.md)'s unassertable scoring.
+- **Don't leak the knowledge base into the execution it diagnoses.** Giving WikiSkill's *Inference Agent* wiki access during rollouts *hurts* (63.7 → 60.9): the executor then solves tasks from the wiki rather than the skills, making its trajectories less informative about skill quality.
+
+### The counter-bound: discard aggressively *within* a run
+
+[SKILL.state](sources/skill-state.md) inverts the page's premise on a shorter horizon, and its evidence is strong. Replacing append-only history with a validated, bounded **execution state** — discarding each step's reasoning trace once it has produced a state update — is not merely cheaper (O(1) prompt, O(T) tokens vs. O(T²)) but **more accurate at long horizons**: ReAct decays 0.90 → 0.74 from T=10 to T=200 while SKILL.state holds 0.94, and when the world changes outside the agent's action loop, history-based runtimes **hallucinate for 5–8 turns** where SKILL.state needs **zero** recovery steps. Budget-matched controls settle the mechanism: pinned to the same ~1,800 tokens, sliding-window truncation scores 0.18 and perplexity compression 0.22 against SKILL.state's 0.94 — **structure, not brevity**.
+
+The reconciliation is a time-horizon split: **accumulate across runs, discard within one.** The two compose — SKILL.state's immutable spec is exactly what a skill-evolution loop produces. Its condition is that state be a *sufficient statistic*, which fails when no schema is known in advance, when an observation's relevance goes unrecognized when first seen, or when **history itself is the objective** (auditing, provenance, explanation) — directly in tension with the [Autogenesis](sources/autogenesis.md)-style lineage that let [DGM](sources/dgm.md) catch its own reward hacking. Discarded reasoning is unauditable reasoning.
+
+Sitting awkwardly against all of this: [HarnessDev](sources/harnessdev.md) found that agent-built harnesses implement execution loops **18/18** times but checkpoint state **1/18**, with **no checkpoint event across 26,679 trajectories** and every never-triggered audited component concerning state/memory. The most valuable layer is the one loops are least likely to build unasked.
+
+See [Knowledge Accumulation](concepts/knowledge-accumulation.md) and [Context Engineering](concepts/context-engineering.md).
 
 ## The Productive Band (Goldilocks Zone) for Prompt Optimization
 
@@ -217,7 +269,9 @@ Two independent sources converged on the same shape: text-only optimization (no 
 | Productive (~50–70%) | +19.7pp on unseen bugs (Haiku 3.5: 65% → 85%) | Tournament gains largest here |
 | Saturated (>~85%) | Prompt is no longer the bottleneck | Diminishing returns above ~60% on Haiku 4.5 |
 
-[SkillOpt](sources/skillopt.md) partially contradicts this: it achieves best-or-tied-best across all 7 models including weaker ones. The likely reason is that its *bounded structured edits* are more learnable than free-form prompt mutations — i.e., constraining the edit space widens the productive band. This is consistent with SkillOpt's framing of edit-count as a *textual learning rate*: a smaller "step size" is what lets weaker models benefit.
+[WikiSkill](sources/wikiskill.md) contradicts it more directly, and in the opposite direction: its **advantage grows with model strength**. Within the Qwen family, gains over no-skill run +12.3 (4B) → +17.5 (9B) → **+23.9 (27B)**, and on SpreadsheetBench +6.5 → +9.3 → **+40.9**. Its largest single-model gain is on the *strongest* model tested (Gemini-3.5-Flash, +12.0 over the best competing method). At the same time skills substitute for scale — Qwen-3.5-9B with WikiSkill (47.4%) beats Qwen-3.6-27B without skills (39.4%) — so capability and evolved procedural knowledge are complementary rather than competing. The likely explanation: stronger models are better at *both* halves of the loop, discovering better patterns *and* executing more elaborate procedures.
+
+[SkillOpt](sources/skillopt.md) partially contradicts this too: it achieves best-or-tied-best across all 7 models including weaker ones. The likely reason is that its *bounded structured edits* are more learnable than free-form prompt mutations — i.e., constraining the edit space widens the productive band. This is consistent with SkillOpt's framing of edit-count as a *textual learning rate*: a smaller "step size" is what lets weaker models benefit.
 
 ## Is There One Good Harness, or One Per Model?
 
@@ -227,7 +281,31 @@ A tension crystallized by the July 2026 sources. Early harness-optimizers implic
 - [Evolve the Harness](sources/evolve-the-harness.md) refines the claim with a transfer experiment: **deterministic code** mechanisms (file-landing gates, tool-call JSON repair, loop breaks) transfer across model *families* (V4 Flash +14.4), while **prompt playbooks** are model-specific and can *degrade* other models (Nemotron-3 Ultra only +0.4). Five of its top six harnesses are code, not prompts.
 - [SkillOpt](sources/skillopt.md) is the apparent counter-example — a *prose* artifact with strong cross-model transfer (+15.2%) — but the reconciliation is consistent: **bounded, structured artifacts transfer; free-form prompt tuning overfits.** SkillOpt's constrained edit operators and Evolve-the-Harness's deterministic code are both "structured"; ad-hoc prompt playbooks are not.
 
-Net: the high-transfer, high-leverage harness component is *deterministic operational code* — the part that fixes where files land, how tool calls are parsed, and when loops break — not model-flattering prose. This also explains why the largest LAB gains came from operational plumbing, not from making the model reason better.
+The September 2026 sources make the debate measurable rather than inferential:
+
+- [HarnessDev](sources/harnessdev.md) **separates the creator model from the executor model** and reports both. Co-adaptation is large: Opus's SWE-Pro harness scores **69.3 under itself and 33.0 under Gemini**, and its Search harness's duplicate-query rate rises **10.1% → 88.2%** when the executor changes. But the cause is often *accidental* rather than a genuine per-model optimum — one Opus harness hard-codes a **120-step limit** tuned to its original executor. And transfer sometimes runs the other way: Qwen's harnesses *gain* +17.6 (BrowseComp) and +12.9 (MLE-bench) under Gemini, meaning their own executor was the bottleneck.
+- [WikiSkill](sources/wikiskill.md) identifies the mechanism: transferability depends on whether an artifact encodes a **general procedure** or a **model-specific workaround**, and weaker models produce more workarounds. Qwen-3.5-4B's SpreadSheet skills encode single-line-Python and string-conversion hacks that help a 4B model avoid execution failures but **crater Gemini from 50.5 to 18.1** by preventing end-to-end scripts; Qwen-27B's skills on the same benchmark *improve* Gemini to 63.4. Transfer also works *upward* — Qwen-4B's skills lift Gemma-4-31B to 73.1 on LiveMath — and transferred skills frequently beat self-evolved ones.
+- [AutoSaddler](sources/autosaddler.md) lands in the middle: a harness optimized with Opus 4.6 still yields **+5.6pp** when the task agent becomes Haiku 4.5.
+
+Net, revised: the axis that predicts transfer is **generality vs. incidental accommodation**, not code vs. prose. Deterministic operational code and bounded structured prose both transfer *because both tend to encode general procedure*; hard-coded budgets, model-flattering prompts, and small-model workarounds do not. The earlier reading still holds where it came from — the largest LAB gains came from operational plumbing rather than from making the model reason better — but "prefer code" is a heuristic for "prefer general mechanism," not the underlying rule.
+
+[WikiSkill](sources/wikiskill.md) and [HarnessDev](sources/harnessdev.md) also converge independently on a distinction the wiki had been conflating: **discovering** useful procedural knowledge and **executing** it are separate capabilities. WikiSkill's sharpest case is a model authoring knowledge more useful to another model than to itself (Qwen-4B's OfficeQA skills: 30.2 → 28.5 for itself, 42.1 → 52.9 for Qwen-27B). Any single-model self-improvement result measures the creator–executor *system* and cannot separate the two by construction.
+
+## How Much of the Reported Gain Is Real?
+
+The wiki's newest source turns its own reporting conventions into the object of study. [HarnessDev](sources/harnessdev.md) is the first ingested **benchmark of harness development itself** — it freezes each produced harness, runs it under both its own creator and a fixed executor, scores every version on a held-out split the creator never saw, and reports execution-token cost alongside capability. Five findings function as an audit of this page's Empirical Results table:
+
+1. **Gains are often below the noise floor.** The same frozen commit varies by ~**±4.75** pair-score points. Of 64 version switches, **27 reported gains inside that band** and only **2 cleared it**.
+2. **Feedback-set gains don't survive held-out tasks.** Self-runtime lineages gain +3.0 to +13.9 on the visible feedback set but only **+1.43 to +4.44** held-out; under a *fixed* executor, **3 of 4 regress** (one by −10.32).
+3. **Visible feedback is a poor selector.** Feedback and held-out scores move the same direction only **53.1%** of the time, and only **2 of 9** creator-declared final versions were their lineage's held-out optimum.
+4. **Some changes never execute.** 18 of 108 audited components never trigger (all state/memory); **124 of 587** Writing features are dead code; of 169 functions added during Evolution, **25 have no caller**. Edit volume is not evidence — Gemini added the fewest lines (1,006) and scored best on Terminal-Bench.
+5. **Cost is uncorrelated with quality.** MLE-bench token use varies ~**19×** across creators with no reliable relationship to score.
+
+Its held-out numbers (+1.43 to +4.44) sit an order of magnitude below the +9 to +21pp this page reports elsewhere — and the two are consistent rather than contradictory. HarnessDev tests **general-purpose frontier models doing the developer role with no method attached**, a small budget (10 full-eval pairs), and one trajectory per cell. The method papers add exactly the machinery that [AutoSaddler](sources/autosaddler.md) ablates: dense diagnostic feedback (−4.2 when removed), a constrained proposal space (−5.1), and generalization-aware selection (−11.4, collapsing a 62.0 result to 50.6 against a 53.0 base).
+
+**The honest synthesis: the gates and the diagnosis are not safety garnish on a loop that would work anyway — they are most of what makes the loop work.** The ceiling for an ungated loop selecting on a noisy visible score is low.
+
+HarnessDev also reveals that "evaluating harness self-improvement" became a subfield in 2026, naming siblings the wiki hasn't yet ingested — **Harness-Bench, HarnessOpt-Bench, Evo-Bench, Meta-Agent Challenge, SEAGym**, priority-ranking evaluation, and *"Harness Updating Is Not Harness Benefit"* — plus a batch of methods (**VeRO, HarnessFix, DemoEvolve, HarnessCompass, Harness-R1, HarnessX, Co-Harness**). A ready ingest backlog, in the same way [Weng's survey](sources/weng-harness-blog.md) was. See [Evaluating Self-Improvement](concepts/evaluating-self-improvement.md).
 
 ## Negative Results and the Limits of Automation
 
@@ -262,6 +340,15 @@ Tu's **consolidation path** (files → harness → weights) also names the migra
 - [OPHIS](sources/ophis.md) argues LLM-based and evolutionary auto-research are "superficial" for lacking a causal model, and beats an LLM baseline on training-dynamics tasks. Does *mechanistic understanding* generalize beyond optimizing a training run you own — to open-ended agent/harness design where there is no clean set of internal observables? Or are the two paradigms complementary (mechanism where you own the internals, search where you don't)?
 - [Squeeze-Evolve](sources/squeeze-evolve.md) shows a **verifier-free** self-confidence proxy is enough to drive cost-aware test-time evolution, while [Interaction Trajectory Mining](sources/interaction-trajectory-mining.md) shows an *offline reward model* is not. Where is the line — which tasks admit a self-referential fitness signal, and which genuinely require an external verifier?
 - Cost-aware model routing now appears at three layers — operator role-split ([AlphaEvolve](sources/alphaevolve.md)), operator bandit ([ShinkaEvolve](sources/shinkaevolve.md)), and per-instance solution routing ([Squeeze-Evolve](sources/squeeze-evolve.md)). Do these compose into one system that routes cost at every layer, and is [experiment.md](experiment.md)'s single-loop `[prompt, model]` search a special case of the same idea?
+- [HarnessDev](sources/harnessdev.md) holds the **development environment fixed** across both its stages and explicitly leaves open whether an evolved harness can itself serve as the development environment for further evolution. That is exactly the recursive step [STOP](sources/stop.md) and [Hyperagents](sources/hyperagents.md) take — so the *recursive* case is currently unmeasured by any benchmark in the wiki. Is that a gap in the benchmarks or a sign the recursive framing isn't yet testable?
+- If **held-out durability rather than peak feedback-set score** is the discriminating metric, is there a **matched-budget** comparison in which harness evolution beats best-of-N or random search? HarnessDev flags this as future work and the matched-budget studies it cites suggest the answer isn't obviously yes.
+- [AutoSaddler](sources/autosaddler.md) shows an unconstrained LLM optimizer **collapses onto 91.5% cheap prose edits** while the highest-acceptance patch types (New Tool 83%, Loop Change 71%, Infra Change 67%) go nearly unexplored. Is this bias a property of current models, of how patch generation is prompted, or of the LLM-as-mutation-operator paradigm itself — and how many published prompt-optimization results are really measuring this attractor?
+- Agent-built harnesses **declare state and never use it** (11/18 define a `State` class; 1 checkpoints; **0** checkpoint events in 26,679 trajectories), while [SKILL.state](sources/skill-state.md) argues explicit bounded execution state is the single highest-leverage runtime abstraction. Why don't loops discover it, and would a category-constrained proposer like AutoSaddler's find it?
+- [WikiSkill](sources/wikiskill.md) shows that **letting the executor read the knowledge base degrades the signal that curates it** (63.7 → 60.9). How many loops leak their diagnostic layer into execution without noticing?
+- WikiSkill's persistence ablation (+15.0) is larger than the gap between any two skill-evolution *methods* it benchmarks. How much of the published spread between self-improvement methods is really a proxy for how well each retains cross-iteration knowledge?
+- The **two-speed state** pattern — a fast reversible artifact under a gate, over a slow irreversible knowledge base exempt from it — is new with WikiSkill. Should every gated loop have a layer the gate cannot touch, and what stops that layer from accumulating garbage (WikiSkill has **no pruning mechanism**, and no system in the wiki prunes an across-run store)?
+- Reconciling [SKILL.state](sources/skill-state.md) and [Autogenesis](sources/autogenesis.md): discarding reasoning is what makes bounded-state runtimes work, and retaining it is what let [DGM](sources/dgm.md) detect its own reward hacking. Can a system be both token-bounded *and* auditable, or is there a real efficiency/accountability tradeoff at the runtime layer?
+- Strict-improvement gates ([WikiSkill](sources/wikiskill.md), [SkillOpt](sources/skillopt.md)) exclude **neutral proposals** that enable later gains; non-detrimental gates ([Self-Harness](sources/self-harness.md)) admit them. Which is right, and does the answer depend on how many iterations the budget allows?
 - How do self-improving systems avoid reward hacking at the meta-level (optimizing the optimizer)?
 - What is the right granularity of human oversight — per-batch review, Pareto curve inspection, or fully autonomous?
 - Can loop architectures compose? (e.g., Agent0-style co-evolution inside an EvoX-style meta-optimizer; CORAL agents running ASI-Evolve-style Analyze stages)
@@ -293,3 +380,4 @@ Tu's **consolidation path** (files → harness → weights) also names the migra
 - [Evolutionary Optimization](concepts/evolutionary-optimization.md) — population-based and meta-evolutionary approaches; the self-modifying-code lineage
 - [Context Engineering](concepts/context-engineering.md) — evolving the structured context (playbook/skill) with no weight updates
 - [Regression Gating](concepts/regression-gating.md) — how safe self-improvement is enforced; reward hacking as the deeper motivation
+- [Evaluating Self-Improvement](concepts/evaluating-self-improvement.md) — noise floors, held-out splits, creator/executor separation, dead-code auditing; when a reported gain is real

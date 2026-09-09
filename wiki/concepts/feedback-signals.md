@@ -1,9 +1,9 @@
 ---
 title: Feedback Signals — Scalar vs. Rich Diagnostic
 type: concept
-tags: [feedback, diagnostics, ASI, execution-traces, rich-context, capability-isolation, model-specific]
-sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt, rlm_gepa, evo-hq, self-harness, hf-harness, interaction-trajectory-mining, ophis, squeeze-evolve]
-last_updated: 2026-08-01
+tags: [feedback, diagnostics, ASI, execution-traces, rich-context, capability-isolation, model-specific, deep-debugging, noise-floor, on-demand-retrieval]
+sources: [meta-harness, optimize-anything, autoharness-arxiv, auto-harness, asi-evolve, coral, deep-research, agentflow, trace, halo, autoreason, skillOpt, rlm_gepa, evo-hq, self-harness, hf-harness, interaction-trajectory-mining, ophis, squeeze-evolve, auto.saddler, wiki.skill, harnessdev]
+last_updated: 2026-09-08
 ---
 
 # Feedback Signals
@@ -64,6 +64,26 @@ Rich feedback tells the system *why* it failed and *what specific conditions* pr
 **Offline reward-model feedback (a cautionary bound)** — [sources/interaction-trajectory-mining](../sources/interaction-trajectory-mining.md) is the negative case: it scores mined skills with an *offline* reward model over logged trajectories rather than live rollouts, and finds the signal too weak to drive cross-domain transfer (mined skills underperform a frequency prior). This is direct evidence from the failure side for the rich-*live*-feedback thesis: the artifact (legible skill clusters) was fine; the offline signal that was supposed to validate it was the bottleneck.
 
 **Verifier-free confidence / diversity proxy** — [sources/squeeze-evolve](../sources/squeeze-evolve.md) takes the opposite escape from the reward-model problem: use no external checker *and* no learned reward model, and read fitness off the **model's own uncertainty** — group confidence (token log-probabilities) or answer diversity. It is a **zero-cost, self-supervised** signal used both to rank candidates and to *route* each problem to a cheap or expensive model by estimated difficulty. Where [interaction-trajectory-mining](../sources/interaction-trajectory-mining.md) shows a weak offline signal fails, Squeeze-Evolve shows a *self-referential* signal can suffice when the task is answer-refinement rather than skill-curation — but it inherits the standard risk of confidence proxies (a confidently-wrong model is mis-routed as "easy").
+
+**Deep debugging vs. shallow reflection (quantified)** — [sources/autosaddler](../sources/autosaddler.md) turns this page's central thesis into a controlled ablation. Its "w/o in-depth diagnosis" arm replaces agentic investigation with the standard prompt-optimization move — *a single LLM call receives the trace and the evaluation result and infers the failure reason* — and then hands that reason to the same patch generator. GAIA2 test Pass@1 drops **62.0 → 57.8**.
+
+The mechanism behind the gap is measurable rather than asserted. In-depth diagnosis actively explores both execution traces *and* the harness source code, issuing on average **6.2 more tool calls and 5.8 more file accesses per optimization step** than a patch-only session, and it **accepts more patches throughout training** (13 vs. 5 by the end of epoch 1). Two design choices matter:
+
+- **Diagnosis and patch generation are deliberately not separated**, so the agent can use context gathered while investigating rather than receiving a summary of it. This is the opposite of the [optimizer/target separation](self-improvement-loop.md) trend and is argued for specifically: a summary of a root cause is lossy in a way the investigation is not.
+- **Progressive trace retrieval** replaces "fit the trace in the context window," which is what limits prior single-trace diagnosers on long-horizon runs.
+
+The broader claim is that on long-horizon tasks, *reflection is not diagnosis*. Asking a model why a 200-step trajectory failed produces a plausible story; letting it grep the trace and read the harness produces a root cause.
+
+**On-demand retrieval instead of pre-sampling** — [sources/wikiskill](../sources/wikiskill.md) gives its Skill Proposer only a wiki *index*, a programmatically-written accept/reject tracker, and a concise pass/fail summary, then lets it pull specific pattern pages and raw traces via `read_file` in a ReAct loop. This is a third answer to the "feedback too rich for the context window" problem, alongside enriching ([Meta-Harness](../sources/meta-harness.md)) and compressing ([HALO](../sources/halo.md)'s RLM, [ASI-Evolve](../sources/asi-evolve.md)'s Analyzer): **index it and let the consumer choose.** As accumulated feedback outgrows any window, this scales where both alternatives don't. Its companion finding is that persistence in the diagnostic channel is worth more than method sophistication — Proposer access to the accumulated wiki is worth **+15.0 average points**, larger than the gap between any two competing skill-evolution methods it benchmarks.
+
+**Programmatic (non-LLM) audit trails** — also from [sources/wikiskill](../sources/wikiskill.md): `skill-impact.md` — proposal metadata, target skill, unified diff, validation score, accept/reject outcome — is appended by the **outer harness, not by any model**. The proposer therefore reads *ground truth* about its own history rather than a self-report it might confabulate. Compare [sources/harnessdev](../sources/harnessdev.md)'s scoring design, where a harness's self-reported status is never a scoring input. A signal the agent authors about itself is a different (and weaker) kind of evidence than one the infrastructure records about it.
+
+**When feedback misleads: noise, probes, and premature success** — [sources/harnessdev](../sources/harnessdev.md) is the wiki's most detailed account of feedback *failing* in a loop that is otherwise working:
+
+- **The signal is often below the noise floor.** The same frozen commit varies by ~**±4.75** pair-score points; 27 of 64 reported gains fall inside that band, and only 2 clear it.
+- **Cheap proxies disagree with the real metric.** Creators substituted 5-task probes and custom scripts for the dedicated trajectory interface (called **twice** across nine lineages, covering 0.5–40.2% of feedback tasks). One candidate **passed all five Terminal probes and scored 0.584 on the full set**.
+- **Feedback direction ≠ true direction.** Feedback-set and held-out scores moved the same way only **53.1%** of the time.
+- The one clean success shows what usable feedback looks like: Opus notices **99 of 100 runs report success while only 48 pass**, traces it to premature completion, and adds a completion gate. The signal was a *contradiction between the agent's self-report and the external scorer* — precisely the kind of evidence a scalar score hides and a shallow reflection would never surface.
 
 **Internal training-dynamics observables (white-box mechanistic feedback)** — [sources/ophis](../sources/ophis.md) sits at the far end of the richness spectrum. Instead of execution traces of *behavior*, its signal is the **internal state of the system being optimized**: ~6,000 tensor-level quantities of a training run (norms, entropy-like measures, parameter/activation statistics). Interventions are derived by *causal attribution* to observed dynamics rather than proposed and scored black-box. This extends the feedback ladder one rung deeper than traces:
 
@@ -143,3 +163,4 @@ The implication: **what matters is not just the *richness* of the feedback signa
 - [concepts/harness-optimization](harness-optimization.md) — harness optimizers specifically benefit from code + trace context
 - [concepts/regression-gating](regression-gating.md) — gating uses pass/fail (scalar), but proposal generation uses rich context
 - [sources/evox](../sources/evox.md) — counter-example: population-level statistics, no traces
+- [concepts/evaluating-self-improvement](evaluating-self-improvement.md) — when a signal is too noisy or too proxied to support the conclusion drawn from it
