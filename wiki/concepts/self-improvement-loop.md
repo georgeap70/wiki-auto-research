@@ -2,8 +2,8 @@
 title: The Self-Improvement Loop
 type: concept
 tags: [core-concept, loop, measure-fail-propose-gate]
-sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, optimize-anything-omni, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt, evo-hq, self-harness, hf-harness, stop, adas, aflow, dgm, hyperagents, ace, mce, ophis, squeeze-evolve]
-last_updated: 2026-08-01
+sources: [agent0, auto-harness, autoresearch-vs-hpo, meta-harness, optimize-anything, optimize-anything-omni, neosigma-blog, evox, autoagent, autoagent2, asi-evolve, coral, deep-research, agentflow, trace, autogenesis, webxskill, halo, autoreason, skillOpt, evo-hq, self-harness, hf-harness, stop, adas, aflow, dgm, hyperagents, ace, mce, ophis, squeeze-evolve, auto.saddler, wiki.skill, harnessdev]
+last_updated: 2026-09-08
 ---
 
 # The Self-Improvement Loop
@@ -42,6 +42,9 @@ Generate a candidate improvement. This is the creative step. What is proposed de
 | Executable skills (param program + NL) | New dual-mode skill artifacts | [sources/webxskill](../sources/webxskill.md) |
 | Typed versioned resources (prompts/tools/memory) | Protocol-level modifications with rationale | [sources/autogenesis](../sources/autogenesis.md) |
 | Structured context / playbook | Itemized bullets or context-management skill | [sources/ace](../sources/ace.md), [sources/mce](../sources/mce.md) |
+| Typed harness patches (prompt/tool/middleware) | A patch drawn from an enumerated taxonomy, scheduled capability-before-steering | [sources/autosaddler](../sources/autosaddler.md) |
+| Filesystem skills + a persistent wiki | An atomic skill create-or-patch, proposed from accumulated pattern pages | [sources/wikiskill](../sources/wikiskill.md) |
+| A whole harness, from a zero-scoring seed | Build the six control modules (loop/tools/context/state/lifecycle/verify) from scratch, then revise them | [sources/harnessdev](../sources/harnessdev.md) |
 | Whole agent design (as code) | A meta-agent programs a new agent | [sources/adas](../sources/adas.md) |
 | A complete workflow (MCTS node) | Edit prompts/edges of a code-represented workflow | [sources/aflow](../sources/aflow.md) |
 | The agent's own codebase | The agent rewrites its own harness | [sources/dgm](../sources/dgm.md), [sources/hyperagents](../sources/hyperagents.md) |
@@ -61,6 +64,8 @@ Accept or reject the proposed change. This is the safety mechanism:
 - **Heartbeat pivoting**: force algorithmic pivot after N consecutive non-improving evaluations ([sources/coral](../sources/coral.md))
 - **Lineage + rollback**: accept changes but keep them reversible via versioned resources with decision rationale ([sources/autogenesis](../sources/autogenesis.md))
 - **Inheritable tree gates**: pass/fail checks attached to nodes in the experiment tree; a root gate runs on every descendant; gate failure dominates score improvement ([sources/evo](../sources/evo.md))
+- **Staged mini-batch → dev-set gating**: a patch must first beat the incumbent *on its own mini-batch* to earn a (costlier) dev-set generalization check ([sources/autosaddler](../sources/autosaddler.md))
+- **Layer-selective rollback**: the gated artifact reverts on rejection, but the knowledge layer that produced it never does ([sources/wikiskill](../sources/wikiskill.md))
 
 See [concepts/regression-gating](regression-gating.md) for details.
 
@@ -126,6 +131,37 @@ Two distinguishing features: (a) tree shape preserves lineage and exposes the se
 
 This is not a new loop *shape* — it's a specification of what primitives a self-improving system needs to expose for external inspection, audit, and safe reversal.
 
+### Offline mini-batch learning over harness code
+[sources/autosaddler](../sources/autosaddler.md) is the most thorough attempt to run the loop as **textbook mini-batch supervised learning**, and it maps the correspondence deliberately:
+
+| ML concept | AutoSaddler component |
+|------------|----------------------|
+| Parameters | `θ = (θ_prompt, θ_tool, θ_middleware)` |
+| Mini-batch | `B_n ⊂ D_train`, a batch of tasks per iteration |
+| Backpropagation | The Diagnosis–Patch Session (agentic root-cause analysis over traces *and* harness source) |
+| Gradient check | Verification on the same mini-batch — mandatory, because textual "gradients" are unverified hypotheses |
+| Learning-rate schedule | **Phased Patch Scheduling**: a Capability-patch phase, then a Steering-patch phase |
+| Optimizer state | **EvoDAG**, a lineage graph whose nodes carry reflection lessons and scores |
+| Early stopping / model selection | Dev-set evaluation; return the best dev scorer within the rollout budget |
+
+Two features make it more than an analogy. First, the loop is genuinely **offline** — split into train/dev/test across *disjoint task groups* — reflecting the practical setting where harnesses are tuned in development before deployment. Second, the Evolution Session is not a hill-climber: it consults the whole EvoDAG and may **recombine components from any subset of previously explored harnesses**, making this a hybrid of per-iteration descent and across-iteration evolutionary recombination. [sources/skillopt](../sources/skillopt.md) made the same SGD framing at the prose-document layer; AutoSaddler adds mini-batches, explicit splits, and the schedule.
+
+### Two-speed state: reversible artifact over irreversible knowledge
+[sources/wikiskill](../sources/wikiskill.md) runs a four-component loop — **Inference Agent** (rollouts) → **Wiki Maintainer** (root-cause analysis; consolidates traces into persistent pattern pages) → **Skill Proposer** (ReAct-style, reads the wiki index and pulls pages/traces on demand) → **Gating & Rollback** (strict validation improvement) — over the joint state `(S_k, W_k)`.
+
+The structural novelty is that the gate applies to **only one of the two layers**. Skills roll back when a proposal fails; the wiki `W_k` is **never** rolled back. A rejected proposal therefore still advances the system, because the diff, score, and rejection outcome persist in a programmatically-written `skill-impact.md` the Proposer consults next iteration. Its case study is exactly this: an abstract skill is rejected at iteration 0, and the *record of that rejection* is what leads the Proposer to a concrete, accepted rule at iteration 1.
+
+Ablation puts the loop's value in the accumulated layer rather than the proposal method (+15.0 average points from Proposer wiki access alone). And it surfaces a loop-design constraint worth generalizing: giving the **Inference Agent** wiki access during rollouts *degrades* final quality (63.7 → 60.9), because the executor then solves tasks from the knowledge base instead of the skills, making its trajectories less informative about skill quality. **Don't leak the diagnostic layer into the execution being diagnosed.**
+
+### Create-then-evolve, measured rather than proposed
+[sources/harnessdev](../sources/harnessdev.md) is not a method but a **benchmark of the loop**, and it stages the loop in two halves that the wiki's method papers usually merge: **Creation** (build a complete harness from a zero-scoring seed and 1–3 dev cases) and **Evolution** (revise your own artifact using downstream execution feedback). Its measurements of the *unassisted* loop are the useful part:
+
+- Evolution is **not monotonic**: of 64 official version switches, 8 regress on both benchmarks, 16 on one, 27 report gains inside the noise band, and only **2 have clear positive evidence beyond noise**.
+- **Failure diagnosis is the weakest step.** The dedicated trajectory-inspection interface was called **twice** across nine lineages; creators substituted small probes that disagree with full evaluation.
+- Creators pick a final version near the best *visible* score, but that is the held-out-optimal version only **2 of 9** times.
+
+Read against [sources/autosaddler](../sources/autosaddler.md) — whose largest ablation loss comes from removing exactly the diagnosis-and-generalization machinery HarnessDev's creators skip — the two sources agree: **the loop's shape is the easy part; the diagnosis and the gate are what make it work.** See [concepts/evaluating-self-improvement](evaluating-self-improvement.md).
+
 ### Together: weight optimization in this wiki
 
 This is the set of loop types that optimize **weights** rather than harness code, prompts, or architecture:
@@ -166,5 +202,7 @@ Without compounding, each iteration starts fresh. What creates compounding:
 - **Curriculum escalation** (harder tasks only appear once easier ones are mastered — [sources/agent0](../sources/agent0.md))
 - **Structural growth** (the agent's code grows and becomes more capable over time — [sources/optimize-anything](../sources/optimize-anything.md))
 - **Shared knowledge distillation** (successful techniques are extracted into reusable Skills — [sources/coral](../sources/coral.md))
+- **A knowledge layer exempt from the gate** (rejected proposals still deposit permanent patterns and an audit trail — [sources/wikiskill](../sources/wikiskill.md); ablating it costs 15 points)
+- **Recombination across lineages** (the next candidate can merge components from any prior explored harness, not just the incumbent — [sources/autosaddler](../sources/autosaddler.md)'s EvoDAG)
 
 See [concepts/knowledge-accumulation](knowledge-accumulation.md) for a detailed treatment of how different systems implement persistence.

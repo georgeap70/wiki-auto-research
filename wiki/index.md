@@ -1,6 +1,6 @@
 # Self-Improving Agentic Systems — Wiki Index
 
-A catalog of all pages. Read this first when answering queries. Last updated: 2026-08-01 (+ optimize-anything-omni, squeeze-evolve, ophis, self-evolving).
+A catalog of all pages. Read this first when answering queries. Last updated: 2026-09-08 (+ autosaddler, harnessdev, skill-state, wikiskill; new concept: evaluating-self-improvement).
 
 ---
 
@@ -61,6 +61,10 @@ One page per raw source. See `sources/` directory for raw URLs.
 | [Squeeze-Evolve](sources/squeeze-evolve.md) | `sources/squeeze-evolve` | [github](https://github.com/squeeze-evolve/squeeze-evolve) | COLM 2026: verifier-free evolutionary test-time scaling — routes each answer-refinement step to a cheap/expensive model by per-instance difficulty (confidence/diversity); equal-or-better accuracy at a fraction of cost; solution-layer sibling to ShinkaEvolve's cost-aware bandit |
 | [OPHIS](sources/ophis.md) | `sources/ophis` | none | MetaCircle (Ziming Liu): mechanistic auto-research — **no LLM, no evolution**; Observation→Problem→Hypothesis→Intervention→Speed-up over ~6,000 training-dynamics observables; NanoGPT val BPB −7.43σ; own causal-depth Stage 1/2/3 (≠ CORAL's) |
 | [Self-Evolving Agents (Tu)](sources/self-evolving.md) | `sources/self-evolving` | none | Xinming Tu: taxonomy — a 3×3 *what-evolves* (files/harness/weights) × *when-it-persists* (session/sessions/users) matrix; consolidation path files→harness→weights; an external cross-cut lens over the whole wiki |
+| [AutoSaddler](sources/autosaddler.md) | `sources/auto.saddler` | [website](https://aka.ms/AutoSaddler-website) | POSTECH/KAIST/SUSTech + Microsoft: harness optimization as **offline mini-batch learning**; typed Capability/Steering patch taxonomy + phased scheduling; EvoDAG lineage with recombination; GAIA2 +9.0 / SBP +9.6 / TB2 +10.0, beats GEPA & Meta-Harness on all three at ~10× fewer traces (arXiv 2608.23041) |
+| [HarnessDev](sources/harnessdev.md) | `sources/harnessdev` | [project](https://self-developing-agents.github.io/) | ByteDance Seed et al.: **benchmark of harness development itself** — Creation from a zero-scoring seed + Evolution, creator/executor separated, cost measured; held-out gains only +1.4 to +4.4 and negative under a fixed executor; dead-code and co-adaptation audits (arXiv 2609.01437) |
+| [SKILL.state](sources/skill-state.md) | `sources/skill.state` | none | Google + Purdue: **runtime architecture, not a loop** — append-only history replaced by validated bounded execution state, reasoning discarded per step; O(1) prompt / O(T) tokens; accuracy *up* at long horizons; structure-not-brevity proven by budget-matched controls (arXiv 2608.26263) |
+| [WikiSkill](sources/wikiskill.md) | `sources/wiki.skill` | none | Google Research + Virginia Tech: skills co-evolved with a **persistent wiki** (raw/wiki/skills, three lifetimes); gate reverts skills, wiki never rolls back; persistence ablation worth **+15.0**; beats SkillOpt/EvoSkill/Trace2Skill on 5 models (arXiv 2608.27454) |
 
 ---
 
@@ -75,6 +79,7 @@ One page per raw source. See `sources/` directory for raw URLs.
 | [Evolutionary Optimization](concepts/evolutionary-optimization.md) | Population-based search; LLMs as operators; GEPA; meta-evolution (EvoX); CORAL multi-agent co-evolution |
 | [Knowledge Accumulation](concepts/knowledge-accumulation.md) | Persistent memory across iterations: learnings.md, Cognition Base, Attempts/Notes/Skills, playbooks, archives; what makes loops compound |
 | [Context Engineering](concepts/context-engineering.md) | Evolving the model's structured context (playbook/skill) with no weight updates; content (ACE) vs. mechanism (MCE); context collapse and the anti-erosion discipline |
+| [Evaluating Self-Improvement](concepts/evaluating-self-improvement.md) | When a reported gain is real: noise floors, held-out splits by task group, creator/executor separation, dead-code auditing, unassertable metrics, and the 2026 benchmark cluster |
 
 ---
 
@@ -137,3 +142,7 @@ One page per raw source. See `sources/` directory for raw URLs.
 | `squeeze-evolve` | [sources/squeeze-evolve.md](sources/squeeze-evolve.md) |
 | `ophis` | [sources/ophis.md](sources/ophis.md) |
 | `self-evolving` | [sources/self-evolving.md](sources/self-evolving.md) |
+| `auto.saddler` | [sources/autosaddler.md](sources/autosaddler.md) |
+| `harnessdev` | [sources/harnessdev.md](sources/harnessdev.md) |
+| `skill.state` | [sources/skill-state.md](sources/skill-state.md) |
+| `wiki.skill` | [sources/wikiskill.md](sources/wikiskill.md) |

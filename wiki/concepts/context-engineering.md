@@ -1,9 +1,9 @@
 ---
 title: Context Engineering
 type: concept
-tags: [context-engineering, playbook, delta-updates, context-collapse, mechanism-vs-content, no-weight-updates]
-sources: [ace, mce, skillOpt, optimize-anything, halo]
-last_updated: 2026-07-10
+tags: [context-engineering, playbook, delta-updates, context-collapse, mechanism-vs-content, no-weight-updates, execution-state, context-poisoning, token-efficiency]
+sources: [ace, mce, skillOpt, optimize-anything, halo, skill.state, wiki.skill]
+last_updated: 2026-09-08
 ---
 
 # Context Engineering
@@ -20,8 +20,46 @@ The two CE systems in the wiki sit at different rungs of the same ladder:
 |--------|-----------------|-----|
 | [ACE](../sources/ace.md) (Agentic Context Engineering) | **Content** — an itemized playbook of bullet strategies | Fixed Generator → Reflector → Curator pipeline with deterministic delta merges |
 | [MCE](../sources/mce.md) (Meta Context Engineering) | **Mechanism** — the CE *skill* (operators + code that manage context) | Bi-level (1+1)-ES; an LLM crossover operator evolves the skill itself |
+| [SKILL.state](../sources/skill-state.md) | **Nothing — the substrate is replaced** | Hand-designed runtime: append-only history is swapped for a validated, mutable execution state; no search at all |
 
 MCE explicitly frames ACE's fixed pipeline as **one point** in the space of possible context-management skills, and searches over the pipelines. This is the same content→mechanism jump that [EvoX](../sources/evox.md) makes for search strategies and [Hyperagents](../sources/hyperagents.md) makes for self-modification procedures — meta-evolution applied to context management.
+
+[SKILL.state](../sources/skill-state.md) is a third position that dissolves the question rather than climbing the ladder: **if you fix the substrate correctly once, there is much less context to manage.** It is worth holding alongside ACE and MCE precisely because it is not an optimizer — it is the strongest evidence in the wiki that a *structural* choice about context can outperform searching over context-management policies.
+
+## Replacing the Substrate: Bounded Execution State
+
+[SKILL.state](../sources/skill-state.md) keeps only `(P, Σ_t, O_t)` in the prompt at every step — immutable skill spec, structured execution state, latest observation — and **discards the intermediate reasoning trace** the moment it has produced a validated state update `Σ_{t+1} = Σ_t ⊕ ΔΣ_t`. Prompt footprint is O(1) and cumulative tokens O(T), against O(T²) for conversational runtimes. Schema ownership and validation live in the deterministic runtime, so a malformed model patch cannot corrupt persistent state (invalid patches trigger rollback-retry).
+
+Three of its results speak directly to this page's concerns:
+
+**Context poisoning, quantified.** When the world changes outside the agent's action loop, history-based runtimes **hallucinate for 5–8 consecutive turns** — obsolete facts in the prompt history overpower contradictory new observations. SKILL.state needs **zero** recovery steps. Under injected distractor telemetry (5/20/50 events per turn) ReAct degrades 0.68 → 0.53 while SKILL.state holds ≥0.97, because distractors are filtered during patch generation and *never enter a later prompt*. This is a companion failure mode to context collapse: collapse is losing what you need, poisoning is retaining what you don't.
+
+**Structure beats brevity — measurably.** Budget-matched to ~1,800 tokens (Warehouse, T=100):
+
+| Configuration | Score |
+|---------------|-------|
+| Full ReAct (unbounded, 1.25M tokens) | 0.84 |
+| Truncated sliding window | 0.18 |
+| Summary-capped | 0.52 |
+| ReAct + LLMLingua (perplexity compression) | 0.22 |
+| **SKILL.state** | **0.94** |
+
+The gain is not from shorter prompts. Statistical compression removes seemingly-redundant slot identifiers that are semantically vital; truncation evicts early allocations that matter later. This is the quantitative version of this page's central claim — *small, structured, additive edits accumulate; free-form rewriting or lossy compression erodes* — with statistical compressors added to the list of things that erode.
+
+**Where it fails is the boundary of the whole idea.** The retained state must be a **sufficient statistic**. That fails when no schema is known in advance, when an earlier observation's relevance goes unrecognized at the time it is seen (discarded context cannot be revisited, unlike a transcript), or when the **history itself is the objective** — auditing, provenance, explaining past actions.
+
+## Two Time Horizons, Two Opposite Disciplines
+
+Put next to [WikiSkill](../sources/wikiskill.md), the wiki's newest CE-adjacent sources stake out opposite ends of one axis, and the apparent contradiction resolves cleanly:
+
+| | Within a single execution | Across iterations / runs |
+|--|---------------------------|--------------------------|
+| Correct discipline | **Discard aggressively** into validated state ([SKILL.state](../sources/skill-state.md)) | **Never discard**; compound in a persistent store ([WikiSkill](../sources/wikiskill.md), [ACE](../sources/ace.md)) |
+| Failure if you get it wrong | Context poisoning, quadratic cost, accuracy decay with horizon | Rediscovering the same failures every iteration (+15.0 points lost, per WikiSkill's ablation) |
+
+They are complementary, and in fact compose: SKILL.state's immutable spec `P` is exactly the artifact a skill-evolution loop produces, and WikiSkill's rollouts would be cheaper and more reliable executed on a bounded-state runtime. The shared principle is that **what earns a place in the context must be explicitly justified** — by an item's helpful/harmful counters ([ACE](../sources/ace.md)), by a pattern page's accumulated evidence ([WikiSkill](../sources/wikiskill.md)), or by a schema field's necessity for future execution ([SKILL.state](../sources/skill-state.md)).
+
+A practical caveat from [HarnessDev](../sources/harnessdev.md): asked to build harnesses from scratch, frontier models implement execution loops 18/18 times but **checkpoint state once in 18**, with zero checkpoint events across 26,679 trajectories. The context/state layer is simultaneously the highest-leverage and the least likely to be built without being asked for.
 
 ## The Central Failure Mode: Context Collapse
 
@@ -61,5 +99,7 @@ Item-level delta editing avoids re-deriving the whole context every step — the
 - [sources/ace](../sources/ace.md) — content-evolving CE (Generator/Reflector/Curator, delta updates)
 - [sources/mce](../sources/mce.md) — mechanism-evolving CE (bi-level, agentic crossover)
 - [sources/skillopt](../sources/skillopt.md) — sibling "structured artifact, bounded edits" approach at the skill-document layer
+- [sources/skill-state](../sources/skill-state.md) — substrate-replacing CE: validated bounded execution state instead of accumulating history
+- [sources/wikiskill](../sources/wikiskill.md) — the across-iteration pole; patch-based pattern editing with the same anti-erosion discipline
 - [sources/weng-harness-blog](../sources/weng-harness-blog.md) — names context engineering as a harness-optimization category
 - [concepts/knowledge-accumulation](knowledge-accumulation.md), [concepts/harness-optimization](harness-optimization.md)

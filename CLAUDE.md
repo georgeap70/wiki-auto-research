@@ -66,6 +66,10 @@ Raw source files → wiki source pages:
 | ace                        | wiki/sources/ace.md           |
 | mce                        | wiki/sources/mce.md           |
 | hyperagents                | wiki/sources/hyperagents.md   |
+| auto.saddler               | wiki/sources/autosaddler.md   |
+| harnessdev                 | wiki/sources/harnessdev.md    |
+| skill.state                | wiki/sources/skill-state.md   |
+| wiki.skill                 | wiki/sources/wikiskill.md     |
 
 ## Workflows
 

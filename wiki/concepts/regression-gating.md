@@ -1,9 +1,9 @@
 ---
 title: Regression Gating
 type: concept
-tags: [safety, regression, gating, threshold, pareto, lineage, rollback, causal-replay, reward-hacking]
-sources: [auto-harness, optimize-anything, evox, meta-harness, autogenesis, autoreason, skillOpt, evo-hq, self-harness, hf-harness, stop, dgm, ophis]
-last_updated: 2026-08-01
+tags: [safety, regression, gating, threshold, pareto, lineage, rollback, causal-replay, reward-hacking, generalization-aware, prior-restraint, unassertable-metric]
+sources: [auto-harness, optimize-anything, evox, meta-harness, autogenesis, autoreason, skillOpt, evo-hq, self-harness, hf-harness, stop, dgm, ophis, auto.saddler, wiki.skill, harnessdev]
+last_updated: 2026-09-08
 ---
 
 # Regression Gating
@@ -105,6 +105,10 @@ A distinct primitive from [sources/skillopt](../sources/skillopt.md): rather tha
 
 This is **prior restraint** rather than post-hoc rejection: bad large edits are never proposed, not merely filtered. Composes with the standard held-out validation gate (SkillOpt uses both — bounded proposal + held-out test).
 
+[sources/autosaddler](../sources/autosaddler.md) applies prior restraint on a different dimension: not *how large* an edit may be but *what category* it may belong to. Its typed patch taxonomy plus **Phased Patch Scheduling** (a Capability-patch phase before a Steering-patch phase) exists because an unconstrained LLM optimizer **collapses onto 91.5% cheap prose edits**, leaving the highest-acceptance interventions — New Tool (83%), Loop Change (71%), Infra Change (67%) — at just 4% of proposals. Restraint here *widens* exploration rather than narrowing it. Removing only the schedule costs 60.7 → 54.8 Pass@1; removing the taxonomy too costs 53.3.
+
+Three flavors of prior restraint now appear in the wiki: **size** ([SkillOpt](../sources/skillopt.md)'s edit budget), **semantics** ([OPHIS](../sources/ophis.md)'s mechanistic-plausibility filter), and **category** (AutoSaddler's taxonomy + schedule).
+
 Conceptually adjacent to:
 - Trust-region methods in numerical optimization
 - The "step size" parameter in policy-gradient RL
@@ -133,6 +137,51 @@ Used by [sources/ophis](../sources/ophis.md), whose interventions are *derived* 
 
 There is also a deeper claim embedded in OPHIS's design: deriving interventions from *why* they should work is a **structural** alternative to gating blind search. Where the reward-hacking cases below arise precisely because a loop optimizes a hackable proxy without understanding it, "understand-then-intervene" attacks that failure at its root rather than filtering its symptoms after the fact.
 
+### Generalization-Aware Selection (Staged, Reflection-Informed)
+
+Used by [sources/autosaddler](../sources/autosaddler.md), and the source of the strongest quantitative argument for gating in the wiki. Three stages, escalating in cost:
+
+1. **Mini-batch improvement** — a patch must beat the incumbent on its own mini-batch (`Ĵ_Bn(H'_n) > Ĵ_Bn(H_n)`) to be considered at all.
+2. **Dev-set generalization check** — only patches that clear stage 1 earn a (much costlier) dev-set evaluation, estimating whether the update generalizes beyond the batch that motivated it.
+3. **Reflection** — pre- and post-patch traces are compared and *every* task sorted into **fixed / regressed / still-failing / still-passing**, with targeted questions about why regressions occurred and whether the effect generalizes. Lessons land in the EvoDAG for future candidate synthesis.
+
+Removing all three is AutoSaddler's **largest single ablation loss: GAIA2 Pass@1 62.0 → 50.6** — worse than removing in-depth diagnosis (→57.8) or the patch taxonomy (→56.9). Finer-grained: removing dev-set filtering alone costs 60.7 → 50.0, and additionally removing Reflection + EvoDAG costs another 5 points (→44.9).
+
+**Why it matters more than proposal quality.** Decomposing dev-set performance into *fix rate* (success on scenarios the base harness failed) and *regression rate* (failure on scenarios it passed) shows the two settings achieve **similar fix rates** — the gate is not finding better repairs. The divergence is entirely in durability:
+
+| | Regression-rate trend |
+|--|----------------------|
+| AutoSaddler (with generalization gate) | **−0.24 pp/iter** (decreasing) |
+| w/o generalization-aware selection | **+0.16 pp/iter** (increasing) |
+
+The illustrative case: at iteration 20 the ablation adds a new tool and rewires the hook on the high-frequency `send_message_to_user` tool to force redirection to it. With no reflection to assess collateral damage the over-scoped patch is retained, and the dev regression rate jumps **8% → 22%**. The *same* failure pattern — an over-broad hook on a high-frequency tool — arises in full AutoSaddler at iteration 4, and reflection blocks it.
+
+The generalizable lesson: **an ungated loop does not fail by finding bad fixes; it fails by shipping real fixes together with real regressions.** Capability patches are also empirically more durable than prose ones — comparable fix rate (55% vs. 58%) at less than half the regressions (8% vs. 17%) — so *what* you let the optimizer propose is itself a durability lever.
+
+### Layer-Selective Rollback (Two-Speed State)
+
+Used by [sources/wikiskill](../sources/wikiskill.md), and a genuinely new gating shape. The gate is strict — a candidate skill set is accepted only if `R(T_val,k) > R_best`, where `R_best` initializes to the *empty-skill* validation score — but it applies to **only one of two layers**:
+
+- **Skills** (`skills/`) roll back on rejection.
+- **The wiki** (`wiki/`) — pattern pages, evolution log, and the accept/reject audit trail — is **never rolled back**, regardless of the decision.
+
+So a rejected proposal still advances the system permanently. The audit trail (`skill-impact.md`) is written **programmatically by the outer harness**, recording proposal metadata, target skill, unified diff, validation score, and outcome — which makes rejections *reusable evidence* rather than discarded noise, and keeps that record out of the agent's own hands. WikiSkill's case study is exactly this loop closing: an abstract skill is rejected at iteration 0, and the preserved record of that rejection is what produces a concrete, accepted rule at iteration 1.
+
+This generalizes [SkillOpt](../sources/skillopt.md)'s rejected-edit buffer and [Evo](../sources/evo.md)'s discarded-hypothesis bucket: rather than a side-store of negatives, the *knowledge layer as a whole* is exempt from the gate. Ablating it costs **15.0 average points**.
+
+The paper is candid about the cost of strictness: requiring *strict improvement* **excludes neutral proposals** that preserve immediate performance but might enable later gains. (Contrast [Self-Harness](../sources/self-harness.md)'s *non-detrimental* criterion, which admits them.) It also has **no wiki-pruning mechanism** — the gate protects the reversible layer while the irreversible one grows without bound.
+
+### Making the Metric Unassertable
+
+[sources/harnessdev](../sources/harnessdev.md) contributes the constructive answer to the reward-hacking cases below — a gate design that made a **clean compliance null result** possible across every run in the paper. Two properties turn advisory constraints into checkable ones:
+
+1. **The score path is isolated from the artifact.** A harness's self-reported status is *never* a scoring input: SWE-Pro credit comes only from the real repository diff left in the task workdir, and Terminal-Bench credit only from final environment state. **No harness can earn score by asserting success.**
+2. **Every run retains trajectory, result, and metric artifacts alongside the frozen harness source**, supporting post-hoc audit of both the delivered code and what that code actually executed.
+
+Prohibited routes were specified up front (hard-coding instance solutions, deriving patches from task identifiers or filename allowlists, consulting hidden tests/answers/scorer internals, replacing the provider-neutral runtime interface) and every run audited. **No harness obtained score through a prohibited route.** Given [STOP](../sources/stop.md) and [DGM](../sources/dgm.md) below, this is evidence that the attack surface is closable by construction — the fix is architectural (make success externally determined and unassertable), not a matter of catching cheaters after the fact.
+
+The same source also supplies the sharpest argument for *why* held-out gating is not optional. Across 64 version switches, feedback-set and held-out scores moved in the same direction only **53.1%** of the time, and only **2 of 9** creator-declared final versions were their lineage's held-out optimum: *visible feedback is useful for local search but unreliable for final selection.* Repeatedly optimizing a noisy score favors a lucky run and amplifies overfitting.
+
 ## Why Gating Exists: Reward / Objective Hacking
 
 Gating is not only about *catastrophic forgetting* — it is the defense against a self-improving loop **gaming its own objective**. Two systems in the wiki documented this concretely, and it is a headline challenge in [Weng's survey](../sources/weng-harness-blog.md):
@@ -154,6 +203,9 @@ Implications for gating design:
 | What is tested? | Prior failures only vs. full regression suite | Speed vs. safety |
 | How many metrics? | Scalar vs. Pareto | Simplicity vs. completeness |
 | How is the suite maintained? | Static vs. growing with each failure | Fixed cost vs. increasing safety |
+| Is a *neutral* change accepted? | Strict improvement vs. non-detrimental | Excludes enabling-but-flat steps vs. admits drift |
+| Does rejection erase the attempt? | Discard vs. retain in an exempt knowledge layer | Simplicity vs. compounding from failures |
+| Can the agent assert its own success? | Self-reported status vs. externally determined state | Convenience vs. a closed hacking surface |
 
 ## The Regression Suite as a Growing Asset
 
@@ -169,3 +221,4 @@ This is a form of compounding safety, analogous to compounding capability.
 - [concepts/self-improvement-loop](self-improvement-loop.md) — gating is the gate phase of the core loop
 - [concepts/feedback-signals](feedback-signals.md) — gating typically uses scalar pass/fail, while proposals use rich diagnostics
 - [concepts/harness-optimization](harness-optimization.md) — all harness optimizers in this wiki use some form of regression gating
+- [concepts/evaluating-self-improvement](evaluating-self-improvement.md) — the measurement side: noise floors, held-out splits, and what an adequate result must report
